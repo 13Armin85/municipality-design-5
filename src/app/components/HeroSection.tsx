@@ -1,78 +1,83 @@
 import { motion } from 'motion/react';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, Sparkles } from 'lucide-react';
 
 export function HeroSection() {
   return (
-    <section id="home" className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-secondary to-primary pt-20 md:pt-24">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YzAtMS4xMDUuODk1LTIgMi0yczIgLjg5NSAyIDItLjg5NSAyLTIgMi0yLS44OTUtMi0yem0tMTAgMGMwLTEuMTA1Ljg5NS0yIDItMnMyIC44OTUgMiAyLS44OTUgMi0yIDItMi0uODk1LTItMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20" />
+    <section
+      id="home"
+      className="hero-surface hero-grid relative min-h-[calc(100vh-4rem)] overflow-hidden pt-24 pb-16 md:pt-28 md:pb-20"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_84%_82%,rgba(255,255,255,0.1),transparent_30%)]" />
 
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
+      <motion.div
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-24 -right-20 h-64 w-64 rounded-full bg-white/12 blur-3xl"
+      />
+
+      <div className="container relative z-10 mx-auto px-4 md:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
+            className="mb-6"
           >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6">
-              شهرداری مراغه
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 md:mb-12 leading-relaxed px-4">
-              مرکز ارائه خدمات الکترونیک شهری، مدیریت شهر هوشمند و پاسخگو به نیازهای شما
-            </p>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/12 px-3 py-1.5 text-xs text-white md:text-sm">
+              <Sparkles className="h-3.5 w-3.5" />
+              درگاه یکپارچه خدمات الکترونیک شهرداری
+            </span>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-8 md:mb-12 px-4"
+            transition={{ duration: 0.6, delay: 0.08 }}
+            className="mb-5 text-3xl font-black leading-tight text-white sm:text-4xl md:text-5xl lg:text-6xl"
           >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 md:px-8 py-3 md:py-4 bg-white text-primary rounded-xl font-medium shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-            >
-              مشاهده خدمات
-              <ArrowLeft className="w-5 h-5" />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 md:px-8 py-3 md:py-4 bg-white/10 backdrop-blur-sm text-white border-2 border-white/30 rounded-xl font-medium hover:bg-white/20 transition-all flex items-center justify-center gap-2"
-            >
-              استعلام ملک
-              <Search className="w-5 h-5" />
-            </motion.button>
-          </motion.div>
+            خدمات شهری مراغه
+            <span className="block bg-gradient-to-l from-white to-white/75 bg-clip-text text-transparent">
+              سریع، امن و شفاف
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.16 }}
+            className="mx-auto mb-9 max-w-2xl text-base leading-relaxed text-white/90 sm:text-lg"
+          >
+            ثبت درخواست، پیگیری پرونده، استعلام ملک و پرداخت عوارض را در یک تجربه اداری ساده و استاندارد انجام دهید.
+          </motion.p>
 
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-3xl mx-auto px-4"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.24 }}
+            className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
           >
-            {[
-              { number: '۲۵۰+', label: 'خدمات الکترونیک' },
-              { number: '۵۰۰۰+', label: 'کاربر فعال' },
-              { number: '۲۴/۷', label: 'پشتیبانی' },
-              { number: '۹۵٪', label: 'رضایت شهروندان' },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/20"
-              >
-                <div className="text-2xl md:text-3xl font-bold text-white mb-1">{stat.number}</div>
-                <div className="text-xs md:text-sm text-white/80">{stat.label}</div>
-              </motion.div>
-            ))}
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="btn-gradient inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-white md:px-8 md:py-4 md:text-base"
+            >
+              ورود به خدمات
+              <ArrowLeft className="h-5 w-5" />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md md:px-8 md:py-4 md:text-base"
+            >
+              استعلام سریع ملک
+              <Search className="h-5 w-5" />
+            </motion.button>
           </motion.div>
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-16 md:h-24 bg-gradient-to-t from-background to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent md:h-24" />
     </section>
   );
 }

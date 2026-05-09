@@ -3,9 +3,10 @@ import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { ServicesSection } from './components/ServicesSection';
 import { NewsSection } from './components/NewsSection';
-import { MapSection } from './components/MapSection';
 import { StatsSection } from './components/StatsSection';
 import { QuickAccessSection } from './components/QuickAccessSection';
+import { RecentActivitiesSection } from './components/RecentActivitiesSection';
+import { SupportSection } from './components/SupportSection';
 import { Footer } from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
 
@@ -29,14 +30,20 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background relative selection:bg-primary/25 selection:text-foreground" dir="rtl">
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -top-36 -right-24 w-[28rem] h-[28rem] rounded-full bg-[var(--primary-soft-strong)] blur-[110px]" />
+        <div className="absolute top-[28%] -left-24 w-[30rem] h-[30rem] rounded-full bg-[var(--accent-soft)] blur-[120px]" />
+        <div className="absolute -bottom-28 left-1/2 -translate-x-1/2 w-[34rem] h-[18rem] rounded-full bg-[var(--primary-soft)] blur-[110px]" />
+      </div>
       <Header isDark={isDark} toggleTheme={toggleTheme} />
       <main>
         <HeroSection />
         <ServicesSection />
-        <MapSection />
+        <RecentActivitiesSection />
         <StatsSection />
         <NewsSection />
+        <SupportSection />
         <QuickAccessSection />
       </main>
       <Footer />

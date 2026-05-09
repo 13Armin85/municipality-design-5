@@ -2,85 +2,101 @@
 
 :root {
   --font-size: 16px;
-  --background: #F8FAFB;
-  --foreground: #1A2332;
-  --card: #FFFFFF;
-  --card-foreground: #1A2332;
-  --popover: #FFFFFF;
-  --popover-foreground: #1A2332;
-  --primary: #1E3A5F;
-  --primary-foreground: #FFFFFF;
-  --secondary: #4A90E2;
-  --secondary-foreground: #FFFFFF;
-  --muted: #E8EDF2;
-  --muted-foreground: #5C6B7D;
-  --accent: #2ECC71;
-  --accent-foreground: #FFFFFF;
-  --destructive: #E74C3C;
-  --destructive-foreground: #FFFFFF;
-  --border: rgba(26, 35, 50, 0.1);
+  --background: #f4f8f5;
+  --foreground: #102620;
+  --card: #ffffff;
+  --card-foreground: #102620;
+  --popover: #ffffff;
+  --popover-foreground: #102620;
+  --primary: #0d7b6e;
+  --primary-foreground: #f8fffd;
+  --secondary: #1a5f7b;
+  --secondary-foreground: #f5fcff;
+  --muted: #e4efe9;
+  --muted-foreground: #4d665e;
+  --accent: #d17a0e;
+  --accent-foreground: #fff8ee;
+  --destructive: #c84f4f;
+  --destructive-foreground: #ffffff;
+  --border: rgba(16, 38, 32, 0.14);
   --input: transparent;
-  --input-background: #FFFFFF;
-  --switch-background: #CBD5E0;
+  --input-background: #ffffff;
+  --switch-background: #b9d2c9;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #4A90E2;
-  --chart-1: #4A90E2;
-  --chart-2: #2ECC71;
-  --chart-3: #F39C12;
-  --chart-4: #9B59B6;
-  --chart-5: #E74C3C;
-  --radius: 0.75rem;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #1A2332;
-  --sidebar-primary: #1E3A5F;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F8FAFB;
-  --sidebar-accent-foreground: #1A2332;
-  --sidebar-border: rgba(26, 35, 50, 0.1);
-  --sidebar-ring: #4A90E2;
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  --ring: #0d7b6e;
+  --chart-1: #0d7b6e;
+  --chart-2: #1a5f7b;
+  --chart-3: #2c8a87;
+  --chart-4: #4d7397;
+  --chart-5: #d19b3f;
+  --radius: 1rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #102620;
+  --sidebar-primary: #0d7b6e;
+  --sidebar-primary-foreground: #f8fffd;
+  --sidebar-accent: #eef5f1;
+  --sidebar-accent-foreground: #102620;
+  --sidebar-border: rgba(16, 38, 32, 0.14);
+  --sidebar-ring: #0d7b6e;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(13, 123, 110, 0.2);
+  --primary-soft: rgba(13, 123, 110, 0.12);
+  --primary-soft-strong: rgba(13, 123, 110, 0.22);
+  --accent-soft: rgba(209, 122, 14, 0.16);
+  --primary-gradient-1: #0d7b6e;
+  --primary-gradient-2: #1a5f7b;
+  --primary-gradient-3: #d17a0e;
+  --shadow-soft: 0 14px 36px rgba(17, 57, 47, 0.12);
+  --shadow-strong: 0 24px 56px rgba(9, 38, 31, 0.22);
 }
 
 .dark {
-  --background: #0F1419;
-  --foreground: #E8EDF2;
-  --card: #1A2332;
-  --card-foreground: #E8EDF2;
-  --popover: #1A2332;
-  --popover-foreground: #E8EDF2;
-  --primary: #4A90E2;
-  --primary-foreground: #FFFFFF;
-  --secondary: #2C5282;
-  --secondary-foreground: #FFFFFF;
-  --muted: #2D3748;
-  --muted-foreground: #A0AEC0;
-  --accent: #2ECC71;
-  --accent-foreground: #FFFFFF;
-  --destructive: #FC8181;
-  --destructive-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: #2D3748;
-  --input-background: #1A2332;
-  --ring: #4A90E2;
+  --background: #0c1815;
+  --foreground: #e4f3ef;
+  --card: #122420;
+  --card-foreground: #e4f3ef;
+  --popover: #122420;
+  --popover-foreground: #e4f3ef;
+  --primary: #30b6a6;
+  --primary-foreground: #f7fffd;
+  --secondary: #3f93b9;
+  --secondary-foreground: #f7fcff;
+  --muted: #1a2f29;
+  --muted-foreground: #97b8ad;
+  --accent: #e0ad53;
+  --accent-foreground: #231706;
+  --destructive: #e48686;
+  --destructive-foreground: #ffffff;
+  --border: rgba(149, 201, 189, 0.22);
+  --input: #1a2f29;
+  --input-background: #122420;
+  --ring: #30b6a6;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --chart-1: #4A90E2;
-  --chart-2: #2ECC71;
-  --chart-3: #F39C12;
-  --chart-4: #9B59B6;
-  --chart-5: #E74C3C;
-  --sidebar: #1A2332;
-  --sidebar-foreground: #E8EDF2;
-  --sidebar-primary: #4A90E2;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #2D3748;
-  --sidebar-accent-foreground: #E8EDF2;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #4A90E2;
-  --glass-bg: rgba(26, 35, 50, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --chart-1: #30b6a6;
+  --chart-2: #3f93b9;
+  --chart-3: #5ec3b6;
+  --chart-4: #74a3c8;
+  --chart-5: #e0ad53;
+  --sidebar: #122420;
+  --sidebar-foreground: #e4f3ef;
+  --sidebar-primary: #30b6a6;
+  --sidebar-primary-foreground: #f7fffd;
+  --sidebar-accent: #1a2f29;
+  --sidebar-accent-foreground: #e4f3ef;
+  --sidebar-border: rgba(149, 201, 189, 0.22);
+  --sidebar-ring: #30b6a6;
+  --glass-bg: rgba(16, 33, 29, 0.78);
+  --glass-border: rgba(61, 174, 160, 0.24);
+  --primary-soft: rgba(48, 182, 166, 0.2);
+  --primary-soft-strong: rgba(48, 182, 166, 0.3);
+  --accent-soft: rgba(224, 173, 83, 0.2);
+  --primary-gradient-1: #1f786e;
+  --primary-gradient-2: #2f7fa4;
+  --primary-gradient-3: #c99440;
+  --shadow-soft: 0 14px 34px rgba(3, 13, 11, 0.48);
+  --shadow-strong: 0 26px 56px rgba(2, 10, 9, 0.72);
 }
 
 @theme inline {
@@ -129,74 +145,222 @@
     @apply border-border outline-ring/50;
   }
 
-  body {
-    @apply bg-background text-foreground;
-  }
-
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
-
   html {
     font-size: var(--font-size);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+    position: relative;
+    isolation: isolate;
+    background-image:
+      radial-gradient(circle at 12% -8%, color-mix(in oklab, var(--primary) 24%, transparent), transparent 40%),
+      radial-gradient(circle at 86% 2%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 38%),
+      radial-gradient(circle at 52% 118%, color-mix(in oklab, var(--secondary) 18%, transparent), transparent 46%),
+      linear-gradient(180deg, color-mix(in oklab, var(--background) 94%, white) 0%, var(--background) 58%, color-mix(in oklab, var(--background) 82%, var(--primary-soft)) 100%);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.32;
+    background-image: radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--primary) 16%, transparent) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Readex Pro", "Vazirmatn", sans-serif;
+    letter-spacing: -0.015em;
   }
 
   h1 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
   h2 {
     font-size: var(--text-xl);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
   h3 {
     font-size: var(--text-lg);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
   h4 {
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
   label {
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
   button {
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
   input {
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
-    line-height: 1.5;
-  }
-
-  html {
-    scroll-behavior: smooth;
-  }
-
-  body {
-    overflow-x: hidden;
+    line-height: 1.45;
   }
 
   .glass-effect {
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
     border: 1px solid var(--glass-border);
+  }
+
+  .section-decor {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section-decor::before {
+    content: "";
+    position: absolute;
+    inset: -42% auto auto -8%;
+    width: 19rem;
+    height: 19rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, var(--primary-soft-strong) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .section-decor::after {
+    content: "";
+    position: absolute;
+    inset: auto -10% -48% auto;
+    width: 21rem;
+    height: 21rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, var(--accent-soft) 0%, transparent 72%);
+    pointer-events: none;
+  }
+
+  .section-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: linear-gradient(120deg, var(--primary-soft), var(--accent-soft));
+    color: color-mix(in oklab, var(--primary) 78%, var(--foreground));
+    border: 1px solid color-mix(in oklab, var(--primary) 24%, transparent);
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .soft-card {
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--card) 95%, white) 0%, color-mix(in oklab, var(--card) 90%, var(--muted)) 100%);
+    border: 1px solid color-mix(in oklab, var(--border) 88%, var(--primary) 12%);
+    box-shadow: var(--shadow-soft);
+    border-radius: calc(var(--radius) + 8px);
+  }
+
+  .soft-card-hover {
+    transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease, background-color 260ms ease;
+  }
+
+  .soft-card-hover:hover {
+    transform: translateY(-7px) scale(1.005);
+    border-color: color-mix(in oklab, var(--primary) 34%, var(--border));
+    box-shadow: var(--shadow-strong);
+  }
+
+  .glass-card {
+    background: linear-gradient(160deg, color-mix(in oklab, var(--glass-bg) 94%, white), color-mix(in oklab, var(--glass-bg) 86%, var(--primary-soft)));
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: var(--shadow-soft);
+    border-radius: calc(var(--radius) + 8px);
+  }
+
+  .mesh-panel {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .mesh-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 84% 14%, color-mix(in oklab, var(--accent) 20%, transparent), transparent 32%),
+      linear-gradient(90deg, color-mix(in oklab, var(--primary) 10%, transparent) 1px, transparent 1px),
+      linear-gradient(180deg, color-mix(in oklab, var(--primary) 10%, transparent) 1px, transparent 1px);
+    background-size: auto, 24px 24px, 24px 24px;
+    opacity: 0.36;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .btn-gradient {
+    background-image: linear-gradient(120deg, var(--primary-gradient-1) 0%, var(--primary-gradient-2) 56%, var(--primary-gradient-3) 100%);
+    background-size: 170% 170%;
+    box-shadow: 0 14px 30px color-mix(in oklab, var(--primary) 28%, transparent);
+    transition: background-position 260ms ease, box-shadow 260ms ease, transform 260ms ease;
+  }
+
+  .btn-gradient:hover {
+    background-position: 100% 42%;
+    box-shadow: 0 20px 38px color-mix(in oklab, var(--secondary) 30%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .brand-band {
+    background-image:
+      radial-gradient(circle at 14% 10%, rgba(255, 255, 255, 0.22), transparent 32%),
+      radial-gradient(circle at 88% 86%, color-mix(in oklab, var(--accent) 35%, transparent), transparent 34%),
+      linear-gradient(132deg, var(--primary-gradient-1), var(--primary-gradient-2) 58%, color-mix(in oklab, var(--primary-gradient-3) 78%, var(--secondary)) 100%);
+    color: #ffffff;
+  }
+
+  .hero-surface {
+    background-image:
+      radial-gradient(circle at 10% -14%, rgba(255, 255, 255, 0.2), transparent 34%),
+      radial-gradient(circle at 86% 0%, color-mix(in oklab, var(--accent) 34%, transparent), transparent 40%),
+      linear-gradient(145deg, color-mix(in oklab, var(--primary-gradient-1) 96%, #031b1f) 0%, color-mix(in oklab, var(--primary-gradient-2) 92%, #0d2940) 58%, color-mix(in oklab, var(--primary-gradient-3) 72%, #4c2808) 100%);
+    color: #ffffff;
+  }
+
+  .hero-grid::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.34;
+    background-image:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 54px 54px;
+    mask-image: radial-gradient(circle at 50% 50%, black 38%, transparent 90%);
   }
 
   @keyframes fadeInUp {
