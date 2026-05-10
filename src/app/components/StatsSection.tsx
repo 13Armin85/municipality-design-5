@@ -10,10 +10,7 @@ const stats = [
 
 export function StatsSection() {
   return (
-    <section className="py-12 md:py-20 bg-gradient-to-br from-primary via-secondary to-primary relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_12%,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_82%_84%,rgba(255,255,255,0.12),transparent_32%)]" />
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2262%22 height=%2262%22 viewBox=%220 0 62 62%22><circle cx=%2231%22 cy=%2231%22 r=%221%22 fill=%22rgba(255,255,255,0.2)%22/></svg>')]" />
-
+    <section className="stats-spotlight section-decor py-12 md:py-20">
       <div className="container mx-auto px-4 md:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -21,11 +18,11 @@ export function StatsSection() {
           viewport={{ once: true }}
           className="text-center mb-10 md:mb-16"
         >
-          <span className="inline-flex items-center gap-1.5 mb-3 px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white text-xs md:text-sm">
+          <span className="section-chip mb-3">
             گزارش عملکرد
           </span>
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-white mb-3 md:mb-4">آمار و ارقام</h2>
-          <p className="text-sm md:text-base text-white/90 max-w-2xl mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-foreground mb-3 md:mb-4">آمار و ارقام</h2>
+          <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto px-4">
             نمای کلی از وضعیت خدمات شهری و عملکرد سامانه
           </p>
         </motion.div>
@@ -41,15 +38,15 @@ export function StatsSection() {
               whileHover={{ y: -6, scale: 1.01 }}
               className="group"
             >
-              <div className="mesh-panel rounded-[calc(var(--radius)+8px)] border border-white/28 bg-black/30 p-6 backdrop-blur-lg shadow-[0_18px_36px_rgba(2,16,20,0.35)] transition-colors duration-300 group-hover:bg-black/38">
+              <div className="soft-card soft-card-hover mesh-panel h-full p-6">
                 <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-4 shadow-lg`}>
                   <stat.icon className="w-7 h-7 md:w-8 md:h-8 text-white" />
                 </div>
 
-                <div className="text-3xl md:text-4xl font-black text-white mb-2">{stat.value}</div>
-                <div className="text-sm md:text-base text-white/85 mb-3">{stat.label}</div>
+                <div className="text-3xl md:text-4xl font-black text-foreground mb-2">{stat.value}</div>
+                <div className="text-sm md:text-base text-muted-foreground mb-3">{stat.label}</div>
 
-                <div className="flex items-center gap-1 text-white">
+                <div className="flex items-center gap-1 text-primary">
                   <TrendingUp className="w-4 h-4" />
                   <span className="text-xs font-semibold">{stat.trend}</span>
                 </div>

@@ -7,6 +7,7 @@ import { StatsSection } from './components/StatsSection';
 import { QuickAccessSection } from './components/QuickAccessSection';
 import { RecentActivitiesSection } from './components/RecentActivitiesSection';
 import { SupportSection } from './components/SupportSection';
+import { FaqSection } from './components/FaqSection';
 import { Footer } from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
 
@@ -43,6 +44,7 @@ export default function App() {
         <RecentActivitiesSection />
         <StatsSection />
         <NewsSection />
+        <FaqSection />
         <SupportSection />
         <QuickAccessSection />
       </main>

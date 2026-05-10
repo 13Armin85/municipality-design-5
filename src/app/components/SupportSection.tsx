@@ -15,7 +15,7 @@ function statusStyle(status: string) {
 
 export function SupportSection() {
   return (
-    <section id="support" className="py-12 md:py-20 bg-muted/30 section-decor">
+    <section id="support" className="py-12 md:py-20 bg-background section-decor">
       <div className="container mx-auto px-4 md:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

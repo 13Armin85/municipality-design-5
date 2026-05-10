@@ -8,8 +8,8 @@ export function Footer() {
   };
 
   return (
-    <footer id="contact" className="relative overflow-hidden bg-gradient-to-br from-primary via-secondary to-primary text-primary-foreground">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_10%,rgba(255,255,255,0.2),transparent_34%)]" />
+    <footer id="contact" className="relative overflow-hidden bg-[#0d1f24] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_10%,rgba(67,150,182,0.18),transparent_36%)]" />
       <div className="container mx-auto px-4 md:px-6 lg:px-8 py-12 md:py-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-12">
           <div>
