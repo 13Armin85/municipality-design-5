@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Link } from 'react-router';
 import { useIsMobile } from './ui/use-mobile';
 
 interface HeaderProps {
@@ -195,14 +196,13 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                 <ShieldCheck className="h-5 w-5" />
               </motion.a>
 
-              <motion.button
-                whileTap={{ scale: 0.95 }}
+              <Link
+                to="/profile"
                 className="header-action-btn hidden items-center gap-2 px-3 sm:flex"
                 aria-label="پروفایل کاربر"
               >
                 <UserCircle2 className="h-5 w-5" />
-                <span className="text-sm">کاربر</span>
-              </motion.button>
+              </Link>
 
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -463,10 +463,17 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                       {unreadCount > 0 && <span className="h-2 w-2 rounded-full bg-primary" />}
                     </span>
                   </button>
-                  <div className="flex items-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm text-foreground">
+                  <Link
+                    to="/profile"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsNotificationsOpen(false);
+                    }}
+                    className="flex items-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm text-foreground transition-colors hover:bg-[var(--primary-soft)]"
+                  >
                     <UserCircle2 className="h-4 w-4" />
                     <span>پروفایل من</span>
-                  </div>
+                  </Link>
                 </div>
               </nav>
             </div>

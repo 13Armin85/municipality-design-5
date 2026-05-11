@@ -12,6 +12,8 @@ import { FaqSection } from './components/FaqSection';
 import { Footer } from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
 import { AboutPage } from './pages/AboutPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { NewsDetailPage } from './pages/NewsDetailPage';
 
 function HomePageContent() {
   return (
@@ -82,6 +84,22 @@ export default function App() {
           element={
             <main>
               <AboutPage isDark={isDark} toggleTheme={toggleTheme} />
+            </main>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <main>
+              <ProfilePage isDark={isDark} toggleTheme={toggleTheme} />
+            </main>
+          }
+        />
+        <Route
+          path="/news/:slug"
+          element={
+            <main>
+              <NewsDetailPage isDark={isDark} toggleTheme={toggleTheme} />
             </main>
           }
         />

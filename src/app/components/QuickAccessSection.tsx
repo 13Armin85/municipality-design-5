@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Phone, Mail, MessageCircle, MapPin, ExternalLink } from 'lucide-react';
+import { Phone, Mail, MapPin, ExternalLink } from 'lucide-react';
 
 const quickLinks = [
   { icon: Phone, title: 'پشتیبانی تلفنی', description: '137 - 09140077804', color: 'from-primary to-secondary', action: 'تماس' },
@@ -9,7 +9,7 @@ const quickLinks = [
 
 export function QuickAccessSection() {
   return (
-    <section className="py-12 md:py-20 bg-background section-decor">
+    <section className="py-12 md:py-20">
       <div className="container mx-auto px-4 md:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

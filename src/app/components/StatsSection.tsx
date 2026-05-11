@@ -1,11 +1,43 @@
 import { motion } from 'motion/react';
-import { Users, FileCheck, Building2, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, Building2, FileCheck, TrendingUp, Users } from 'lucide-react';
 
 const stats = [
-  { icon: Users, value: '50,000+', label: 'شهروندان فعال', trend: '+12%', color: 'from-primary to-secondary' },
-  { icon: FileCheck, value: '12,345', label: 'درخواست پردازش شده', trend: '+28%', color: 'from-secondary to-primary' },
-  { icon: Building2, value: '15,678', label: 'املاک ثبت شده', trend: '+15%', color: 'from-primary/90 to-secondary/90' },
-  { icon: TrendingUp, value: '95%', label: 'رضایت شهروندان', trend: '+5%', color: 'from-secondary/90 to-primary/90' },
+  {
+    icon: Users,
+    value: '50,000+',
+    label: 'شهروندان فعال',
+    trend: '+12%',
+    description: 'کاربر فعال در سامانه خدمات غیرحضوری',
+    progress: 78,
+    color: 'from-primary to-secondary',
+  },
+  {
+    icon: FileCheck,
+    value: '12,345',
+    label: 'درخواست پردازش شده',
+    trend: '+28%',
+    description: 'پرونده‌های رسیدگی‌شده تا پایان این ماه',
+    progress: 86,
+    color: 'from-secondary to-primary',
+  },
+  {
+    icon: Building2,
+    value: '15,678',
+    label: 'املاک ثبت شده',
+    trend: '+15%',
+    description: 'املاک ثبت‌شده در پایگاه اطلاعات شهری',
+    progress: 69,
+    color: 'from-primary/90 to-secondary/90',
+  },
+  {
+    icon: TrendingUp,
+    value: '95%',
+    label: 'رضایت شهروندان',
+    trend: '+5%',
+    description: 'میانگین امتیاز ثبت‌شده از کیفیت خدمات',
+    progress: 95,
+    color: 'from-secondary/90 to-primary/90',
+  },
 ];
 
 export function StatsSection() {
@@ -38,17 +70,25 @@ export function StatsSection() {
               whileHover={{ y: -6, scale: 1.01 }}
               className="group"
             >
-              <div className="soft-card soft-card-hover mesh-panel h-full p-6">
-                <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-4 shadow-lg`}>
-                  <stat.icon className="w-7 h-7 md:w-8 md:h-8 text-white" />
+              <div className="soft-card soft-card-hover mesh-panel relative isolate h-full overflow-hidden p-5 md:p-6">
+                <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l ${stat.color}`} />
+                <div className={`pointer-events-none absolute -top-12 -left-10 h-28 w-28 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-2xl`} />
+                <div className={`pointer-events-none absolute -bottom-14 -right-12 h-32 w-32 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-3xl`} />
+
+                <div className="relative z-10 flex items-start justify-between gap-3">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${stat.color} shadow-lg md:h-16 md:w-16`}>
+                    <stat.icon className="h-7 w-7 text-white md:h-8 md:w-8" />
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary">
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    {stat.trend}
+                  </span>
                 </div>
 
-                <div className="text-3xl md:text-4xl font-black text-foreground mb-2">{stat.value}</div>
-                <div className="text-sm md:text-base text-muted-foreground mb-3">{stat.label}</div>
-
-                <div className="flex items-center gap-1 text-primary">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="text-xs font-semibold">{stat.trend}</span>
+                <div className="relative z-10 mt-5">
+                  <p className="text-3xl font-black tracking-tight text-foreground md:text-4xl">{stat.value}</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground md:text-base">{stat.label}</p>
+                  <p className="mt-1 text-xs leading-6 text-muted-foreground md:text-sm">{stat.description}</p>
                 </div>
               </div>
             </motion.div>

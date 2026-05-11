@@ -1,33 +1,14 @@
 import { motion } from 'motion/react';
-import { Calendar, Clock, ArrowLeft, Newspaper } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Newspaper } from 'lucide-react';
+import { Link } from 'react-router';
+import { newsItems } from '../data/news';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel';
 
-const news = [
-  {
-    title: 'راه‌اندازی نسخه جدید پرتال خدمات شهری',
-    excerpt: 'نسخه جدید سامانه با بهبود سرعت، دسترسی‌پذیری و پنل پیگیری درخواست‌ها در اختیار شهروندان قرار گرفت.',
-    date: '1405/02/18',
-    time: '10:30',
-    category: 'اطلاعیه',
-  },
-  {
-    title: 'آغاز طرح تشویقی پرداخت عوارض نوسازی',
-    excerpt: 'شهروندان می‌توانند در بازه زمانی اعلام‌شده از تخفیف پرداخت آنلاین عوارض نوسازی استفاده کنند.',
-    date: '1405/02/16',
-    time: '14:15',
-    category: 'خبر',
-  },
-  {
-    title: 'به‌روزرسانی خدمات استعلام املاک',
-    excerpt: 'سرویس استعلام املاک با نمایش تاریخچه پرونده و وضعیت جاری، دقیق‌تر و کامل‌تر شد.',
-    date: '1405/02/13',
-    time: '09:00',
-    category: 'خدمات',
-  },
-];
+const latestNews = newsItems.slice(0, 5);
 
 export function NewsSection() {
   return (
-    <section id="news" className="py-12 md:py-20 bg-background section-decor">
+    <section id="news" className="py-12 md:py-20">
       <div className="container mx-auto px-4 md:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -42,57 +23,65 @@ export function NewsSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-          {news.map((item, index) => (
-            <motion.article
-              key={item.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group soft-card soft-card-hover overflow-hidden"
-            >
-              <div className="relative h-28 bg-gradient-to-l from-primary via-secondary to-primary">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.32),transparent_34%)]" />
-                <div className="absolute left-4 top-4 w-9 h-9 rounded-lg bg-white/15 text-white flex items-center justify-center border border-white/25">
-                  <Newspaper className="w-4 h-4" />
-                </div>
-                <span className="absolute right-4 top-4 px-3 py-1 rounded-full bg-white/16 border border-white/26 text-white text-xs">
-                  {item.category}
-                </span>
-              </div>
-
-              <div className="p-5 md:p-6">
-                <h3 className="text-base md:text-lg font-bold text-foreground mb-3 line-clamp-2">{item.title}</h3>
-                <p className="text-xs md:text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">{item.excerpt}</p>
-
-                <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>{item.date}</span>
+        <Carousel
+          opts={{
+            align: 'start',
+            direction: 'rtl',
+            loop: latestNews.length > 3,
+          }}
+          className="relative mx-auto w-full max-w-6xl px-1 md:px-3"
+        >
+          <CarouselContent>
+            {latestNews.map((item, index) => (
+              <CarouselItem key={item.id} className="md:basis-1/2 lg:basis-1/3">
+                <motion.article
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.08 }}
+                  className="group h-full"
+                >
+                  <Link
+                    to={`/news/${item.slug}`}
+                    className="soft-card soft-card-hover block h-full overflow-hidden transition-transform hover:-translate-y-1"
+                  >
+                    <div className="relative h-28 bg-gradient-to-l from-primary via-secondary to-primary">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.32),transparent_34%)]" />
+                      <div className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg border border-white/25 bg-white/15 text-white">
+                        <Newspaper className="h-4 w-4" />
+                      </div>
+                      <span className="absolute right-4 top-4 rounded-full border border-white/26 bg-white/16 px-3 py-1 text-xs text-white">
+                        {item.category}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{item.time}</span>
-                    </div>
-                  </div>
-                  <ArrowLeft className="w-4 h-4 text-primary transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            </motion.article>
-          ))}
-        </div>
 
-        <div className="text-center">
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            className="btn-gradient px-6 md:px-8 py-3 text-primary-foreground rounded-xl font-semibold shadow-lg transition-all"
-          >
-            مشاهده همه اخبار
-          </motion.button>
-        </div>
+                    <div className="p-5 md:p-6">
+                      <h3 className="mb-3 line-clamp-2 text-base font-bold text-foreground md:text-lg">{item.title}</h3>
+                      <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-muted-foreground md:text-sm">{item.excerpt}</p>
+
+                      <div className="flex items-center justify-between border-t border-border pt-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>{item.date}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            <span>{item.time}</span>
+                          </div>
+                        </div>
+                        <ArrowLeft className="h-4 w-4 text-primary transition-transform group-hover:translate-x-1" />
+                      </div>
+                    </div>
+                  </Link>
+                </motion.article>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+
+          <CarouselPrevious className="-left-2 hidden border-border bg-background/90 text-foreground hover:bg-[var(--primary-soft)] md:inline-flex" />
+          <CarouselNext className="-right-2 hidden border-border bg-background/90 text-foreground hover:bg-[var(--primary-soft)] md:inline-flex" />
+        </Carousel>
       </div>
     </section>
   );

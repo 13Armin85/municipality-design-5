@@ -25,8 +25,7 @@ export function AboutPage({ isDark, toggleTheme }: AboutPageProps) {
               </Link>
 
               <div className="min-w-0 text-center">
-                <p className="text-xs text-muted-foreground md:text-sm">شهرداری مراغه</p>
-                <h1 className="truncate text-sm font-bold text-foreground md:text-base">درباره عوارض نوسازی و کسب و پیشه</h1>
+                <h1 className="truncate text-sm font-bold text-foreground md:text-base">درباره ما</h1>
               </div>
 
               <button
@@ -55,18 +54,6 @@ export function AboutPage({ isDark, toggleTheme }: AboutPageProps) {
 
       <section className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
         <div className="container mx-auto max-w-7xl px-0 md:px-2 lg:px-6">
-          <motion.article
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="hero-surface hero-grid relative overflow-hidden rounded-[1.6rem] border border-white/20 p-6 shadow-[0_18px_45px_rgba(5,29,25,0.28)] md:p-9"
-          >
-            <div className="relative z-10">
-              <span className="section-chip mb-4 bg-white/10 text-white">صفحه راهنما</span>
-              <h2 className="mb-4 text-2xl font-black text-white md:text-3xl lg:text-4xl">اطلاعات کامل عوارض شهری</h2>
-              <p className="max-w-4xl text-sm leading-7 text-white/90 md:text-base">{aboutIntro}</p>
-            </div>
-          </motion.article>
-
           <div className="mt-8 grid grid-cols-1 gap-4 md:mt-10 md:gap-6 lg:grid-cols-2">
             {aboutInfoSections.map((section, index) => (
               <motion.article
