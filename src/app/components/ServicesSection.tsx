@@ -1,5 +1,6 @@
-import { motion } from 'motion/react';
-import { Home, FileText, Building, ShoppingCart, Clipboard, MapPin, Wrench, ArrowUpLeft } from 'lucide-react';
+﻿import { motion } from 'motion/react';
+import { Link } from 'react-router';
+import { Home, FileText, Building, ShoppingCart, Clipboard, ArrowUpLeft } from 'lucide-react';
 
 const services = [
   {
@@ -31,75 +32,78 @@ const services = [
     title: "عوارض صنفی",
     description: "مدیریت عوارض واحدهای صنفی",
     color: "from-primary to-secondary/90",
+    href: "/guild-fees",
   },
   {
     icon: Clipboard,
-    title: "وضعیت عقب نشینی ملک",
-    description: "در این بخش میتوانید وضعیت عقب نشینی ملک خود را مشاهده کنید.",
+    title: "وضعیت عقب‌نشینی ملک",
+    description: "در این بخش می‌توانید وضعیت عقب‌نشینی ملک خود را مشاهده کنید.",
     color: "from-secondary to-primary/90",
+    href: "/property-inquiry",
   },
 ];
 
 export function ServicesSection() {
   return (
-    <section
-      id="services"
-      className="py-12 md:py-20 bg-background section-decor"
-    >
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 relative z-10">
+    <section id="services" className="section-decor bg-background py-12 md:py-20">
+      <div className="container relative z-10 mx-auto px-4 md:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-10 md:mb-16"
+          className="mb-10 text-center md:mb-16"
         >
           <span className="section-chip mb-3">دسترسی سریع</span>
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-foreground mb-3 md:mb-4">
-            خدمات شهری
-          </h2>
-          <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto px-4">
+          <h2 className="mb-3 text-2xl font-black text-foreground md:mb-4 md:text-3xl lg:text-4xl">خدمات شهری</h2>
+          <p className="mx-auto max-w-2xl px-4 text-sm text-muted-foreground md:text-base">
             تمامی خدمات الکترونیک اداری در یک نمای متمرکز، ساده و استاندارد
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {services.map((service, index) => (
-            <motion.div
-              key={service.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.06 }}
-              className="group"
-            >
-              <div className="soft-card soft-card-hover mesh-panel h-full p-5 md:p-6 relative overflow-hidden">
-                <div
-                  className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-l ${service.color}`}
-                />
-                <div className="absolute -bottom-14 -left-14 w-28 h-28 rounded-full bg-[var(--primary-soft)] blur-2xl group-hover:scale-150 transition-transform duration-500" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
+          {services.map((service, index) => {
+            const serviceBody = (
+              <div className="soft-card soft-card-hover mesh-panel relative h-full overflow-hidden p-5 md:p-6">
+                <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l ${service.color}`} />
+                <div className="absolute -bottom-14 -left-14 h-28 w-28 rounded-full bg-[var(--primary-soft)] blur-2xl transition-transform duration-500 group-hover:scale-150" />
 
                 <div className="relative z-10">
                   <div
-                    className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center mb-4 shadow-lg`}
+                    className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg md:h-16 md:w-16 ${service.color}`}
                   >
-                    <service.icon className="w-7 h-7 md:w-8 md:h-8 text-white" />
+                    <service.icon className="h-7 w-7 text-white md:h-8 md:w-8" />
                   </div>
 
-                  <h3 className="text-base md:text-lg font-bold text-foreground mb-2">
-                    {service.title}
-                  </h3>
-                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed mb-4">
-                    {service.description}
-                  </p>
+                  <h3 className="mb-2 text-base font-bold text-foreground md:text-lg">{service.title}</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-muted-foreground md:text-sm">{service.description}</p>
 
-                  <div className="inline-flex items-center gap-1.5 text-primary text-xs md:text-sm font-semibold">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary md:text-sm">
                     ورود به خدمت
-                    <ArrowUpLeft className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:-translate-x-0.5" />
+                    <ArrowUpLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5" />
                   </div>
                 </div>
               </div>
-            </motion.div>
-          ))}
+            );
+
+            return (
+              <motion.div
+                key={service.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.06 }}
+                className="group"
+              >
+                {service.href ? (
+                  <Link to={service.href} className="block h-full">
+                    {serviceBody}
+                  </Link>
+                ) : (
+                  serviceBody
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -83,7 +83,7 @@ export function HeroSection() {
 
   return (
     <section id="home" className="relative px-3 pb-8 pt-24 sm:px-4 sm:pt-28 lg:px-6">
-      <div className="relative mx-auto h-[clamp(15rem,46svh,40rem)] w-full max-w-7xl overflow-hidden rounded-[1.25rem] border border-white/25 sm:h-[clamp(18rem,52svh,40rem)] sm:rounded-[1.5rem] lg:rounded-[1.75rem]">
+      <div className="relative mx-auto h-[clamp(15rem,46svh,40rem)] w-full max-w-[92rem] overflow-hidden rounded-[1.25rem] border border-white/25 sm:h-[clamp(18rem,52svh,40rem)] sm:rounded-[1.5rem] lg:rounded-[1.75rem]">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.article
             key={currentSlide.id}

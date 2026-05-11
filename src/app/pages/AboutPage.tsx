@@ -21,7 +21,7 @@ export function AboutPage({ isDark, toggleTheme }: AboutPageProps) {
             <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
               <Link to="/" className="header-action-btn inline-flex items-center gap-2 px-3">
                 <ArrowRight className="h-4 w-4" />
-                <span className="text-sm">بازگشت به صفحه اصلی</span>
+                <span className="text-sm">بازگشت</span>
               </Link>
 
               <div className="min-w-0 text-center">

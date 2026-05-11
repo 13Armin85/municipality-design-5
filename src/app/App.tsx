@@ -14,6 +14,8 @@ import { ScrollToTop } from './components/ScrollToTop';
 import { AboutPage } from './pages/AboutPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { NewsDetailPage } from './pages/NewsDetailPage';
+import { GuildFeesPage } from './pages/GuildFeesPage';
+import { PropertyInquiryPage } from "./pages/PropertyInquiryPage";
 
 function HomePageContent() {
   return (
@@ -60,7 +62,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative selection:bg-primary/25 selection:text-foreground" dir="rtl">
+    <div
+      className="min-h-screen bg-background relative selection:bg-primary/25 selection:text-foreground"
+      dir="rtl"
+    >
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className="absolute -top-36 -right-24 w-[28rem] h-[28rem] rounded-full bg-[var(--primary-soft-strong)] blur-[110px]" />
         <div className="absolute top-[28%] -left-24 w-[30rem] h-[30rem] rounded-full bg-[var(--accent-soft)] blur-[120px]" />
@@ -100,6 +105,22 @@ export default function App() {
           element={
             <main>
               <NewsDetailPage isDark={isDark} toggleTheme={toggleTheme} />
+            </main>
+          }
+        />
+        <Route
+          path="/guild-fees"
+          element={
+            <main>
+              <GuildFeesPage isDark={isDark} toggleTheme={toggleTheme} />
+            </main>
+          }
+        />
+        <Route
+          path="/property-inquiry"
+          element={
+            <main>
+              <PropertyInquiryPage isDark={isDark} toggleTheme={toggleTheme} />
             </main>
           }
         />
