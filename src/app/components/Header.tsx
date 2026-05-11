@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Bell,
   Building2,
+  CheckCheck,
+  Clock3,
   Menu,
   Moon,
   ShieldCheck,
@@ -37,10 +39,21 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [scrolled, setScrolled] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState(menuItems[0].href);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
+  const unreadCount = notifications.filter((item) => !readNotificationIds.includes(item.id)).length;
+
+  const markNotificationAsRead = (id: string) => {
+    setReadNotificationIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setReadNotificationIds(notifications.map((item) => item.id));
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,6 +80,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsNotificationsOpen(false);
+        setIsAllNotificationsOpen(false);
       }
     };
 
@@ -90,6 +104,13 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     window.addEventListener('hashchange', syncActiveMenuItem);
     return () => window.removeEventListener('hashchange', syncActiveMenuItem);
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isAllNotificationsOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isAllNotificationsOpen]);
 
   return (
     <motion.header
@@ -151,6 +172,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                 ref={notificationButtonRef}
                 onClick={() => {
                   setIsMenuOpen(false);
+                  setIsAllNotificationsOpen(false);
                   setIsNotificationsOpen((prev) => !prev);
                 }}
                 className="header-action-btn relative"
@@ -159,8 +181,19 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                 aria-controls="notifications-panel"
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
+                )}
               </motion.button>
+
+              <motion.a
+                whileTap={{ scale: 0.95 }}
+                href="/admin"
+                className="header-action-btn"
+                aria-label="Admin panel"
+              >
+                <ShieldCheck className="h-5 w-5" />
+              </motion.a>
 
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -218,33 +251,41 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     >
                       <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
                         <h3 className="text-sm font-bold text-foreground">اعلان‌ها</h3>
-                        <button
-                          type="button"
-                          onClick={() => setIsNotificationsOpen(false)}
-                          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          بستن
-                        </button>
+                        
                       </div>
 
                       <div className="max-h-[56vh] overflow-y-auto p-2 sm:max-h-72">
-                        {notifications.map((item) => (
+                        {notifications.map((item) => {
+                          const isUnread = !readNotificationIds.includes(item.id);
+                          return (
                           <button
                             key={item.id}
                             type="button"
-                            onClick={() => setIsNotificationsOpen(false)}
-                            className="w-full rounded-xl px-3 py-3 text-right transition-colors hover:bg-[var(--primary-soft)]"
+                            onClick={() => {
+                              markNotificationAsRead(item.id);
+                              setIsNotificationsOpen(false);
+                            }}
+                            className={`w-full rounded-xl px-3 py-3 text-right transition-colors hover:bg-[var(--primary-soft)] ${
+                              isUnread ? 'bg-[var(--primary-soft)]/60' : ''
+                            }`}
                           >
-                            <p className="mb-1 text-sm text-foreground">{item.title}</p>
+                            <div className="mb-1 flex items-start justify-between gap-2">
+                              <p className="text-sm text-foreground">{item.title}</p>
+                              {isUnread && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                            </div>
                             <p className="text-xs text-muted-foreground">{item.time}</p>
                           </button>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <div className="border-t border-border/70 p-2">
                         <button
                           type="button"
-                          onClick={() => setIsNotificationsOpen(false)}
+                          onClick={() => {
+                            setIsNotificationsOpen(false);
+                            setIsAllNotificationsOpen(true);
+                          }}
                           className="w-full rounded-xl px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-[var(--primary-soft)]"
                         >
                           مشاهده همه اعلان‌ها
@@ -258,6 +299,113 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isAllNotificationsOpen && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="بستن نمای همه اعلان‌ها"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAllNotificationsOpen(false)}
+              className="fixed inset-0 z-[70] bg-black/45 backdrop-blur-[2px]"
+            />
+
+            <motion.section
+              role="dialog"
+              aria-modal="true"
+              aria-label="همه اعلان‌ها"
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-x-2 top-[calc(env(safe-area-inset-top)+4.75rem)] z-[80] mx-auto flex h-[min(80vh,44rem)] w-[min(64rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl md:inset-x-6 md:top-24"
+            >
+              <div className="relative border-b border-border/70 px-4 py-4 sm:px-6">
+                <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-primary/60 to-transparent" />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-primary">
+                      <Bell className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-bold text-foreground sm:text-lg">همه اعلان‌ها</h3>
+                      <p className="text-xs text-muted-foreground sm:text-sm">
+                        {unreadCount} اعلان خوانده‌نشده برای پیگیری دارید
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAllNotificationsOpen(false)}
+                    className="header-action-btn h-9 w-9 min-w-9"
+                    aria-label="بستن"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 sm:px-6">
+                <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-[var(--primary-soft)] px-3 py-1 text-xs font-semibold text-primary">
+                  <Bell className="h-3.5 w-3.5" />
+                  لیست کامل اعلان‌ها
+                </span>
+                <button
+                  type="button"
+                  onClick={markAllNotificationsAsRead}
+                  disabled={unreadCount === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-[var(--primary-soft)] disabled:pointer-events-none disabled:opacity-45"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  علامت‌گذاری همه
+                </button>
+              </div>
+
+              <div className="grid flex-1 gap-3 overflow-y-auto p-3 sm:p-4">
+                {notifications.map((item) => {
+                  const isUnread = !readNotificationIds.includes(item.id);
+                  return (
+                    <article
+                      key={item.id}
+                      className={`group rounded-2xl border border-border/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-[var(--primary-soft)] ${
+                        isUnread ? 'bg-[var(--primary-soft)]/65' : 'bg-background/70'
+                      }`}
+                    >
+                      <div className="mb-2 flex items-start justify-between gap-3">
+                        <p className="text-sm leading-6 text-foreground">{item.title}</p>
+                        <span
+                          className={`mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${
+                            isUnread
+                              ? 'bg-primary shadow-[0_0_0_4px_var(--primary-soft)]'
+                              : 'bg-muted-foreground/45'
+                          }`}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Clock3 className="h-3.5 w-3.5" />
+                          {item.time}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => markNotificationAsRead(item.id)}
+                          className="rounded-lg px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-background/80"
+                        >
+                          علامت گذاری به عنوان خوانده شده 
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </motion.section>
+          </>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isMenuOpen && (
@@ -304,14 +452,15 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     type="button"
                     onClick={() => {
                       setIsMenuOpen(false);
+                      setIsAllNotificationsOpen(false);
                       setIsNotificationsOpen(true);
                     }}
                     className="flex items-center justify-between rounded-xl bg-[var(--primary-soft)] px-4 py-3 text-sm text-foreground transition-colors hover:bg-[var(--primary-soft-strong)]"
                   >
                     <span>اعلان‌ها</span>
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-                      {notifications.length}
-                      <span className="h-2 w-2 rounded-full bg-primary" />
+                      {unreadCount}
+                      {unreadCount > 0 && <span className="h-2 w-2 rounded-full bg-primary" />}
                     </span>
                   </button>
                   <div className="flex items-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm text-foreground">

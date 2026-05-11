@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Route, Routes, useLocation } from 'react-router';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { ServicesSection } from './components/ServicesSection';
@@ -10,6 +11,32 @@ import { SupportSection } from './components/SupportSection';
 import { FaqSection } from './components/FaqSection';
 import { Footer } from './components/Footer';
 import { ScrollToTop } from './components/ScrollToTop';
+import { AboutPage } from './pages/AboutPage';
+
+function HomePageContent() {
+  return (
+    <>
+      <HeroSection />
+      <ServicesSection />
+      <RecentActivitiesSection />
+      <StatsSection />
+      <NewsSection />
+      <FaqSection />
+      <SupportSection />
+      <QuickAccessSection />
+    </>
+  );
+}
+
+function RouteScrollManager() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [location.pathname]);
+
+  return null;
+}
 
 export default function App() {
   const [isDark, setIsDark] = useState(false);
@@ -37,17 +64,39 @@ export default function App() {
         <div className="absolute top-[28%] -left-24 w-[30rem] h-[30rem] rounded-full bg-[var(--accent-soft)] blur-[120px]" />
         <div className="absolute -bottom-28 left-1/2 -translate-x-1/2 w-[34rem] h-[18rem] rounded-full bg-[var(--primary-soft)] blur-[110px]" />
       </div>
-      <Header isDark={isDark} toggleTheme={toggleTheme} />
-      <main>
-        <HeroSection />
-        <ServicesSection />
-        <RecentActivitiesSection />
-        <StatsSection />
-        <NewsSection />
-        <FaqSection />
-        <SupportSection />
-        <QuickAccessSection />
-      </main>
+      <RouteScrollManager />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <Header isDark={isDark} toggleTheme={toggleTheme} />
+              <main>
+                <HomePageContent />
+              </main>
+            </>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <main>
+              <AboutPage isDark={isDark} toggleTheme={toggleTheme} />
+            </main>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <>
+              <Header isDark={isDark} toggleTheme={toggleTheme} />
+              <main>
+                <HomePageContent />
+              </main>
+            </>
+          }
+        />
+      </Routes>
       <Footer />
       <ScrollToTop />
     </div>

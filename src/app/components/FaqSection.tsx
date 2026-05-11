@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
-import { CircleHelp, LifeBuoy } from 'lucide-react';
+import { ArrowUpLeft, CircleHelp, FileText, LifeBuoy } from 'lucide-react';
+import { Link } from 'react-router';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 const faqItems = [
@@ -66,15 +67,26 @@ export function FaqSection() {
               <h3 className="text-base font-bold text-foreground md:text-lg">نیاز به راهنمایی بیشتر دارید؟</h3>
             </div>
             <p className="mb-4 text-sm leading-7 text-muted-foreground md:text-base">
-              اگر پاسخ سوال خود را در این بخش پیدا نکردید، از طریق مرکز پشتیبانی تیکت ثبت کنید تا کارشناسان راهنمایی تخصصی ارائه دهند.
+              اگر پاسخ سوال خود را در این بخش پیدا نکردید، از طریق مرکز پشتیبانی تیکت ثبت کنید تا کارشناسان
+              راهنمایی تخصصی ارائه دهند.
             </p>
             <div className="rounded-xl bg-[var(--primary-soft)] p-3 text-sm text-foreground">
               <div className="mb-1 flex items-center gap-2 font-semibold text-primary">
                 <LifeBuoy className="h-4 w-4" />
                 <span>پشتیبانی شهرداری</span>
               </div>
-              <p className="text-xs text-muted-foreground md:text-sm">پاسخ‌گویی تلفنی: 137 | پیگیری آنلاین از داخل پنل کاربری</p>
+              <p className="text-xs text-muted-foreground md:text-sm">
+                پاسخ‌گویی تلفنی: 137 | پیگیری آنلاین از داخل پنل کاربری
+              </p>
             </div>
+            <Link
+              to="/about"
+              className="btn-gradient mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white md:text-base"
+            >
+              <FileText className="h-4 w-4 md:h-5 md:w-5" />
+              مشاهده راهنمای کامل 
+              <ArrowUpLeft className="h-4 w-4 md:h-5 md:w-5" />
+            </Link>
           </motion.div>
 
           <motion.div

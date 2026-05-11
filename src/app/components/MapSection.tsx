@@ -21,7 +21,9 @@ export function MapSection() {
           viewport={{ once: true }}
           className="text-center mb-10 md:mb-16"
         >
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 md:mb-4">نقشه زمین‌های مردم</h2>
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 md:mb-4">
+            نقشه زمین‌های مردم
+          </h2>
           <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto px-4">
             مشاهده و استعلام آنلاین موقعیت و اطلاعات املاک شهری
           </p>
@@ -48,13 +50,17 @@ export function MapSection() {
                       onClick={() => setActiveLayer(layer.id)}
                       className={`w-full text-right px-4 py-3 rounded-xl transition-all ${
                         activeLayer === layer.id
-                          ? 'bg-primary text-primary-foreground shadow-lg'
-                          : 'bg-muted hover:bg-muted/70 text-foreground'
+                          ? "bg-primary text-primary-foreground shadow-lg"
+                          : "bg-muted hover:bg-muted/70 text-foreground"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{layer.label}</span>
-                        <span className="text-xs opacity-75">{layer.count}</span>
+                        <span className="text-sm font-medium">
+                          {layer.label}
+                        </span>
+                        <span className="text-xs opacity-75">
+                          {layer.count}
+                        </span>
                       </div>
                     </button>
                   ))}
@@ -85,8 +91,12 @@ export function MapSection() {
                     <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                       <Map className="w-8 h-8 md:w-10 md:h-10 text-primary" />
                     </div>
-                    <p className="text-sm md:text-base text-muted-foreground mb-2">نقشه تعاملی املاک</p>
-                    <p className="text-xs md:text-sm text-muted-foreground/70">برای مشاهده جزئیات روی املاک کلیک کنید</p>
+                    <p className="text-sm md:text-base text-muted-foreground mb-2">
+                      نقشه تعاملی املاک
+                    </p>
+                    <p className="text-xs md:text-sm text-muted-foreground/70">
+                      برای مشاهده جزئیات روی املاک کلیک کنید
+                    </p>
                   </div>
                 </div>
 
@@ -108,15 +118,17 @@ export function MapSection() {
                   >
                     <div className="flex items-center justify-center gap-2">
                       <Search className="w-4 h-4" />
-                      <span>استعلام ملک</span>
+                      <span> وضعیت عقب نشینی ملک </span>
                     </div>
                   </motion.button>
                 </div>
 
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg">
-                  <div className="text-xs text-muted-foreground mb-1">تعداد املاک نمایش داده شده</div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    تعداد املاک نمایش داده شده
+                  </div>
                   <div className="text-lg md:text-xl font-bold text-primary">
-                    {layers.find(l => l.id === activeLayer)?.count}
+                    {layers.find((l) => l.id === activeLayer)?.count}
                   </div>
                 </div>
               </div>

@@ -3,7 +3,6 @@ import { Phone, Mail, MessageCircle, MapPin, ExternalLink } from 'lucide-react';
 
 const quickLinks = [
   { icon: Phone, title: 'پشتیبانی تلفنی', description: '137 - 09140077804', color: 'from-primary to-secondary', action: 'تماس' },
-  { icon: MessageCircle, title: 'چت آنلاین', description: 'پاسخگویی در ساعات اداری', color: 'from-secondary to-primary', action: 'شروع گفتگو' },
   { icon: Mail, title: 'ایمیل پشتیبانی', description: 'info@maragheh.ir', color: 'from-primary/90 to-secondary/90', action: 'ارسال ایمیل' },
   { icon: MapPin, title: 'آدرس شهرداری', description: 'مراغه، بلوار شهید بهشتی', color: 'from-secondary/90 to-primary/90', action: 'مسیریابی' },
 ];
@@ -25,7 +24,7 @@ export function QuickAccessSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {quickLinks.map((link, index) => (
             <motion.div
               key={link.title}
