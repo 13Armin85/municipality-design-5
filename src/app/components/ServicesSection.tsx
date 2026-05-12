@@ -15,12 +15,14 @@ const services = [
     title: "ثبت درخواست",
     description: "ارسال درخواست‌های شهری و پیگیری آن‌ها",
     color: "from-secondary to-primary",
+    href: "/sabt-darkhast",
   },
   {
     icon: Building,
     title: "پیگیری درخواست‌ها",
     description: "بررسی وضعیت پرونده‌های در حال رسیدگی",
     color: "from-primary/95 to-secondary/85",
+    href: "/property-request",
   },
   {
     icon: ShoppingCart,

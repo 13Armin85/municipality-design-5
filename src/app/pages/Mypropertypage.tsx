@@ -92,22 +92,8 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
       >
         <div className="container mx-auto px-0 md:px-2 lg:px-6">
           <div className="nav-shell">
-            <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4 flex-row-reverse">
-              {/* دکمه راهنما سمت راست */}
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95"
-              >
-                <Info className="h-3.5 w-3.5" />
-                راهنما !
-              </button>
-
-              {/* عنوان وسط */}
-              <h1 className="text-sm font-bold text-foreground md:text-base">
-                املاک من
-              </h1>
-
-              {/* دکمه بازگشت سمت چپ */}
+            <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
+              {/* دکمه بازگشت سمت راست (شروع راست‌چین) */}
               <Link
                 to="/"
                 className="header-action-btn inline-flex items-center gap-2 px-3"
@@ -115,6 +101,32 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                 <ArrowRight className="h-4 w-4" />
                 <span className="hidden text-sm md:block">بازگشت</span>
               </Link>
+
+              {/* عنوان وسط */}
+              <h1 className="text-sm font-bold text-foreground md:text-base">
+                املاک من
+              </h1>
+
+              {/* دکمه‌های تم و راهنما سمت چپ */}
+              <div className="flex items-center gap-1.5 md:gap-3 flex-row-reverse">
+                <button
+                  onClick={toggleTheme}
+                  className="header-action-btn flex items-center justify-center p-2 rounded-lg hover:bg-muted transition-colors text-foreground"
+                >
+                  {isDark ? (
+                    <Sun className="h-5 w-5" />
+                  ) : (
+                    <Moon className="h-5 w-5" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 md:py-2 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                  راهنما
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -257,13 +269,13 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
                 {/* کنترل‌های نقشه - سمت چپ */}
                 <div className="absolute left-4 top-4 flex flex-col gap-2 z-10">
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors">
+                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
                     <Plus className="h-4 w-4" />
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors">
+                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
                     <Minus className="h-4 w-4" />
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors">
+                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
                     <Home className="h-4 w-4" />
                   </button>
                 </div>

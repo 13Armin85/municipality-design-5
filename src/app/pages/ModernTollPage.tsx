@@ -3,10 +3,8 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
   ChevronLeft,
-  Compass,
   Home,
   Info,
-  MapPin,
   Minus,
   Plus,
   Search,
@@ -16,11 +14,9 @@ import {
   X,
   Layers,
   FileText,
-  Activity,
   Users,
   Receipt,
   History,
-  Map,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -50,24 +46,27 @@ const ownersData = [
   },
 ];
 
-const currentFeeFields = [
+const rightFeeFields = [
   { label: "نام مالک", value: "—" },
-  { label: "آدرس مالک", value: "—" },
-  { label: "شماره فیش", value: "—" },
-  { label: "تا سال", value: "—" },
-  { label: "خوش‌حسابی", value: "" },
-  { label: "سهم مالک", value: "" },
-  { label: "معافیت", value: "" },
-  { label: "خدمات معوقه", value: "" },
-  { label: "آتش‌نشانی", value: "" },
-  { label: "بدحسابی", value: "" },
-  { label: "ارزش افزوده", value: "" },
-  { label: "آموزش و پرورش", value: "" },
-  { label: "خدمات", value: "" },
-  { label: "عوارض", value: "" },
-  { label: "مبلغ قابل پرداخت", value: "—" },
-  { label: "بدهی معوقه", value: "" },
   { label: "از سال", value: "—" },
+  { label: "شماره فیش", value: "—" },
+  { label: "خوش‌حسابی", value: "" },
+  { label: "معافیت", value: "" },
+  { label: "آتش‌نشانی", value: "" },
+  { label: "ارزش افزوده", value: "" },
+  { label: "خدمات", value: "" },
+  { label: "مبلغ قابل پرداخت", value: "—" },
+];
+
+const leftFeeFields = [
+  { label: "آدرس مالک", value: "—" },
+  { label: "تا سال", value: "—" },
+  { label: "سهم مالک", value: "" },
+  { label: "خدمات معوقه", value: "" },
+  { label: "بدحسابی", value: "" },
+  { label: "آموزش و پرورش", value: "" },
+  { label: "عوارض", value: "" },
+  { label: "بدهی معوقه", value: "" },
   { label: "مبلغ به حروف", value: "—" },
 ];
 
@@ -92,37 +91,12 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     </button>
   );
 
-  // Split fee fields into two columns: right side (odd indices) and left side (even indices)
-  const rightFeeFields = [
-    { label: "نام مالک", value: "—" },
-    { label: "از سال", value: "—" },
-    { label: "شماره فیش", value: "—" },
-    { label: "خوش‌حسابی", value: "" },
-    { label: "معافیت", value: "" },
-    { label: "آتش‌نشانی", value: "" },
-    { label: "ارزش افزوده", value: "" },
-    { label: "خدمات", value: "" },
-    { label: "مبلغ قابل پرداخت", value: "—" },
-  ];
-
-  const leftFeeFields = [
-    { label: "آدرس مالک", value: "—" },
-    { label: "تا سال", value: "—" },
-    { label: "سهم مالک", value: "" },
-    { label: "خدمات معوقه", value: "" },
-    { label: "بدحسابی", value: "" },
-    { label: "آموزش و پرورش", value: "" },
-    { label: "عوارض", value: "" },
-    { label: "بدهی معوقه", value: "" },
-    { label: "مبلغ به حروف", value: "—" },
-  ];
-
   return (
     <div
       dir="rtl"
       className="min-h-screen bg-background text-foreground transition-colors duration-300"
     >
-      {/* Help Modal */}
+      {/* مودال راهنما */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -167,7 +141,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         )}
       </AnimatePresence>
 
-      {/* Header */}
+      {/* هدر */}
       <motion.header
         initial={{ y: -80 }}
         animate={{ y: 0 }}
@@ -200,12 +174,12 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
 
       <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
         <div className="container mx-auto max-w-6xl space-y-5">
-          {/* Notice banner */}
+          {/* بنر اطلاع‌رسانی */}
           <div className="rounded-2xl border border-primary/25 bg-[var(--primary-soft)] px-4 py-3 text-xs text-primary md:text-sm">
             کاربر گرامی، لطفاً پس از انتخاب ملک خود دکمه جستجو را بفشارید.
           </div>
 
-          {/* Search Section */}
+          {/* بخش جستجو */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -241,7 +215,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             </div>
           </motion.article>
 
-          {/* Sub-files Section */}
+          {/* پرونده‌های زیر مجموعه */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -251,7 +225,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <div className="flex items-center gap-2">
                 <Layers className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold">پرونده های زیر مجموعه</h2>
+                <h2 className="text-sm font-bold text-foreground">
+                  پرونده های زیر مجموعه
+                </h2>
               </div>
               <HelpButton
                 title="زیر مجموعه"
@@ -271,7 +247,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             </div>
           </motion.article>
 
-          {/* Owners Section */}
+          {/* مالکین */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -281,7 +257,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold">مالکین</h2>
+                <h2 className="text-sm font-bold text-foreground">مالکین</h2>
               </div>
               <HelpButton
                 title="مالکین"
@@ -332,7 +308,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             </div>
           </motion.article>
 
-          {/* Current Renovation Fees Section */}
+          {/* عوارض نوسازی جاری */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -342,16 +318,17 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <div className="flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold">عوارض نوسازی جاری</h2>
+                <h2 className="text-sm font-bold text-foreground">
+                  عوارض نوسازی جاری
+                </h2>
               </div>
               <HelpButton
                 title="عوارض نوسازی"
-                desc="جزئیات کامل عوارض نوسازی جاری برای این ملک، شامل سهم مالک، معافیت‌ها و مبلغ قابل پرداخت نمایش داده می‌شود."
+                desc="جزئیات کامل عوارض نوسازی جاری برای این ملک نمایش داده می‌شود."
               />
             </div>
             <div className="p-4">
               <div className="grid grid-cols-1 gap-x-8 gap-y-0 md:grid-cols-2">
-                {/* Right column */}
                 <div className="space-y-0">
                   {rightFeeFields.map((field, i) => (
                     <div
@@ -362,12 +339,11 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                         {field.label} :
                       </span>
                       <span className="font-medium text-foreground/80">
-                        {field.value || ""}
+                        {field.value || "—"}
                       </span>
                     </div>
                   ))}
                 </div>
-                {/* Left column */}
                 <div className="space-y-0">
                   {leftFeeFields.map((field, i) => (
                     <div
@@ -378,13 +354,12 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                         {field.label} :
                       </span>
                       <span className="font-medium text-foreground/80">
-                        {field.value || ""}
+                        {field.value || "—"}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
-              {/* دریافت فیش button */}
               <div className="mt-5 flex justify-start">
                 <button className="flex items-center gap-2 rounded-xl bg-destructive px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-destructive/20 transition-all hover:bg-destructive/90 active:scale-95">
                   <FileText className="h-4 w-4" />
@@ -394,7 +369,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             </div>
           </motion.article>
 
-          {/* Current Renovation History Section */}
+          {/* سوابق نوسازی */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -404,11 +379,13 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold">سوابق نوسازی جاری</h2>
+                <h2 className="text-sm font-bold text-foreground">
+                  سوابق نوسازی جاری
+                </h2>
               </div>
               <HelpButton
-                title="سوابق نوسازی"
-                desc="تاریخچه و سوابق پرداخت عوارض نوسازی برای این ملک در این بخش نمایش داده می‌شود."
+                title="سوابق"
+                desc="تاریخچه پرداخت‌های قبلی در این قسمت لیست می‌شود."
               />
             </div>
             <div className="p-4">
@@ -418,7 +395,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             </div>
           </motion.article>
 
-          {/* Map Section */}
+          {/* نقشه */}
           <motion.article
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -426,28 +403,25 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             className="soft-card mesh-panel relative h-[400px] overflow-hidden group"
           >
             <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+              <div className="absolute inset-0 bg-blue-900/20 z-10" />
               <img
                 src="/map-placeholder.jpg"
                 alt="Map"
                 className="h-full w-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
               />
-              {/* Map overlay tint */}
-              <div className="absolute inset-0 bg-blue-900/20" />
             </div>
-            {/* Zoom controls */}
-            <div className="absolute left-4 top-4 flex flex-col gap-2">
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors">
+            <div className="absolute left-4 top-4 z-20 flex flex-col gap-2">
+              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
                 <Plus className="h-4 w-4" />
               </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors">
+              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
                 <Minus className="h-4 w-4" />
               </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors">
+              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
                 <Home className="h-4 w-4" />
               </button>
             </div>
-            {/* Trash button */}
-            <button className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg hover:bg-destructive transition-colors">
+            <button className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg hover:bg-destructive transition-colors">
               <Trash2 className="h-4 w-4" />
             </button>
           </motion.article>

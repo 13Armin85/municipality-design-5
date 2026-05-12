@@ -17,6 +17,9 @@ import { NewsDetailPage } from "./pages/NewsDetailPage";
 import { GuildFeesPage } from "./pages/GuildFeesPage";
 import { PropertyInquiryPage } from "./pages/PropertyInquiryPage";
 import { MyPropertyPage } from "./pages/Mypropertypage";
+import { SabtDarkhastPage } from "./pages/Sabtdarkhastpage";
+import { PropertyRequestDetails } from "./pages/PropertyRequestDetails";
+import {ModernTollPage} from "./pages/ModernTollPage"
 
 function HomePageContent() {
   return (
@@ -132,6 +135,37 @@ export default function App() {
           element={
             <main>
               <MyPropertyPage isDark={isDark} toggleTheme={toggleTheme} />
+            </main>
+          }
+        />
+        <Route
+          path="/sabt-darkhast"
+          element={
+            <main>
+              <SabtDarkhastPage isDark={isDark} toggleTheme={toggleTheme} />
+            </main>
+          }
+        />
+        <Route
+          path="/property-request"
+          element={
+            <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
+              <div className="container mx-auto max-w-5xl">
+                <PropertyRequestDetails
+                  isDark={isDark}
+                  toggleTheme={toggleTheme}
+                />
+              </div>
+            </main>
+          }
+        />
+        <Route
+          path="/modern-toll"
+          element={
+            <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
+              <div className="container mx-auto max-w-5xl">
+                <ModernTollPage isDark={isDark} toggleTheme={toggleTheme} />
+              </div>
             </main>
           }
         />
