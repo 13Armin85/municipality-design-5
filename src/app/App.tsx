@@ -1,21 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Route, Routes, useLocation } from 'react-router';
-import { Header } from './components/Header';
-import { HeroSection } from './components/HeroSection';
-import { ServicesSection } from './components/ServicesSection';
-import { NewsSection } from './components/NewsSection';
-import { StatsSection } from './components/StatsSection';
-import { QuickAccessSection } from './components/QuickAccessSection';
-import { RecentActivitiesSection } from './components/RecentActivitiesSection';
-import { SupportSection } from './components/SupportSection';
-import { FaqSection } from './components/FaqSection';
-import { Footer } from './components/Footer';
-import { ScrollToTop } from './components/ScrollToTop';
-import { AboutPage } from './pages/AboutPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { NewsDetailPage } from './pages/NewsDetailPage';
-import { GuildFeesPage } from './pages/GuildFeesPage';
+import { useState, useEffect } from "react";
+import { Route, Routes, useLocation } from "react-router";
+import { Header } from "./components/Header";
+import { HeroSection } from "./components/HeroSection";
+import { ServicesSection } from "./components/ServicesSection";
+import { NewsSection } from "./components/NewsSection";
+import { StatsSection } from "./components/StatsSection";
+import { QuickAccessSection } from "./components/QuickAccessSection";
+import { RecentActivitiesSection } from "./components/RecentActivitiesSection";
+import { SupportSection } from "./components/SupportSection";
+import { FaqSection } from "./components/FaqSection";
+import { Footer } from "./components/Footer";
+import { ScrollToTop } from "./components/ScrollToTop";
+import { AboutPage } from "./pages/AboutPage";
+import { ProfilePage } from "./pages/ProfilePage";
+import { NewsDetailPage } from "./pages/NewsDetailPage";
+import { GuildFeesPage } from "./pages/GuildFeesPage";
 import { PropertyInquiryPage } from "./pages/PropertyInquiryPage";
+import { MyPropertyPage } from "./pages/Mypropertypage";
 
 function HomePageContent() {
   return (
@@ -36,7 +37,7 @@ function RouteScrollManager() {
   const location = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [location.pathname]);
 
   return null;
@@ -46,19 +47,21 @@ export default function App() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    const shouldBeDark = savedTheme === "dark" || (!savedTheme && prefersDark);
 
     setIsDark(shouldBeDark);
-    document.documentElement.classList.toggle('dark', shouldBeDark);
+    document.documentElement.classList.toggle("dark", shouldBeDark);
   }, []);
 
   const toggleTheme = () => {
     const newTheme = !isDark;
     setIsDark(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    document.documentElement.classList.toggle("dark", newTheme);
+    localStorage.setItem("theme", newTheme ? "dark" : "light");
   };
 
   return (
@@ -121,6 +124,14 @@ export default function App() {
           element={
             <main>
               <PropertyInquiryPage isDark={isDark} toggleTheme={toggleTheme} />
+            </main>
+          }
+        />
+        <Route
+          path="/my-property"
+          element={
+            <main>
+              <MyPropertyPage isDark={isDark} toggleTheme={toggleTheme} />
             </main>
           }
         />

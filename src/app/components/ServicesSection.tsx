@@ -8,6 +8,7 @@ const services = [
     title: "املاک من",
     description: "مشاهده و مدیریت املاک ثبت‌شده",
     color: "from-primary to-secondary",
+    href: "/my-property",
   },
   {
     icon: FileText,
@@ -26,6 +27,7 @@ const services = [
     title: "عوارض نوسازی",
     description: "پرداخت، مشاهده و چاپ قبض عوارض",
     color: "from-secondary/95 to-primary/85",
+    href: "/modern-toll",
   },
   {
     icon: ShoppingCart,
