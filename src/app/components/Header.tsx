@@ -455,34 +455,39 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
             </nav>
 
             <div className="relative flex items-center gap-2 md:gap-3">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                ref={notificationButtonRef}
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsAllNotificationsOpen(false);
-                  setIsNotificationsOpen((prev) => !prev);
-                }}
-                className="header-action-btn relative"
-                aria-label="اعلان‌ها"
-                aria-expanded={isNotificationsOpen}
-                aria-controls="notifications-panel"
-              >
-                <Bell className="h-5 w-5" />
+              {/* Bell and Admin panel — only visible after login */}
+              {isAuthenticated && (
+                <>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    ref={notificationButtonRef}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsAllNotificationsOpen(false);
+                      setIsNotificationsOpen((prev) => !prev);
+                    }}
+                    className="header-action-btn relative"
+                    aria-label="اعلان‌ها"
+                    aria-expanded={isNotificationsOpen}
+                    aria-controls="notifications-panel"
+                  >
+                    <Bell className="h-5 w-5" />
 
-                {unreadCount > 0 && (
-                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
-                )}
-              </motion.button>
+                    {unreadCount > 0 && (
+                      <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
+                    )}
+                  </motion.button>
 
-              <motion.a
-                whileTap={{ scale: 0.95 }}
-                href="/admin"
-                className="header-action-btn"
-                aria-label="Admin panel"
-              >
-                <ShieldCheck className="h-5 w-5" />
-              </motion.a>
+                  <motion.a
+                    whileTap={{ scale: 0.95 }}
+                    href="/admin"
+                    className="header-action-btn"
+                    aria-label="Admin panel"
+                  >
+                    <ShieldCheck className="h-5 w-5" />
+                  </motion.a>
+                </>
+              )}
 
               <Link
                 to="/profile"
@@ -1361,25 +1366,28 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                 })}
 
                 <div className="grid grid-cols-2 gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setIsAllNotificationsOpen(false);
-                      setIsNotificationsOpen(true);
-                    }}
-                    className="flex items-center justify-between rounded-xl bg-[var(--primary-soft)] px-4 py-3 text-sm text-foreground transition-colors hover:bg-[var(--primary-soft-strong)]"
-                  >
-                    <span>اعلان‌ها</span>
+                  {/* Notifications button — only visible after login */}
+                  {isAuthenticated && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsAllNotificationsOpen(false);
+                        setIsNotificationsOpen(true);
+                      }}
+                      className="flex items-center justify-between rounded-xl bg-[var(--primary-soft)] px-4 py-3 text-sm text-foreground transition-colors hover:bg-[var(--primary-soft-strong)]"
+                    >
+                      <span>اعلان‌ها</span>
 
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-                      {unreadCount}
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                        {unreadCount}
 
-                      {unreadCount > 0 && (
-                        <span className="h-2 w-2 rounded-full bg-primary" />
-                      )}
-                    </span>
-                  </button>
+                        {unreadCount > 0 && (
+                          <span className="h-2 w-2 rounded-full bg-primary" />
+                        )}
+                      </span>
+                    </button>
+                  )}
 
                   <Link
                     to="/profile"
