@@ -91,7 +91,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
         className="fixed inset-x-0 top-0 z-50 px-2 pt-2 md:px-4 md:pt-3"
       >
         <div className="container mx-auto px-0 md:px-2 lg:px-6">
-          <div className="nav-shell">
+          <div className="nav-shell bg-card border border-border/50 rounded-2xl shadow-sm">
             <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
               {/* دکمه بازگشت سمت راست (شروع راست‌چین) */}
               <Link
@@ -132,19 +132,19 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
         </div>
       </motion.header>
 
-      <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
+      <main className="px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6 bg-background">
         <div className="container mx-auto max-w-6xl space-y-5">
           {/* جدول املاک */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="soft-card mesh-panel overflow-hidden"
+            className="soft-card bg-card border border-border/50 rounded-2xl overflow-hidden"
           >
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs md:text-sm">
                 <thead>
-                  <tr className="bg-muted/60 border-b border-border/60">
+                  <tr className="bg-muted/40 border-b border-border/60">
                     <th className="px-4 py-3 font-semibold text-foreground/80 text-right">
                       کد نوسازی
                     </th>
@@ -163,7 +163,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                       initial={{ opacity: 0, x: 10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="border-b border-border/40 hover:bg-muted/20 transition-colors"
+                      className="border-b border-border/40 hover:bg-muted/10 transition-colors"
                     >
                       <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
                         {property.id}
@@ -206,63 +206,17 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97, y: 6 }}
                 transition={{ duration: 0.3 }}
-                className="soft-card mesh-panel relative h-[480px] overflow-hidden group"
+                className="soft-card bg-card border border-border/50 rounded-2xl relative h-[480px] overflow-hidden group"
               >
                 {/* نقشه پس‌زمینه */}
                 <div className="absolute inset-0 bg-slate-700">
-                  {/* شبیه‌سازی نقشه با gradient و pattern */}
                   <div className="h-full w-full relative overflow-hidden">
-                    <svg
-                      className="absolute inset-0 w-full h-full opacity-30"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <defs>
-                        <pattern
-                          id="grid"
-                          width="40"
-                          height="40"
-                          patternUnits="userSpaceOnUse"
-                        >
-                          <path
-                            d="M 40 0 L 0 0 0 40"
-                            fill="none"
-                            stroke="rgba(255,255,255,0.15)"
-                            strokeWidth="0.5"
-                          />
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#grid)" />
-                    </svg>
-                    {/* placeholder نقشه با رنگ‌های شهری */}
                     <div className="absolute inset-0 bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800" />
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center text-white/40 select-none">
                         <MapPin className="h-12 w-12 mx-auto mb-2 opacity-30" />
                         <p className="text-xs">نقشه در حال بارگذاری...</p>
                       </div>
-                    </div>
-                    {/* بلوک‌های رنگی شبیه‌سازی نقشه */}
-                    <div className="absolute inset-0 opacity-40">
-                      {[...Array(20)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute rounded-sm"
-                          style={{
-                            width: `${30 + Math.random() * 60}px`,
-                            height: `${20 + Math.random() * 40}px`,
-                            left: `${Math.random() * 90}%`,
-                            top: `${Math.random() * 90}%`,
-                            backgroundColor: [
-                              "#facc15",
-                              "#84cc16",
-                              "#ef4444",
-                              "#a855f7",
-                              "#06b6d4",
-                            ][Math.floor(Math.random() * 5)],
-                            opacity: 0.5 + Math.random() * 0.4,
-                          }}
-                        />
-                      ))}
                     </div>
                   </div>
                 </div>
