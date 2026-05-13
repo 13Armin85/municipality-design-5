@@ -19,7 +19,8 @@ import { PropertyInquiryPage } from "./pages/PropertyInquiryPage";
 import { MyPropertyPage } from "./pages/Mypropertypage";
 import { SabtDarkhastPage } from "./pages/Sabtdarkhastpage";
 import { PropertyRequestDetails } from "./pages/PropertyRequestDetails";
-import {ModernTollPage} from "./pages/ModernTollPage"
+import { ModernTollPage } from "./pages/ModernTollPage";
+import AdminPanel from "./pages/Adminpanel";
 
 function HomePageContent() {
   return (
@@ -44,6 +45,12 @@ function RouteScrollManager() {
   }, [location.pathname]);
 
   return null;
+}
+
+function ConditionalFooter() {
+  const location = useLocation();
+  if (location.pathname === "/admin") return null;
+  return <Footer />;
 }
 
 export default function App() {
@@ -139,6 +146,10 @@ export default function App() {
           }
         />
         <Route
+          path="/admin"
+          element={<AdminPanel isDark={isDark} toggleTheme={toggleTheme} />}
+        />
+        <Route
           path="/sabt-darkhast"
           element={
             <main>
@@ -181,7 +192,7 @@ export default function App() {
           }
         />
       </Routes>
-      <Footer />
+      <ConditionalFooter />
       <ScrollToTop />
     </div>
   );

@@ -60,6 +60,7 @@ const notifications = [
 ];
 
 const AUTH_STORAGE_KEY = "municipality-user-authenticated";
+const AUTH_TYPE_KEY = "municipality-user-type";
 
 // --- Forgot Password Step Types ---
 type ForgotStep = "phone" | "otp" | "newPassword" | "success";
@@ -76,7 +77,10 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const [activeMenuItem, setActiveMenuItem] = useState(menuItems[0].href);
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [loginType, setLoginType] = useState<"user" | "admin">("user");
+  const [loginType, setLoginType] = useState<"user" | "admin">(() => {
+    if (typeof window === "undefined") return "user";
+    return (localStorage.getItem(AUTH_TYPE_KEY) as "user" | "admin") || "user";
+  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -140,6 +144,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     }
 
     localStorage.setItem(AUTH_STORAGE_KEY, "true");
+    localStorage.setItem(AUTH_TYPE_KEY, loginType);
 
     setIsAuthenticated(true);
     setLoginError("");
@@ -478,14 +483,17 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     )}
                   </motion.button>
 
-                  <motion.a
-                    whileTap={{ scale: 0.95 }}
-                    href="/admin"
-                    className="header-action-btn"
-                    aria-label="Admin panel"
-                  >
-                    <ShieldCheck className="h-5 w-5" />
-                  </motion.a>
+                  {/* Show Admin Panel Icon ONLY if loginType is admin */}
+                  {loginType === "admin" && (
+                    <motion.div whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to="/admin"
+                        className="header-action-btn inline-flex items-center justify-center"
+                      >
+                        <ShieldCheck className="h-5 w-5" />
+                      </Link>
+                    </motion.div>
+                  )}
                 </>
               )}
 
