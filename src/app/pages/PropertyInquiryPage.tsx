@@ -20,24 +20,112 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 
+// ۱. ساختار کامل داده‌های فرضی (Mock Data)
+const mockData = [
+  {
+    id: "۷-۱۰۴-۲۷-۴۴-۰-۰-۰",
+    type: "ملک",
+    owner: "بهرام حضرتی",
+    fields: ["7", "104", "27", "44", "0", "0", "0"],
+    retraction: {
+      originalArea: "۲۰۴۹",
+      reformedArea: "۱۲۵",
+      remainingArea: "۱۹۲۴",
+      description:
+        "اصلاحی شمالی: ۱.۲ متر | اصلاحی غربی: ۰.۸ متر | کد طرح: TR-1044",
+    },
+    dimensions: [
+      {
+        dir: "شمال",
+        type: "کوچه",
+        name: "اخلاص",
+        sideExist: "۱۰.۲۰",
+        edgeExist: "۱۰.۲۰",
+      },
+      {
+        dir: "شرق",
+        type: "خیابان",
+        name: "شهید سلیمانی",
+        sideExist: "۲۱.۴۰",
+        edgeExist: "۲۱.۴۰",
+      },
+      {
+        dir: "جنوب",
+        type: "کوچه",
+        name: "گلستان",
+        sideExist: "۱۰.۱۰",
+        edgeExist: "۱۰.۱۰",
+      },
+      {
+        dir: "غرب",
+        type: "پلاک مجاور",
+        name: "پلاک ۴۲",
+        sideExist: "۲۱.۳۵",
+        edgeExist: "۲۱.۳۵",
+      },
+    ],
+  },
+  {
+    id: "۷-۱۰۴-۲۷-۴۴-۱-۲-۰",
+    type: "آپارتمان",
+    owner: "مهسا حضرتی",
+    fields: ["7", "104", "27", "44", "1", "2", "0"],
+    retraction: {
+      originalArea: "۱۳۸۰",
+      reformedArea: "۹۰",
+      remainingArea: "۱۲۹۰",
+      description:
+        "اصلاحی جنوبی: ۰.۹ متر | اصلاحی شرقی: ۰.۵ متر | کد طرح: TR-2210",
+    },
+    dimensions: [
+      {
+        dir: "شمال",
+        type: "خیابان",
+        name: "آزادی",
+        sideExist: "۱۵.۰۰",
+        edgeExist: "۱۴.۵۰",
+      },
+      {
+        dir: "شرق",
+        type: "پلاک مجاور",
+        name: "پلاک ۵",
+        sideExist: "۲۰.۰۰",
+        edgeExist: "۲۰.۰۰",
+      },
+      {
+        dir: "جنوب",
+        type: "کوچه",
+        name: "یاس",
+        sideExist: "۱۵.۱۰",
+        edgeExist: "۱۴.۸۰",
+      },
+      {
+        dir: "غرب",
+        type: "پلاک مجاور",
+        name: "پلاک ۷",
+        sideExist: "۲۰.۰۵",
+        edgeExist: "۲۰.۰۵",
+      },
+    ],
+  },
+];
+
 interface PropertyInquiryPageProps {
   isDark: boolean;
   toggleTheme: () => void;
 }
-
-const childCases = [
-  { id: "۷-۱۰۴-۲۷-۴۴-۰-۰-۰", type: "ملک", owner: "بهرام حضرتی", fields: ["7", "104", "27", "44", "0", "0", "0"] },
-  { id: "۷-۱۰۴-۲۷-۴۴-۱-۲-۰", type: "آپارتمان", owner: "مهسا حضرتی", fields: ["7", "104", "27", "44", "1", "2", "0"] },
-];
 
 export function PropertyInquiryPage({
   isDark,
   toggleTheme,
 }: PropertyInquiryPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchValues, setSearchValues] = useState(childCases[0].fields);
-  const [selectedCase, setSelectedCase] = useState(childCases[0]);
-  const [activeCase, setActiveCase] = useState(childCases[0]);
+
+  // ۲. مدیریت استیت‌ها برای هماهنگی داده‌ها
+  const [searchValues, setSearchValues] = useState(mockData[0].fields);
+  const [selectedCase, setSelectedCase] = useState(mockData[0]); // موردی که کلیک شده
+  const [activeCase, setActiveCase] = useState(mockData[0]); // موردی که جستجو شده (دیتا از این خوانده می‌شود)
+
   const [modalContent, setModalContent] = useState({
     title: "",
     description: "",
@@ -48,12 +136,11 @@ export function PropertyInquiryPage({
     setIsModalOpen(true);
   };
 
+  // ۳. با زدن دکمه جستجو، مورد انتخاب شده به عنوان مورد "فعال" در کل صفحه ست می‌شود
   const handleSearch = () => {
-    setSearchValues(selectedCase.fields);
     setActiveCase(selectedCase);
   };
 
-  // کامپوننت دکمه راهنما برای استفاده مجدد در سکشن‌ها
   const HelpButton = ({ title, desc }: { title: string; desc: string }) => (
     <button
       onClick={() => handleOpenHelp(title, desc)}
@@ -168,8 +255,10 @@ export function PropertyInquiryPage({
               />
             </div>
             <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-8">
-              {/* دکمه جستجو در سمت راست */}
-              <button onClick={handleSearch} className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20">
+              <button
+                onClick={handleSearch}
+                className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20"
+              >
                 <Search className="ml-1.5 h-4 w-4" /> جستجو
               </button>
               {[
@@ -214,11 +303,24 @@ export function PropertyInquiryPage({
               />
             </div>
             <div className="p-4">
-              {childCases.map((caseItem) => (
-                <button key={caseItem.id} onClick={() => { setSelectedCase(caseItem); setSearchValues(caseItem.fields); }} className="mb-2 flex w-full items-center justify-between rounded-xl border border-border/70 bg-card/50 p-3 group cursor-pointer hover:border-primary/40 transition-all">
+              {mockData.map((caseItem) => (
+                <button
+                  key={caseItem.id}
+                  onClick={() => {
+                    setSelectedCase(caseItem);
+                    setSearchValues(caseItem.fields);
+                  }}
+                  className={`mb-2 flex w-full items-center justify-between rounded-xl border p-3 group cursor-pointer transition-all ${
+                    selectedCase.id === caseItem.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border/70 bg-card/50 hover:border-primary/40"
+                  }`}
+                >
                   <div className="flex items-center gap-3">
                     <div className="h-3 w-3 animate-pulse rounded-full bg-orange-400" />
-                    <span className="text-xs font-medium md:text-sm">{caseItem.id} ({caseItem.type}) - {caseItem.owner}</span>
+                    <span className="text-xs font-medium md:text-sm">
+                      {caseItem.id} ({caseItem.type}) - {caseItem.owner}
+                    </span>
                   </div>
                   <ChevronLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />
                 </button>
@@ -226,7 +328,7 @@ export function PropertyInquiryPage({
             </div>
           </motion.article>
 
-          {/* وضعیت عقب نشینی */}
+          {/* وضعیت عقب نشینی - خواندن از activeCase */}
           <div className="grid gap-5 md:grid-cols-2">
             <motion.article
               initial={{ opacity: 0, x: 20 }}
@@ -245,7 +347,20 @@ export function PropertyInquiryPage({
                 />
               </div>
               <div className="space-y-3 p-4">
-                {[{ label: "مساحت طبق سند", value: activeCase.id === "۷-۱۰۴-۲۷-۴۴-۰-۰-۰" ? "۲۰۴۹" : "۱۳۸۰" }, { label: "مساحت اصلاحی", value: activeCase.id === "۷-۱۰۴-۲۷-۴۴-۰-۰-۰" ? "۱۲۵" : "۹۰" }, { label: "مساحت باقیمانده پس از اصلاح", value: activeCase.id === "۷-۱۰۴-۲۷-۴۴-۰-۰-۰" ? "۱۹۲۴" : "۱۲۹۰" }].map((item, i) => (
+                {[
+                  {
+                    label: "مساحت طبق سند",
+                    value: activeCase.retraction.originalArea,
+                  },
+                  {
+                    label: "مساحت اصلاحی",
+                    value: activeCase.retraction.reformedArea,
+                  },
+                  {
+                    label: "مساحت باقیمانده پس از اصلاح",
+                    value: activeCase.retraction.remainingArea,
+                  },
+                ].map((item, i) => (
                   <div
                     key={i}
                     className="flex justify-between border-b border-border/40 pb-2 text-sm"
@@ -274,12 +389,14 @@ export function PropertyInquiryPage({
                 />
               </div>
               <div className="p-4">
-                <div className="rounded-xl border border-border/50 bg-card/60 p-4 text-xs text-foreground/80">{activeCase.id === "۷-۱۰۴-۲۷-۴۴-۰-۰-۰" ? "اصلاحی شمالی: ۱.۲ متر | اصلاحی غربی: ۰.۸ متر | کد طرح: TR-1044" : "اصلاحی جنوبی: ۰.۹ متر | اصلاحی شرقی: ۰.۵ متر | کد طرح: TR-2210"}</div>
+                <div className="rounded-xl border border-border/50 bg-card/60 p-4 text-xs text-foreground/80">
+                  {activeCase.retraction.description}
+                </div>
               </div>
             </motion.article>
           </div>
 
-          {/* جهات چهارگانه */}
+          {/* جهات چهارگانه - خواندن از activeCase */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -316,7 +433,7 @@ export function PropertyInquiryPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {[{ dir: "شمال", type: "کوچه", name: "اخلاص", sideExist: "۱۰.۲۰", edgeExist: "۱۰.۲۰" }, { dir: "شرق", type: "خیابان", name: "شهید سلیمانی", sideExist: "۲۱.۴۰", edgeExist: "۲۱.۴۰" }, { dir: "جنوب", type: "کوچه", name: "گلستان", sideExist: "۱۰.۱۰", edgeExist: "۱۰.۱۰" }, { dir: "غرب", type: "پلاک مجاور", name: "پلاک ۴۲", sideExist: "۲۱.۳۵", edgeExist: "۲۱.۳۵" }].map((d, i) => (
+                  {activeCase.dimensions.map((d, i) => (
                     <tr key={i} className="transition-colors hover:bg-muted/30">
                       <td className="border border-border/50 p-2 text-center font-bold">
                         {d.dir}

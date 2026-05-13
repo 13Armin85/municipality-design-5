@@ -23,56 +23,104 @@ interface GuildFeesPageProps {
   toggleTheme: () => void;
 }
 
-// --- دیتاهای ثابت ---
-const searchFields = [
-  { label: "صنفی", placeholder: "صنفی" },
-  { label: "آپارتمان", placeholder: "آپارتمان" },
-  { label: "ساختمان", placeholder: "ساختمان" },
-  { label: "ملک", placeholder: "ملک" },
-  { label: "بلوک", placeholder: "بلوک" },
-  { label: "محله", placeholder: "محله" },
-  { label: "منطقه", placeholder: "منطقه" },
-];
-
-const childCases = [
+// --- ماک دیتا جامع ---
+const MOCK_DATABASE = [
   {
     id: "case-1",
     title: "۱-۷۰۱-۱۳-۱۶۲-۴۰۰",
     type: "ملک",
-    owner: "احمد عزیزی",
+    ownerName: "احمد عزیزی",
     icon: Store,
+    // کدهای نوسازی برای فیلدهای جستجو
+    codes: {
+      منطقه: "1",
+      محله: "701",
+      بلوک: "13",
+      ملک: "162",
+      ساختمان: "400",
+      آپارتمان: "0",
+      صنفی: "12",
+    },
+    feeInfo: {
+      right: [
+        { label: "نام متصدی", value: "احمد عزیزی" },
+        { label: "از تاریخ", value: "1402/01/01" },
+        { label: "مبلغ جاری", value: "4,500,000 ریال" },
+        { label: "مبلغ به حروف", value: "چهارصد و پنجاه هزار تومان" },
+      ],
+      left: [
+        { label: "نوع شغل", value: "خرده فروشی" },
+        { label: "تا تاریخ", value: "1402/12/29" },
+        { label: "مبلغ قسط", value: "1,125,000 ریال" },
+        { label: "آدرس", value: "خیابان اصلی، پلاک 12" },
+      ],
+    },
+    owners: [
+      {
+        firstName: "احمد",
+        lastName: "عزیزی",
+        type: "حقیقی",
+        fatherName: "جعفر",
+        issuePlace: "مشهد",
+      },
+    ],
   },
   {
     id: "case-2",
-    title: "۱-۷۰۱-۱۳-۱۶۲-۴۰۰",
+    title: "۲-۸۰۵-۲۲-۱۱۰-۵۰۰",
     type: "ساختمان",
-    owner: "احمد عزیزی",
+    ownerName: "رضا محمدی",
     icon: Home,
+    codes: {
+      منطقه: "2",
+      محله: "805",
+      بلوک: "22",
+      ملک: "110",
+      ساختمان: "500",
+      آپارتمان: "5",
+      صنفی: "0",
+    },
+    feeInfo: {
+      right: [
+        { label: "نام متصدی", value: "رضا محمدی" },
+        { label: "از تاریخ", value: "1401/06/01" },
+        { label: "مبلغ جاری", value: "8,200,000 ریال" },
+        { label: "مبلغ به حروف", value: "هشتصد و بیست هزار تومان" },
+      ],
+      left: [
+        { label: "نوع شغل", value: "دفتر فنی" },
+        { label: "تا تاریخ", value: "1402/06/01" },
+        { label: "مبلغ قسط", value: "2,050,000 ریال" },
+        { label: "آدرس", value: "بلوار پیروزی، مجتمع تجاری" },
+      ],
+    },
+    owners: [
+      {
+        firstName: "رضا",
+        lastName: "محمدی",
+        type: "حقیقی",
+        fatherName: "علی",
+        issuePlace: "تهران",
+      },
+      {
+        firstName: "مریم",
+        lastName: "سادات",
+        type: "حقیقی",
+        fatherName: "حسن",
+        issuePlace: "تهران",
+      },
+    ],
   },
 ];
 
-const currentFeeInfoRight = [
-  { label: "نام متصدی", value: "تکمیل شد" },
-  { label: "از تاریخ", value: "تکمیل شد" },
-  { label: "مبلغ جاری", value: "تکمیل شد" },
-  { label: "مبلغ به حروف", value: "تکمیل شد" },
-];
-
-const currentFeeInfoLeft = [
-  { label: "نوع شغل", value: "تکمیل شد" },
-  { label: "تا تاریخ", value: "تکمیل شد" },
-  { label: "مبلغ قسط", value: "تکمیل شد" },
-  { label: "آدرس", value: "تکمیل شد" },
-];
-
-const owners = [
-  {
-    firstName: "احمد",
-    lastName: "عزیزی",
-    type: "حقیقی",
-    fatherName: "جعفر",
-    issuePlace: "مشهد",
-  },
+const searchFields = [
+  { label: "صنفی", key: "صنفی" },
+  { label: "آپارتمان", key: "آپارتمان" },
+  { label: "ساختمان", key: "ساختمان" },
+  { label: "ملک", key: "ملک" },
+  { label: "بلوک", key: "بلوک" },
+  { label: "محله", key: "محله" },
+  { label: "منطقه", key: "منطقه" },
 ];
 
 const parcels = [
@@ -169,21 +217,56 @@ const parcels = [
 ];
 
 export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
-  // مدیریت مودال راهنما
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
     description: "",
   });
 
+  // استیت‌های مربوط به جستجو و داده‌های فعال
+  const [searchInputs, setSearchInputs] = useState<Record<string, string>>({
+    صنفی: "",
+    آپارتمان: "",
+    ساختمان: "",
+    ملک: "",
+    بلوک: "",
+    محله: "",
+    منطقه: "",
+  });
+  const [activeData, setActiveData] = useState<
+    (typeof MOCK_DATABASE)[0] | null
+  >(null);
+
   const handleOpenHelp = (title: string, description: string) => {
     setModalContent({ title, description });
     setIsModalOpen(true);
   };
 
+  // وقتی روی یک ملک از لیست کلیک می‌شود
+  const handleCaseClick = (item: (typeof MOCK_DATABASE)[0]) => {
+    setSearchInputs(item.codes);
+  };
+
+  // عملیات جستجو
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // پیدا کردن داده بر اساس منطقه و محله و ملک (به عنوان نمونه)
+    const result = MOCK_DATABASE.find(
+      (item) =>
+        item.codes.منطقه === searchInputs.منطقه &&
+        item.codes.محله === searchInputs.محله &&
+        item.codes.ملک === searchInputs.ملک,
+    );
+    setActiveData(result || null);
+  };
+
+  const handleInputChange = (key: string, value: string) => {
+    setSearchInputs((prev) => ({ ...prev, [key]: value }));
+  };
+
   return (
     <>
-      {/* مودال راهنما */}
+      {/* مودال راهنما - بدون تغییر دیزاین */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -243,18 +326,15 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                 <ArrowRight className="h-4 w-4" />
                 <span className="text-sm">بازگشت </span>
               </Link>
-
               <div className="min-w-0 text-center">
                 <h1 className="truncate text-sm font-bold text-foreground md:text-base">
                   عوارض صنفی
                 </h1>
               </div>
-
               <button
                 type="button"
                 onClick={toggleTheme}
                 className="header-action-btn"
-                aria-label="تغییر تم"
               >
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.span
@@ -292,7 +372,6 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
 
           <div className="space-y-4 md:space-y-5">
             {/* بخش جستجو */}
-            {/* بخش جستجو */}
             <motion.article
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -309,7 +388,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                     onClick={() =>
                       handleOpenHelp(
                         "راهنمای جستجو",
-                        "در این بخش می‌توانید با وارد کردن کدهای نوسازی ملک شامل منطقه، محله، بلوک و غیره، اطلاعات دقیق ملک را از سامانه استعلام بگیرید.",
+                        "در این بخش می‌توانید با وارد کردن کدهای نوسازی ملک اطلاعات دقیق را استعلام بگیرید.",
                       )
                     }
                     className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10"
@@ -317,21 +396,13 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                     <Info className="h-3.5 w-3.5" />
                     راهنما
                   </button>
-                  <button
-                    type="button"
-                    aria-label="بازگشت"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 bg-background text-primary transition-all hover:bg-muted"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
 
               <form
                 className="grid grid-cols-2 gap-x-2 gap-y-4 p-4 md:grid-cols-8 md:p-5"
-                onSubmit={(event) => event.preventDefault()}
+                onSubmit={handleSearch}
               >
-                {/* دکمه جستجو */}
                 <button
                   type="submit"
                   className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 active:scale-95 md:order-first"
@@ -340,12 +411,15 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                   جستجو
                 </button>
 
-                {/* اینپوت‌ها با لیبل بالای کادر */}
                 {searchFields.map((field) => (
                   <div key={field.label} className="relative mt-2">
                     <input
                       type="text"
-                      placeholder={field.placeholder}
+                      value={searchInputs[field.key] || ""}
+                      onChange={(e) =>
+                        handleInputChange(field.key, e.target.value)
+                      }
+                      placeholder={field.label}
                       className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-center text-sm text-foreground outline-none transition-all focus:border-primary/45 focus:ring-2 focus:ring-primary/10"
                     />
                     <label className="absolute -top-2.5 right-3 bg-card px-1.5 text-[10px] font-medium text-muted-foreground transition-all">
@@ -356,12 +430,11 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
               </form>
             </motion.article>
 
-            {/* بخش پرونده‌های زیر مجموعه */}
+            {/* پرونده‌های زیر مجموعه */}
             <motion.article
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: 0.03 }}
               className="soft-card mesh-panel overflow-hidden"
             >
               <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
@@ -372,7 +445,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                   onClick={() =>
                     handleOpenHelp(
                       "پرونده‌های زیرمجموعه",
-                      "این لیست شامل تمامی واحدهای مستقر در ملک انتخابی (مانند واحدهای آپارتمانی یا مغازه‌ها) است که دارای پرونده صنفی مجزا هستند.",
+                      "لیست واحدهای مستقر در ملک انتخابی.",
                     )
                   }
                   className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10"
@@ -384,14 +457,15 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
 
               <div className="p-4 md:p-5">
                 <div className="space-y-2 rounded-xl border border-border/70 bg-card/50 p-3">
-                  {childCases.map((item) => (
+                  {MOCK_DATABASE.map((item) => (
                     <article
                       key={item.id}
+                      onClick={() => handleCaseClick(item)}
                       className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/80 px-3 py-2.5 text-sm transition-all hover:border-primary/40 hover:shadow-sm group"
                     >
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {item.title} - ({item.type}) - {item.owner}
+                          {item.title} - ({item.type}) - {item.ownerName}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
@@ -404,188 +478,145 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
               </div>
             </motion.article>
 
-            {/* بخش عوارض جاری */}
-            <motion.article
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: 0.06 }}
-              className="soft-card mesh-panel overflow-hidden"
-            >
-              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
-                <h2 className="text-sm font-bold text-foreground md:text-base">
-                  عوارض صنفی جاری
-                </h2>
-                <button
-                  onClick={() =>
-                    handleOpenHelp(
-                      "عوارض جاری",
-                      "در این قسمت جزئیات محاسباتی عوارض سال جاری، مبالغ اقساط و وضعیت پرداخت‌های متصدی واحد صنفی نمایش داده می‌شود.",
-                    )
-                  }
-                  className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10"
+            {/* بخش عوارض جاری - نمایش در صورت وجود دیتا */}
+            {activeData && (
+              <>
+                <motion.article
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="soft-card mesh-panel overflow-hidden"
                 >
-                  <Info className="h-3.5 w-3.5" />
-                  راهنما
-                </button>
-              </div>
+                  <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+                    <h2 className="text-sm font-bold text-foreground md:text-base">
+                      عوارض صنفی جاری
+                    </h2>
+                  </div>
+                  <div className="p-4 md:p-5">
+                    <div className="grid gap-4 rounded-xl border border-border/70 bg-card/40 p-4 md:grid-cols-2 md:gap-8">
+                      <ul className="space-y-2">
+                        {activeData.feeInfo.right.map((item) => (
+                          <li
+                            key={item.label}
+                            className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
+                          >
+                            <span className="text-muted-foreground">
+                              {item.label}
+                            </span>
+                            <strong className="text-foreground">
+                              {item.value}
+                            </strong>
+                          </li>
+                        ))}
+                      </ul>
+                      <ul className="space-y-2">
+                        {activeData.feeInfo.left.map((item) => (
+                          <li
+                            key={item.label}
+                            className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
+                          >
+                            <span className="text-muted-foreground">
+                              {item.label}
+                            </span>
+                            <strong className="text-foreground">
+                              {item.value}
+                            </strong>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </motion.article>
 
-              <div className="p-4 md:p-5">
-                <div className="grid gap-4 rounded-xl border border-border/70 bg-card/40 p-4 md:grid-cols-2 md:gap-8">
-                  <ul className="space-y-2">
-                    {currentFeeInfoRight.map((item) => (
-                      <li
-                        key={item.label}
-                        className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
-                      >
-                        <span className="text-muted-foreground">
-                          {item.label}
-                        </span>
-                        <strong className="text-foreground">
-                          {item.value}
-                        </strong>
-                      </li>
-                    ))}
-                  </ul>
-                  <ul className="space-y-2">
-                    {currentFeeInfoLeft.map((item) => (
-                      <li
-                        key={item.label}
-                        className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
-                      >
-                        <span className="text-muted-foreground">
-                          {item.label}
-                        </span>
-                        <strong className="text-foreground">
-                          {item.value}
-                        </strong>
-                      </li>
-                    ))}
-                  </ul>
+                <motion.article
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="soft-card mesh-panel overflow-hidden"
+                >
+                  <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+                    <h2 className="text-sm font-bold text-foreground md:text-base">
+                      مالکین
+                    </h2>
+                  </div>
+                  <div className="overflow-x-auto p-4 md:p-5">
+                    <table className="min-w-full overflow-hidden rounded-xl border border-border/70 text-sm">
+                      <thead className="bg-[var(--primary-soft)]/70 text-foreground">
+                        <tr>
+                          <th className="px-3 py-2.5 text-right font-semibold">
+                            نام
+                          </th>
+                          <th className="px-3 py-2.5 text-right font-semibold">
+                            نام خانوادگی
+                          </th>
+                          <th className="px-3 py-2.5 text-right font-semibold">
+                            نوع مالک
+                          </th>
+                          <th className="px-3 py-2.5 text-right font-semibold">
+                            نام پدر
+                          </th>
+                          <th className="px-3 py-2.5 text-right font-semibold">
+                            محل صدور
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/70 bg-card/40">
+                        {activeData.owners.map((owner, index) => (
+                          <tr
+                            key={index}
+                            className="transition-colors hover:bg-muted/30"
+                          >
+                            <td className="px-3 py-2.5 text-foreground">
+                              {owner.firstName}
+                            </td>
+                            <td className="px-3 py-2.5 text-foreground">
+                              {owner.lastName}
+                            </td>
+                            <td className="px-3 py-2.5 text-foreground">
+                              {owner.type}
+                            </td>
+                            <td className="px-3 py-2.5 text-foreground">
+                              {owner.fatherName}
+                            </td>
+                            <td className="px-3 py-2.5 text-foreground">
+                              {owner.issuePlace}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </motion.article>
+              </>
+            )}
+
+            {/* وضعیت خالی */}
+            {!activeData && (
+              <motion.article className="soft-card mesh-panel overflow-hidden">
+                <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+                  <h2 className="text-sm font-bold text-foreground md:text-base">
+                    عوارض
+                  </h2>
+                  <FileText className="h-4 w-4 text-primary" />
                 </div>
-              </div>
-            </motion.article>
-
-            {/* مالکین */}
-            <motion.article
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: 0.09 }}
-              className="soft-card mesh-panel overflow-hidden"
-            >
-              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
-                <h2 className="text-sm font-bold text-foreground md:text-base">
-                  مالکین
-                </h2>
-                <span className="inline-flex h-2.5 w-2.5 rounded-full bg-primary/65 animate-pulse" />
-              </div>
-
-              <div className="overflow-x-auto p-4 md:p-5">
-                <table className="min-w-full overflow-hidden rounded-xl border border-border/70 text-sm">
-                  <thead className="bg-[var(--primary-soft)]/70 text-foreground">
-                    <tr>
-                      <th className="px-3 py-2.5 text-right font-semibold">
-                        نام
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-semibold">
-                        نام خانوادگی
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-semibold">
-                        نوع مالک
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-semibold">
-                        نام پدر
-                      </th>
-                      <th className="px-3 py-2.5 text-right font-semibold">
-                        محل صدور
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/70 bg-card/40">
-                    {owners.map((owner, index) => (
-                      <tr
-                        key={`${owner.firstName}-${index}`}
-                        className="transition-colors hover:bg-muted/30"
-                      >
-                        <td className="px-3 py-2.5 text-foreground">
-                          {owner.firstName}
-                        </td>
-                        <td className="px-3 py-2.5 text-foreground">
-                          {owner.lastName}
-                        </td>
-                        <td className="px-3 py-2.5 text-foreground">
-                          {owner.type}
-                        </td>
-                        <td className="px-3 py-2.5 text-foreground">
-                          {owner.fatherName}
-                        </td>
-                        <td className="px-3 py-2.5 text-foreground">
-                          {owner.issuePlace}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </motion.article>
-            {/* بخش عوارض - وضعیت خالی */}
-            <motion.article
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: 0.12 }}
-              className="soft-card mesh-panel overflow-hidden"
-            >
-              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
-                <h2 className="text-sm font-bold text-foreground md:text-base">
-                  عوارض
-                </h2>
-                <FileText className="h-4 w-4 text-primary" />
-              </div>
-
-              <div className="p-4 md:p-5">
-                <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  موردی برای نمایش وجود ندارد. ابتدا جستجو کنید.
+                <div className="p-4 md:p-5">
+                  <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    موردی برای نمایش وجود ندارد. ابتدا ملکی را انتخاب و جستجو
+                    کنید.
+                  </div>
                 </div>
-              </div>
-            </motion.article>
+              </motion.article>
+            )}
 
-            {/* نقشه زمین با قابلیت هوور */}
-            <motion.article
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: 0.15 }}
-              className="soft-card mesh-panel overflow-hidden"
-            >
+            {/* نقشه - بدون تغییر دیزاین */}
+            <motion.article className="soft-card mesh-panel overflow-hidden">
               <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
                 <h2 className="text-sm font-bold text-foreground md:text-base">
                   نقشه زمین (نمادین)
                 </h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      handleOpenHelp(
-                        "راهنمای نقشه",
-                        "این یک نقشه شماتیک از محدوده ملک انتخابی است. با نگه‌داشتن ماوس روی هر قطعه می‌توانید عنوان آن را مشاهده کنید. قطعه هاشورخورده نمایانگر موقعیت فعلی است.",
-                      )
-                    }
-                    className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10"
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                    راهنما
-                  </button>
-                  <Building2 className="h-4 w-4 text-primary" />
-                </div>
+                <Building2 className="h-4 w-4 text-primary" />
               </div>
-
               <div className="p-4 md:p-5">
                 <div className="relative h-[30rem] overflow-hidden rounded-2xl border border-border/70 bg-[linear-gradient(145deg,#647257_0%,#7e8f6d_38%,#6a735f_100%)] md:h-[44rem]">
-                  <div className="absolute inset-0 opacity-55 [background-image:radial-gradient(circle_at_12%_14%,rgba(255,255,255,0.18)_0,transparent_34%),radial-gradient(circle_at_88%_78%,rgba(255,255,255,0.1)_0,transparent_30%)]" />
-                  <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(17,36,18,0.22)_1px,transparent_1px),linear-gradient(90deg,rgba(17,36,18,0.22)_1px,transparent_1px)] [background-size:70px_70px]" />
-
-                  {/* قطعات نقشه با قابلیت هاور */}
+                  {/* محتوای نقشه ثابت می ماند */}
                   {parcels.map((parcel) => (
                     <motion.div
                       key={parcel.id}
@@ -593,7 +624,6 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                         scale: 1.03,
                         filter: "brightness(1.1)",
                         zIndex: 10,
-                        boxShadow: "0 10px 20px -5px rgba(0,0,0,0.3)",
                       }}
                       className={`absolute rounded-sm border border-sky-900/25 cursor-pointer flex items-center justify-center group transition-all ${parcel.tone}`}
                       style={{
@@ -609,11 +639,11 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                       </span>
                     </motion.div>
                   ))}
-
-                  {/* محدوده فعال (ملک انتخابی) */}
-                  <div className="absolute left-[44%] top-[58%] h-28 w-24 rounded-md border-2 border-dashed border-sky-600 bg-emerald-300/35 shadow-[0_0_0_6px_rgba(18,80,126,0.14)] backdrop-blur-[1px] animate-pulse" />
-
-                  {/* کنترل‌های نقشه */}
+                  {/* انیمیشن پالس روی ملک فعال اگر دیتایی پیدا شد */}
+                  {activeData && (
+                    <div className="absolute left-[44%] top-[58%] h-28 w-24 rounded-md border-2 border-dashed border-sky-600 bg-emerald-300/35 shadow-[0_0_0_6px_rgba(18,80,126,0.14)] backdrop-blur-[1px] animate-pulse" />
+                  )}
+                  {/* کنترل های نقشه */}
                   <div className="absolute left-3 top-3 space-y-1.5 md:left-4 md:top-4">
                     <button className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-card/90 text-foreground shadow-sm transition-colors hover:bg-card">
                       <Plus className="h-4 w-4" />
@@ -625,20 +655,6 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                       <Home className="h-4 w-4" />
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl border border-destructive/35 bg-card/90 text-destructive shadow-sm md:right-4 md:top-4 transition-colors hover:bg-destructive hover:text-white"
-                    aria-label="حذف"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-
-                  <div className="absolute bottom-3 left-3 rounded-lg border border-border/70 bg-card/90 px-3 py-1.5 text-xs font-medium text-foreground md:bottom-4 md:left-4">
-                    مقیاس 10m
-                  </div>
-
-                  <div className="absolute bottom-3 right-3 h-12 w-12 overflow-hidden rounded-xl border border-border/70 bg-gradient-to-br from-sky-300/70 to-emerald-300/70 shadow-inner md:bottom-4 md:right-4" />
                 </div>
               </div>
             </motion.article>
