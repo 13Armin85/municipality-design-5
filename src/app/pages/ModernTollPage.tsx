@@ -19,6 +19,7 @@ import {
   History,
 } from "lucide-react";
 import { Link } from "react-router";
+import { searchLabels, urbanPropertiesMock } from "../data/urbanServiceMock";
 
 interface ModernTollPageProps {
   isDark: boolean;
@@ -76,6 +77,10 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     title: "",
     description: "",
   });
+  const [selectedCase, setSelectedCase] = useState(urbanPropertiesMock[0]);
+  const [searchValues, setSearchValues] = useState(urbanPropertiesMock[0].fields);
+  const [activeCase, setActiveCase] = useState(urbanPropertiesMock[0]);
+  const handleSearch = () => { setSearchValues(selectedCase.fields); setActiveCase(selectedCase); };
 
   const handleOpenHelp = (title: string, description: string) => {
     setModalContent({ title, description });
@@ -158,7 +163,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 <span className="hidden text-sm md:block">بازگشت</span>
               </Link>
               <h1 className="text-sm font-bold text-foreground md:text-base">
-                استعلام پرونده نوسازی
+                استعلام پرونده نوسازی - {activeCase.owner}
               </h1>
               <button onClick={toggleTheme} className="header-action-btn">
                 {isDark ? (
@@ -197,18 +202,18 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               />
             </div>
             <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-8">
-              <button className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20">
+              <button onClick={handleSearch} className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20">
                 <Search className="ml-1.5 h-4 w-4" /> جستجو
               </button>
-              {searchFields.map((field, i) => (
+              {searchLabels.map((field, i) => (
                 <div key={i} className="relative">
                   <input
-                    defaultValue={field.value}
-                    placeholder={field.label}
+                    value={searchValues[i]} readOnly
+                    placeholder={field}
                     className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium outline-none focus:border-primary transition-colors"
                   />
                   <span className="absolute -top-2 right-3 bg-card px-1 text-[9px] text-muted-foreground">
-                    {field.label}
+                    {field}
                   </span>
                 </div>
               ))}
@@ -235,7 +240,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               />
             </div>
             <div className="p-4">
-              <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card/50 p-3 group cursor-pointer hover:border-primary/40 transition-all">
+              <button onClick={() => { setSelectedCase(urbanPropertiesMock[2]); setSearchValues(urbanPropertiesMock[2].fields); }} className="flex w-full items-center justify-between rounded-xl border border-border/70 bg-card/50 p-3 group cursor-pointer hover:border-primary/40 transition-all">
                 <div className="flex items-center gap-3">
                   <div className="h-3 w-3 animate-pulse rounded-full bg-orange-400" />
                   <span className="text-xs font-medium md:text-sm">
@@ -243,7 +248,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   </span>
                 </div>
                 <ChevronLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />
-              </div>
+              </button>
             </div>
           </motion.article>
 
@@ -336,7 +341,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                       className="flex justify-between border-b border-border/30 py-2.5 text-xs md:text-sm"
                     >
                       <span className="text-muted-foreground">
-                        {field.label} :
+                        {field} :
                       </span>
                       <span className="font-medium text-foreground/80">
                         {field.value || "—"}
@@ -351,7 +356,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                       className="flex justify-between border-b border-border/30 py-2.5 text-xs md:text-sm"
                     >
                       <span className="text-muted-foreground">
-                        {field.label} :
+                        {field} :
                       </span>
                       <span className="font-medium text-foreground/80">
                         {field.value || "—"}
