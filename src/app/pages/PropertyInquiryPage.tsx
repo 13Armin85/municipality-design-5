@@ -25,33 +25,31 @@ interface PropertyInquiryPageProps {
   toggleTheme: () => void;
 }
 
-const searchFields = [
-  { label: "منطقه", value: "2" },
-  { label: "محله", value: "104" },
-  { label: "بلوک", value: "27" },
-  { label: "ملک", value: "44" },
-  { label: "ساختمان", value: "" },
-  { label: "آپارتمان", value: "" },
-  { label: "صنفی", value: "" },
-];
-
-const propertyDetails = [
-  { label: "مساحت طبق سند", value: "۲۰۴۹" },
-  { label: "مساحت اصلاحی", value: "-" },
-  { label: "مساحت باقیمانده پس از اصلاح", value: "۲۰۴۹" },
-];
-
-const directionsData = [
+const childCases = [
   {
-    dir: "شمال",
-    type: "کوچه",
-    name: "اخلاص",
-    sideExist: "۱.۰۰",
-    edgeExist: "۱",
+    id: "۷-۱۰۴-۲۷-۴۴-۰-۰-۰",
+    type: "ملک",
+    owner: "بهرام حضرتی",
+    fields: ["7", "104", "27", "44", "0", "0", "0"],
+    propertyDetails: [
+      { label: "مساحت طبق سند", value: "۲۰۴۹" },
+      { label: "مساحت اصلاحی", value: "۱۲۵" },
+      { label: "مساحت باقیمانده پس از اصلاح", value: "۱۹۲۴" },
+    ],
+    retreat: "اصلاحی شمالی: ۱.۲ متر | اصلاحی غربی: ۰.۸ متر | کد طرح: TR-1044",
   },
-  { dir: "شرق", type: "---", name: "---", sideExist: "۱.۰۰", edgeExist: "۰" },
-  { dir: "جنوب", type: "---", name: "---", sideExist: "۱.۰۰", edgeExist: "۰" },
-  { dir: "غرب", type: "---", name: "---", sideExist: "۱.۰۰", edgeExist: "۰" },
+  {
+    id: "۷-۱۰۴-۲۷-۴۴-۱-۲-۰",
+    type: "آپارتمان",
+    owner: "مهسا حضرتی",
+    fields: ["7", "104", "27", "44", "1", "2", "0"],
+    propertyDetails: [
+      { label: "مساحت طبق سند", value: "۱۱۰" },
+      { label: "مساحت اصلاحی", value: "۱۰" },
+      { label: "مساحت باقیمانده پس از اصلاح", value: "۱۰۰" },
+    ],
+    retreat: "اصلاحی شرقی: ۰.۴ متر | اصلاحی جنوبی: ۰.۶ متر | کد طرح: AP-221",
+  },
 ];
 
 export function PropertyInquiryPage({
@@ -59,6 +57,9 @@ export function PropertyInquiryPage({
   toggleTheme,
 }: PropertyInquiryPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchValues, setSearchValues] = useState(childCases[0].fields);
+  const [selectedCase, setSelectedCase] = useState(childCases[0]);
+  const [searchedCase, setSearchedCase] = useState(childCases[0]);
   const [modalContent, setModalContent] = useState({
     title: "",
     description: "",
@@ -67,6 +68,15 @@ export function PropertyInquiryPage({
   const handleOpenHelp = (title: string, description: string) => {
     setModalContent({ title, description });
     setIsModalOpen(true);
+  };
+
+  const handleSelectCase = (caseItem: (typeof childCases)[0]) => {
+    setSelectedCase(caseItem);
+    setSearchValues(caseItem.fields);
+  };
+
+  const handleSearch = () => {
+    setSearchedCase(selectedCase);
   };
 
   // کامپوننت دکمه راهنما برای استفاده مجدد در سکشن‌ها
@@ -185,18 +195,27 @@ export function PropertyInquiryPage({
             </div>
             <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-8">
               {/* دکمه جستجو در سمت راست */}
-              <button className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20">
+              <button onClick={handleSearch} className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20">
                 <Search className="ml-1.5 h-4 w-4" /> جستجو
               </button>
-              {searchFields.map((field, i) => (
+              {[
+                "منطقه",
+                "محله",
+                "بلوک",
+                "ملک",
+                "ساختمان",
+                "آپارتمان",
+                "صنفی",
+              ].map((label, i) => (
                 <div key={i} className="relative">
                   <input
-                    defaultValue={field.value}
-                    placeholder={field.label}
+                    value={searchValues[i]}
+                    readOnly
+                    placeholder={label}
                     className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium outline-none focus:border-primary transition-colors"
                   />
                   <span className="absolute -top-2 right-3 bg-card px-1 text-[9px] text-muted-foreground">
-                    {field.label}
+                    {label}
                   </span>
                 </div>
               ))}
@@ -221,15 +240,15 @@ export function PropertyInquiryPage({
               />
             </div>
             <div className="p-4">
-              <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card/50 p-3 group cursor-pointer hover:border-primary/40 transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="h-3 w-3 animate-pulse rounded-full bg-orange-400" />
-                  <span className="text-xs font-medium md:text-sm">
-                    ۷-۱۰۴-۲۷-۴۴-۰-۰-۰ (ملک) - بهرام حضرتی
-                  </span>
-                </div>
-                <ChevronLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />
-              </div>
+              {childCases.map((caseItem) => (
+                <button key={caseItem.id} onClick={() => handleSelectCase(caseItem)} className="mb-2 flex w-full items-center justify-between rounded-xl border border-border/70 bg-card/50 p-3 group cursor-pointer hover:border-primary/40 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="h-3 w-3 animate-pulse rounded-full bg-orange-400" />
+                    <span className="text-xs font-medium md:text-sm">{caseItem.id} ({caseItem.type}) - {caseItem.owner}</span>
+                  </div>
+                  <ChevronLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />
+                </button>
+              ))}
             </div>
           </motion.article>
 
@@ -252,7 +271,7 @@ export function PropertyInquiryPage({
                 />
               </div>
               <div className="space-y-3 p-4">
-                {propertyDetails.map((item, i) => (
+                {searchedCase.propertyDetails.map((item, i) => (
                   <div
                     key={i}
                     className="flex justify-between border-b border-border/40 pb-2 text-sm"
@@ -281,9 +300,7 @@ export function PropertyInquiryPage({
                 />
               </div>
               <div className="p-4">
-                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center text-xs text-destructive">
-                  موردی برای نمایش وجود ندارد. (ملک فاقد اصلاحی در طرح جاری است)
-                </div>
+                <div className="rounded-xl border border-border/50 bg-card/60 p-4 text-xs text-foreground/80">{searchedCase.retreat}</div>
               </div>
             </motion.article>
           </div>
@@ -325,7 +342,7 @@ export function PropertyInquiryPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {directionsData.map((d, i) => (
+                  {[{ dir: "شمال", type: "کوچه", name: "اخلاص", sideExist: "۱۰.۲۰", edgeExist: "۱۰.۲۰" }, { dir: "شرق", type: "خیابان", name: "شهید سلیمانی", sideExist: "۲۱.۴۰", edgeExist: "۲۱.۴۰" }, { dir: "جنوب", type: "کوچه", name: "گلستان", sideExist: "۱۰.۱۰", edgeExist: "۱۰.۱۰" }, { dir: "غرب", type: "پلاک مجاور", name: "پلاک ۴۲", sideExist: "۲۱.۳۵", edgeExist: "۲۱.۳۵" }].map((d, i) => (
                     <tr key={i} className="transition-colors hover:bg-muted/30">
                       <td className="border border-border/50 p-2 text-center font-bold">
                         {d.dir}

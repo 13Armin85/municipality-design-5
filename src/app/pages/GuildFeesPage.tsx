@@ -52,17 +52,17 @@ const childCases = [
 ];
 
 const currentFeeInfoRight = [
-  { label: "نام متصدی", value: "---" },
-  { label: "از تاریخ", value: "---" },
-  { label: "مبلغ جاری", value: "---" },
-  { label: "مبلغ به حروف", value: "---" },
+  { label: "نام متصدی", value: "تکمیل شد" },
+  { label: "از تاریخ", value: "تکمیل شد" },
+  { label: "مبلغ جاری", value: "تکمیل شد" },
+  { label: "مبلغ به حروف", value: "تکمیل شد" },
 ];
 
 const currentFeeInfoLeft = [
-  { label: "نوع شغل", value: "---" },
-  { label: "تا تاریخ", value: "---" },
-  { label: "مبلغ قسط", value: "---" },
-  { label: "آدرس", value: "---" },
+  { label: "نوع شغل", value: "تکمیل شد" },
+  { label: "تا تاریخ", value: "تکمیل شد" },
+  { label: "مبلغ قسط", value: "تکمیل شد" },
+  { label: "آدرس", value: "تکمیل شد" },
 ];
 
 const owners = [
@@ -70,8 +70,8 @@ const owners = [
     firstName: "احمد",
     lastName: "عزیزی",
     type: "حقیقی",
-    fatherName: "---",
-    issuePlace: "---",
+    fatherName: "جعفر",
+    issuePlace: "مشهد",
   },
 ];
 
