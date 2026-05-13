@@ -41,8 +41,8 @@ const ownersData = [
     name: "بهرام",
     lastName: "حضرتی",
     ownerType: "حقیقی",
-    fatherName: "",
-    birthPlace: "",
+    fatherName: "علی",
+    birthPlace: "مشهد",
   },
 ];
 
@@ -50,23 +50,23 @@ const rightFeeFields = [
   { label: "نام مالک", value: "—" },
   { label: "از سال", value: "—" },
   { label: "شماره فیش", value: "—" },
-  { label: "خوش‌حسابی", value: "" },
-  { label: "معافیت", value: "" },
-  { label: "آتش‌نشانی", value: "" },
-  { label: "ارزش افزوده", value: "" },
-  { label: "خدمات", value: "" },
+  { label: "خوش‌حسابی", value: "۰" },
+  { label: "معافیت", value: "۰" },
+  { label: "آتش‌نشانی", value: "۰" },
+  { label: "ارزش افزوده", value: "۰" },
+  { label: "خدمات", value: "۰" },
   { label: "مبلغ قابل پرداخت", value: "—" },
 ];
 
 const leftFeeFields = [
   { label: "آدرس مالک", value: "—" },
   { label: "تا سال", value: "—" },
-  { label: "سهم مالک", value: "" },
-  { label: "خدمات معوقه", value: "" },
-  { label: "بدحسابی", value: "" },
-  { label: "آموزش و پرورش", value: "" },
-  { label: "عوارض", value: "" },
-  { label: "بدهی معوقه", value: "" },
+  { label: "سهم مالک", value: "۰" },
+  { label: "خدمات معوقه", value: "۰" },
+  { label: "بدحسابی", value: "۰" },
+  { label: "آموزش و پرورش", value: "۰" },
+  { label: "عوارض", value: "۰" },
+  { label: "بدهی معوقه", value: "۰" },
   { label: "مبلغ به حروف", value: "—" },
 ];
 
