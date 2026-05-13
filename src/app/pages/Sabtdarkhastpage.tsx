@@ -31,9 +31,9 @@ const searchFields = [
   { label: "محله", value: "701" },
   { label: "بلوک", value: "5" },
   { label: "ملک", value: "56" },
-  { label: "ساختمان", value: "" },
-  { label: "آپارتمان", value: "" },
-  { label: "صنفی", value: "" },
+  { label: "ساختمان", value: "۰" },
+  { label: "آپارتمان", value: "۰" },
+  { label: "صنفی", value: "۰" },
 ];
 
 export function SabtDarkhastPage({
