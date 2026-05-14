@@ -1,47 +1,55 @@
-﻿import { motion } from 'motion/react';
-import { Link } from 'react-router';
-import { Home, FileText, Building, ShoppingCart, Clipboard, ArrowUpLeft } from 'lucide-react';
+﻿import { motion } from "framer-motion"; // یا 'motion/react' بسته به نسخه نصب شده شما
+import { Link } from "react-router"; // یا 'react-router'
+import {
+  LayoutDashboard,
+  FilePlus2,
+  SearchCode,
+  Landmark,
+  Store,
+  MapPinOff,
+  ArrowUpLeft,
+} from "lucide-react";
 
 const services = [
   {
-    icon: Home,
+    icon: LayoutDashboard,
     title: "املاک من",
     description: "مشاهده و مدیریت املاک ثبت‌شده",
     color: "from-primary to-secondary",
     href: "/my-property",
   },
   {
-    icon: FileText,
+    icon: FilePlus2,
     title: "ثبت درخواست",
     description: "ارسال درخواست‌های شهری و پیگیری آن‌ها",
     color: "from-secondary to-primary",
     href: "/sabt-darkhast",
   },
   {
-    icon: Building,
+    icon: SearchCode,
     title: "پیگیری درخواست‌ها",
     description: "بررسی وضعیت پرونده‌های در حال رسیدگی",
     color: "from-primary/95 to-secondary/85",
     href: "/property-request",
   },
   {
-    icon: ShoppingCart,
+    icon: Landmark,
     title: "عوارض نوسازی",
     description: "پرداخت، مشاهده و چاپ قبض عوارض",
     color: "from-secondary/95 to-primary/85",
     href: "/modern-toll",
   },
   {
-    icon: ShoppingCart,
+    icon: Store,
     title: "عوارض صنفی",
     description: "مدیریت عوارض واحدهای صنفی",
     color: "from-primary to-secondary/90",
     href: "/guild-fees",
   },
   {
-    icon: Clipboard,
+    icon: MapPinOff,
     title: "وضعیت عقب‌نشینی ملک",
-    description: "در این بخش می‌توانید وضعیت عقب‌نشینی ملک خود را مشاهده کنید.",
+    description: "بررسی وضعیت عقب نشینی املاک",
     color: "from-secondary to-primary/90",
     href: "/property-inquiry",
   },
@@ -49,7 +57,10 @@ const services = [
 
 export function ServicesSection() {
   return (
-    <section id="services" className="section-decor bg-background py-12 md:py-20">
+    <section
+      id="services"
+      className="section-decor bg-background py-12 md:py-20"
+    >
       <div className="container relative z-10 mx-auto px-4 md:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -58,7 +69,9 @@ export function ServicesSection() {
           className="mb-10 text-center md:mb-16"
         >
           <span className="section-chip mb-3">دسترسی سریع</span>
-          <h2 className="mb-3 text-2xl font-black text-foreground md:mb-4 md:text-3xl lg:text-4xl">خدمات شهری</h2>
+          <h2 className="mb-3 text-2xl font-black text-foreground md:mb-4 md:text-3xl lg:text-4xl">
+            خدمات شهری
+          </h2>
           <p className="mx-auto max-w-2xl px-4 text-sm text-muted-foreground md:text-base">
             تمامی خدمات الکترونیک اداری در یک نمای متمرکز، ساده و استاندارد
           </p>
@@ -68,7 +81,9 @@ export function ServicesSection() {
           {services.map((service, index) => {
             const serviceBody = (
               <div className="soft-card soft-card-hover mesh-panel relative h-full overflow-hidden p-5 md:p-6">
-                <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l ${service.color}`} />
+                <div
+                  className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l ${service.color}`}
+                />
                 <div className="absolute -bottom-14 -left-14 h-28 w-28 rounded-full bg-[var(--primary-soft)] blur-2xl transition-transform duration-500 group-hover:scale-150" />
 
                 <div className="relative z-10">
@@ -78,8 +93,12 @@ export function ServicesSection() {
                     <service.icon className="h-7 w-7 text-white md:h-8 md:w-8" />
                   </div>
 
-                  <h3 className="mb-2 text-base font-bold text-foreground md:text-lg">{service.title}</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-muted-foreground md:text-sm">{service.description}</p>
+                  <h3 className="mb-2 text-base font-bold text-foreground md:text-lg">
+                    {service.title}
+                  </h3>
+                  <p className="mb-4 text-xs leading-relaxed text-muted-foreground md:text-sm">
+                    {service.description}
+                  </p>
 
                   <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary md:text-sm">
                     ورود به خدمت
