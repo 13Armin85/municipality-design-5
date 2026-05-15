@@ -2,10 +2,14 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
+  BadgeInfo,
+  Building,
   Building2,
   Camera,
   Clock3,
   FileCheck2,
+  Home,
+  Landmark,
   LogOut,
   Mail,
   MapPin,
@@ -52,6 +56,36 @@ const accountCards = [
   { title: "واحد خدمت‌دهنده", value: "شهرداری مراغه", icon: Building2 },
 ];
 
+const properties = [
+  {
+    id: "p1",
+    title: "آپارتمان مسکونی",
+    code: "PR-24819",
+    address: "مراغه، خیابان امام، کوچه گلستان ۳",
+    area: "۱۴۵ متر",
+    status: "فعال",
+    usage: "مسکونی",
+  },
+  {
+    id: "p2",
+    title: "زمین شهری",
+    code: "PR-77502",
+    address: "مراغه، بلوار ولایت، فاز ۲",
+    area: "۳۲۰ متر",
+    status: "دارای بدهی",
+    usage: "زمین",
+  },
+  {
+    id: "p3",
+    title: "واحد تجاری",
+    code: "PR-91284",
+    address: "مراغه، خیابان دانشسرا، مجتمع آفتاب",
+    area: "۸۲ متر",
+    status: "تایید شده",
+    usage: "تجاری",
+  },
+];
+
 const timelineItems = [
   {
     id: "t1",
@@ -76,6 +110,7 @@ const timelineItems = [
 export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -83,6 +118,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
 
   useEffect(() => {
     const savedImage = localStorage.getItem(PROFILE_IMAGE_STORAGE_KEY);
+
     if (savedImage) {
       setProfileImage(savedImage);
     }
@@ -94,6 +130,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
 
   const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+
     if (!file) return;
 
     setPhotoError(null);
@@ -106,6 +143,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
     }
 
     const maxAllowedSize = 4 * 1024 * 1024;
+
     if (file.size > maxAllowedSize) {
       setPhotoError("حداکثر حجم عکس باید کمتر از ۴ مگابایت باشد.");
       event.target.value = "";
@@ -113,25 +151,34 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
     }
 
     const reader = new FileReader();
+
     reader.onload = () => {
       if (typeof reader.result === "string") {
         setProfileImage(reader.result);
+
         localStorage.setItem(PROFILE_IMAGE_STORAGE_KEY, reader.result);
+
         setPhotoMessage("عکس پروفایل با موفقیت ذخیره شد.");
       }
     };
+
     reader.onerror = () => {
       setPhotoError("بارگذاری عکس انجام نشد. دوباره تلاش کنید.");
     };
+
     reader.readAsDataURL(file);
+
     event.target.value = "";
   };
 
   const handleRemovePhoto = () => {
     setProfileImage(null);
+
     setPhotoMessage("عکس پروفایل حذف شد.");
     setPhotoError(null);
+
     localStorage.removeItem(PROFILE_IMAGE_STORAGE_KEY);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -139,7 +186,9 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
 
   const handleLogout = () => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+
     setIsLogoutConfirmOpen(false);
+
     navigate("/");
   };
 
@@ -158,6 +207,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                 className="header-action-btn inline-flex items-center gap-2 px-3"
               >
                 <ArrowRight className="h-4 w-4" />
+
                 <span className="text-sm">بازگشت</span>
               </Link>
 
@@ -177,10 +227,24 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
                       key={isDark ? "sun" : "moon"}
-                      initial={{ opacity: 0, rotate: -18, scale: 0.9 }}
-                      animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                      exit={{ opacity: 0, rotate: 18, scale: 0.9 }}
-                      transition={{ duration: 0.15 }}
+                      initial={{
+                        opacity: 0,
+                        rotate: -18,
+                        scale: 0.9,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        rotate: 0,
+                        scale: 1,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        rotate: 18,
+                        scale: 0.9,
+                      }}
+                      transition={{
+                        duration: 0.15,
+                      }}
                       className="inline-flex"
                     >
                       {isDark ? (
@@ -197,7 +261,6 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
         </div>
       </motion.header>
 
-      {/* Logout confirm modal */}
       <AnimatePresence>
         {isLogoutConfirmOpen && (
           <>
@@ -214,21 +277,37 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
             <motion.div
               role="dialog"
               aria-modal="true"
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.18 }}
+              initial={{
+                opacity: 0,
+                scale: 0.95,
+                y: -10,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.95,
+                y: -10,
+              }}
+              transition={{
+                duration: 0.18,
+              }}
               className="fixed inset-x-4 top-1/2 z-[90] mx-auto w-full max-w-sm -translate-y-1/2 rounded-3xl border border-border/70 bg-card/95 p-6 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl"
             >
               <div className="mb-5 flex flex-col items-center gap-3 text-center">
                 <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
                   <LogOut className="h-7 w-7" />
                 </span>
+
                 <div>
                   <h3 className="text-base font-bold text-foreground">
                     خروج از حساب کاربری
                   </h3>
-                  <p className="mt-1 text-sm text-muted-foreground leading-6">
+
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
                     آیا مطمئن هستید؟ پس از خروج باید مجدداً وارد شوید.
                   </p>
                 </div>
@@ -242,6 +321,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                 >
                   انصراف
                 </button>
+
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -260,8 +340,14 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
           <div className="mt-7 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,23rem)_minmax(0,1fr)]">
             <motion.aside
               initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
+              whileInView={{
+                opacity: 1,
+                y: 0,
+              }}
+              viewport={{
+                once: true,
+                margin: "-80px",
+              }}
               className="soft-card mesh-panel p-5 md:p-6"
             >
               <div className="mb-5 text-center">
@@ -277,6 +363,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                       <UserCircle2 className="h-16 w-16" />
                     </div>
                   )}
+
                   <span className="absolute bottom-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/40 bg-background/85 text-primary shadow-sm">
                     <Camera className="h-4 w-4" />
                   </span>
@@ -285,6 +372,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                 <h3 className="mt-4 text-lg font-bold text-foreground">
                   امیررضا محمدی
                 </h3>
+
                 <p className="text-sm text-muted-foreground">
                   شهروند تایید شده
                 </p>
@@ -306,6 +394,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                 >
                   بارگذاری عکس
                 </button>
+
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
@@ -321,9 +410,18 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                 {photoError && (
                   <motion.p
                     key={photoError}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
+                    initial={{
+                      opacity: 0,
+                      y: 6,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -6,
+                    }}
                     className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
                   >
                     {photoError}
@@ -335,9 +433,18 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                 {photoMessage && (
                   <motion.p
                     key={photoMessage}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
+                    initial={{
+                      opacity: 0,
+                      y: 6,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -6,
+                    }}
                     className="mt-3 rounded-xl border border-primary/30 bg-[var(--primary-soft)] px-3 py-2 text-xs text-primary"
                   >
                     {photoMessage}
@@ -354,10 +461,12 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                     <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--primary-soft)] text-primary">
                       <item.icon className="h-4 w-4" />
                     </span>
+
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">
                         {item.title}
                       </p>
+
                       <p className="truncate text-sm font-semibold text-foreground">
                         {item.value}
                       </p>
@@ -366,7 +475,6 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                 ))}
               </div>
 
-              {/* Logout button inside sidebar */}
               <button
                 type="button"
                 onClick={() => setIsLogoutConfirmOpen(true)}
@@ -380,14 +488,21 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
             <div className="grid grid-cols-1 gap-5">
               <motion.article
                 initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
+                whileInView={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                viewport={{
+                  once: true,
+                  margin: "-80px",
+                }}
                 className="soft-card mesh-panel p-5 md:p-6"
               >
                 <div className="mb-4 flex items-center gap-2">
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary-soft)] text-primary">
                     <ShieldCheck className="h-4 w-4" />
                   </span>
+
                   <h3 className="text-base font-bold text-foreground md:text-lg">
                     اطلاعات هویتی و حساب
                   </h3>
@@ -402,6 +517,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                       <dt className="text-xs text-muted-foreground">
                         {item.label}
                       </dt>
+
                       <dd className="mt-1 text-sm font-semibold text-foreground">
                         {item.value}
                       </dd>
@@ -412,15 +528,24 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
 
               <motion.article
                 initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ delay: 0.04 }}
+                whileInView={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                viewport={{
+                  once: true,
+                  margin: "-80px",
+                }}
+                transition={{
+                  delay: 0.04,
+                }}
                 className="soft-card mesh-panel p-5 md:p-6"
               >
                 <div className="mb-4 flex items-center gap-2">
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary-soft)] text-primary">
                     <Phone className="h-4 w-4" />
                   </span>
+
                   <h3 className="text-base font-bold text-foreground md:text-lg">
                     اطلاعات تماس
                   </h3>
@@ -435,10 +560,12 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                       <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary-soft)] text-primary">
                         <item.icon className="h-4 w-4" />
                       </span>
+
                       <div>
                         <p className="text-xs text-muted-foreground">
                           {item.label}
                         </p>
+
                         <p className="text-sm font-semibold text-foreground">
                           {item.value}
                         </p>
@@ -450,15 +577,108 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
 
               <motion.article
                 initial={{ opacity: 0, y: 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ delay: 0.08 }}
+                whileInView={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                viewport={{
+                  once: true,
+                  margin: "-80px",
+                }}
+                transition={{
+                  delay: 0.08,
+                }}
+                className="soft-card mesh-panel p-5 md:p-6"
+              >
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary-soft)] text-primary">
+                    <Landmark className="h-4 w-4" />
+                  </span>
+
+                  <div>
+                    <h3 className="text-base font-bold text-foreground md:text-lg">
+                      دارایی‌ها و املاک
+                    </h3>
+
+                    <p className="text-xs text-muted-foreground">
+                      لیست املاک و دارایی‌های ثبت شده
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {properties.map((property) => (
+                    <motion.article
+                      key={property.id}
+                      whileHover={{ y: -2 }}
+                      transition={{
+                        duration: 0.15,
+                      }}
+                      className="rounded-2xl border border-border/70 bg-background/70 p-4 transition-all hover:border-primary/40 hover:bg-[var(--primary-soft)]"
+                    >
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex items-start gap-3">
+                          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-primary">
+                            {property.usage === "مسکونی" ? (
+                              <Home className="h-5 w-5" />
+                            ) : property.usage === "تجاری" ? (
+                              <Building className="h-5 w-5" />
+                            ) : (
+                              <Landmark className="h-5 w-5" />
+                            )}
+                          </span>
+
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="text-sm font-bold text-foreground">
+                                {property.title}
+                              </h4>
+                            </div>
+
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {property.address}
+                            </p>
+
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <span className="inline-flex items-center gap-1 rounded-xl bg-card px-2.5 py-1 text-xs text-foreground">
+                                <BadgeInfo className="h-3.5 w-3.5 text-primary" />
+                                {property.area}
+                              </span>
+
+                              <span className="inline-flex items-center gap-1 rounded-xl bg-card px-2.5 py-1 text-xs text-foreground">
+                                <Building2 className="h-3.5 w-3.5 text-primary" />
+                                {property.usage}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </motion.article>
+                  ))}
+                </div>
+              </motion.article>
+
+              <motion.article
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                viewport={{
+                  once: true,
+                  margin: "-80px",
+                }}
+                transition={{
+                  delay: 0.12,
+                }}
                 className="soft-card mesh-panel p-5 md:p-6"
               >
                 <div className="mb-4 flex items-center gap-2">
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--primary-soft)] text-primary">
                     <Clock3 className="h-4 w-4" />
                   </span>
+
                   <h3 className="text-base font-bold text-foreground md:text-lg">
                     آخرین وضعیت درخواست‌ها
                   </h3>
@@ -473,9 +693,11 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
                       <h4 className="text-sm font-bold text-foreground">
                         {item.title}
                       </h4>
+
                       <p className="mt-1 text-sm text-muted-foreground">
                         {item.subtitle}
                       </p>
+
                       <p className="mt-2 text-xs text-muted-foreground">
                         {item.time}
                       </p>
