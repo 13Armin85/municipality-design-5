@@ -460,9 +460,10 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
             </nav>
 
             <div className="relative flex items-center gap-2 md:gap-3">
-              {/* Bell and Admin panel — only visible after login */}
+              {/* Bell and Admin panel — only visible after login, hidden on mobile */}
               {isAuthenticated && (
                 <>
+                  {/* ایکون نوتیفیکیشن — در موبایل مخفی است */}
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     ref={notificationButtonRef}
@@ -471,7 +472,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                       setIsAllNotificationsOpen(false);
                       setIsNotificationsOpen((prev) => !prev);
                     }}
-                    className="header-action-btn relative"
+                    className="header-action-btn relative hidden sm:flex"
                     aria-label="اعلان‌ها"
                     aria-expanded={isNotificationsOpen}
                     aria-controls="notifications-panel"
@@ -483,7 +484,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     )}
                   </motion.button>
 
-                  {/* Show Admin Panel Icon ONLY if loginType is admin */}
+                  {/* ایکون پنل ادمین — در همه سایزها نمایش داده می‌شود */}
                   {loginType === "admin" && (
                     <motion.div whileTap={{ scale: 0.95 }}>
                       <Link
@@ -497,10 +498,11 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                 </>
               )}
 
+              {/* ایکون پروفایل — در موبایل مخفی است */}
               <Link
                 to="/profile"
                 onClick={handleProfileClick}
-                className="header-action-btn inline-flex items-center gap-2 px-3"
+                className="header-action-btn hidden sm:inline-flex items-center gap-2 px-3"
                 aria-label="پروفایل کاربر"
               >
                 <UserCircle2 className="h-5 w-5" />
