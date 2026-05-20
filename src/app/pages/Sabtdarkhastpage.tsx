@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
@@ -69,7 +69,8 @@ const OFFICES = [
   "مخابرات",
 ];
 
-// Persian Calendar Helpers
+// ─── Persian Calendar Helpers ─────────────────────────────────────────────────
+
 const PERSIAN_MONTHS = [
   "فروردین",
   "اردیبهشت",
@@ -126,7 +127,11 @@ function getDaysInJalaliMonth(year: number, month: number) {
   return year % 4 === 0 ? 30 : 29;
 }
 
-// Persian Calendar Picker — renders INLINE (not absolutely positioned over siblings)
+// ─── Persian Calendar Picker ──────────────────────────────────────────────────
+// Three views: "day" → click month name → "month" → click year → "year"
+
+type CalendarView = "day" | "month" | "year";
+
 function PersianDatePicker({
   value,
   onChange,
@@ -137,6 +142,7 @@ function PersianDatePicker({
   onClose: () => void;
 }) {
   const today = getCurrentJalali();
+
   const parseDate = (v: string) => {
     const parts = v.split("/").map(Number);
     if (parts.length === 3 && parts[0] > 1300)
@@ -144,14 +150,23 @@ function PersianDatePicker({
     return today;
   };
 
+  const [calView, setCalView] = useState<CalendarView>("day");
   const [view, setView] = useState<{ year: number; month: number }>(() => {
     const d = parseDate(value);
     return { year: d.year, month: d.month };
   });
   const [selected, setSelected] = useState(() => parseDate(value));
 
+  // Year picker: show a window of 12 years, centered near current view year
+  const [yearPageStart, setYearPageStart] = useState(() => {
+    const d = parseDate(value);
+    return Math.floor((d.year - 1) / 12) * 12 + 1;
+  });
+
+  // ── Day view helpers ──
   const days = getDaysInJalaliMonth(view.year, view.month);
   const firstDayOffset = (view.year * 365 + view.month * 30) % 7;
+  const weekDays = ["ش", "ی", "د", "س", "چ", "پ", "ج"];
 
   const prevMonth = () => {
     if (view.month === 1) setView({ year: view.year - 1, month: 12 });
@@ -171,7 +186,86 @@ function PersianDatePicker({
     onClose();
   };
 
-  const weekDays = ["ش", "ی", "د", "س", "چ", "پ", "ج"];
+  // ── Month view helpers ──
+  const selectMonth = (m: number) => {
+    setView({ year: view.year, month: m });
+    setCalView("day");
+  };
+
+  // ── Year view helpers ──
+  const YEAR_PAGE_SIZE = 12;
+  const yearRange = Array.from(
+    { length: YEAR_PAGE_SIZE },
+    (_, i) => yearPageStart + i,
+  );
+
+  const selectYear = (y: number) => {
+    setView({ year: y, month: view.month });
+    setYearPageStart(Math.floor((y - 1) / YEAR_PAGE_SIZE) * YEAR_PAGE_SIZE + 1);
+    setCalView("month");
+  };
+
+  const prevYearPage = () => setYearPageStart((s) => s - YEAR_PAGE_SIZE);
+  const nextYearPage = () => setYearPageStart((s) => s + YEAR_PAGE_SIZE);
+
+  // ── Header label ──
+  const headerLabel = () => {
+    if (calView === "day")
+      return (
+        <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+          <button
+            onClick={() => setCalView("month")}
+            className="hover:text-primary transition-colors underline-offset-2 hover:underline"
+          >
+            {PERSIAN_MONTHS[view.month - 1]}
+          </button>
+          <button
+            onClick={() => {
+              setYearPageStart(
+                Math.floor((view.year - 1) / YEAR_PAGE_SIZE) * YEAR_PAGE_SIZE +
+                  1,
+              );
+              setCalView("year");
+            }}
+            className="hover:text-primary transition-colors underline-offset-2 hover:underline"
+          >
+            {toPersianDigits(view.year)}
+          </button>
+        </span>
+      );
+    if (calView === "month")
+      return (
+        <button
+          onClick={() => {
+            setYearPageStart(
+              Math.floor((view.year - 1) / YEAR_PAGE_SIZE) * YEAR_PAGE_SIZE + 1,
+            );
+            setCalView("year");
+          }}
+          className="text-sm font-bold text-foreground hover:text-primary transition-colors underline-offset-2 hover:underline"
+        >
+          {toPersianDigits(view.year)}
+        </button>
+      );
+    // year view
+    return (
+      <span className="text-sm font-bold text-foreground">
+        {toPersianDigits(yearPageStart)} —{" "}
+        {toPersianDigits(yearPageStart + YEAR_PAGE_SIZE - 1)}
+      </span>
+    );
+  };
+
+  const handlePrev = () => {
+    if (calView === "day") prevMonth();
+    else if (calView === "month") setView((v) => ({ ...v, year: v.year - 1 }));
+    else prevYearPage();
+  };
+  const handleNext = () => {
+    if (calView === "day") nextMonth();
+    else if (calView === "month") setView((v) => ({ ...v, year: v.year + 1 }));
+    else nextYearPage();
+  };
 
   return (
     <motion.div
@@ -182,67 +276,163 @@ function PersianDatePicker({
       className="w-full mt-1 rounded-2xl border border-border bg-card shadow-xl shadow-black/10 overflow-hidden z-40"
       dir="rtl"
     >
+      {/* ── Header ── */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-primary/5">
         <button
-          onClick={prevMonth}
+          onClick={handlePrev}
           className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-colors"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
-        <span className="text-sm font-bold text-foreground">
-          {toPersianDigits(view.year)} {PERSIAN_MONTHS[view.month - 1]}
-        </span>
+        {headerLabel()}
         <button
-          onClick={nextMonth}
+          onClick={handleNext}
           className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
       </div>
-      <div className="p-3">
-        <div className="grid grid-cols-7 mb-1">
-          {weekDays.map((d) => (
-            <div
-              key={d}
-              className="text-center text-[10px] font-bold text-muted-foreground py-1"
-            >
-              {d}
+
+      {/* ── Body ── */}
+      <AnimatePresence mode="wait">
+        {calView === "day" && (
+          <motion.div
+            key="day"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.15 }}
+            className="p-3"
+          >
+            {/* Week day headers */}
+            <div className="grid grid-cols-7 mb-1">
+              {weekDays.map((d) => (
+                <div
+                  key={d}
+                  className="text-center text-[10px] font-bold text-muted-foreground py-1"
+                >
+                  {d}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-0.5">
-          {Array.from({ length: firstDayOffset % 7 }).map((_, i) => (
-            <div key={`e-${i}`} />
-          ))}
-          {Array.from({ length: days }).map((_, i) => {
-            const d = i + 1;
-            const isSelected =
-              selected.year === view.year &&
-              selected.month === view.month &&
-              selected.day === d;
-            const isToday =
-              today.year === view.year &&
-              today.month === view.month &&
-              today.day === d;
-            return (
-              <button
-                key={d}
-                onClick={() => selectDay(d)}
-                className={`h-8 w-full rounded-lg text-xs font-medium transition-all ${
-                  isSelected
-                    ? "bg-primary text-primary-foreground font-bold shadow-sm"
-                    : isToday
-                      ? "border border-primary/40 text-primary"
-                      : "hover:bg-muted text-foreground"
-                }`}
-              >
-                {toPersianDigits(d)}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="px-3 pb-3 flex justify-end">
+            {/* Day cells */}
+            <div className="grid grid-cols-7 gap-0.5">
+              {Array.from({ length: firstDayOffset % 7 }).map((_, i) => (
+                <div key={`e-${i}`} />
+              ))}
+              {Array.from({ length: days }).map((_, i) => {
+                const d = i + 1;
+                const isSelected =
+                  selected.year === view.year &&
+                  selected.month === view.month &&
+                  selected.day === d;
+                const isToday =
+                  today.year === view.year &&
+                  today.month === view.month &&
+                  today.day === d;
+                return (
+                  <button
+                    key={d}
+                    onClick={() => selectDay(d)}
+                    className={`h-8 w-full rounded-lg text-xs font-medium transition-all ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                        : isToday
+                          ? "border border-primary/40 text-primary"
+                          : "hover:bg-muted text-foreground"
+                    }`}
+                  >
+                    {toPersianDigits(d)}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {calView === "month" && (
+          <motion.div
+            key="month"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.15 }}
+            className="p-3"
+          >
+            <div className="grid grid-cols-3 gap-2">
+              {PERSIAN_MONTHS.map((name, i) => {
+                const m = i + 1;
+                const isSelected =
+                  selected.year === view.year && selected.month === m;
+                const isCurrentMonth =
+                  today.year === view.year && today.month === m;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => selectMonth(m)}
+                    className={`rounded-xl py-2.5 text-xs font-semibold transition-all ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : isCurrentMonth
+                          ? "border border-primary/40 text-primary"
+                          : "hover:bg-muted text-foreground"
+                    }`}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {calView === "year" && (
+          <motion.div
+            key="year"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.15 }}
+            className="p-3"
+          >
+            <div className="grid grid-cols-3 gap-2">
+              {yearRange.map((y) => {
+                const isSelected = selected.year === y;
+                const isCurrentYear = today.year === y;
+                return (
+                  <button
+                    key={y}
+                    onClick={() => selectYear(y)}
+                    className={`rounded-xl py-2.5 text-xs font-semibold transition-all ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : isCurrentYear
+                          ? "border border-primary/40 text-primary"
+                          : "hover:bg-muted text-foreground"
+                    }`}
+                  >
+                    {toPersianDigits(y)}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Footer ── */}
+      <div className="px-3 pb-3 flex items-center justify-between border-t border-border/40 pt-2">
+        {/* Back button when not in day view */}
+        {calView !== "day" ? (
+          <button
+            onClick={() => setCalView(calView === "year" ? "month" : "day")}
+            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 px-2 py-1 rounded-lg hover:bg-primary/8 transition-colors"
+          >
+            <ChevronRight className="h-3 w-3" /> بازگشت
+          </button>
+        ) : (
+          <div />
+        )}
         <button
           onClick={onClose}
           className="text-xs text-muted-foreground hover:text-foreground px-3 py-1 rounded-lg hover:bg-muted transition-colors"
@@ -254,7 +444,8 @@ function PersianDatePicker({
   );
 }
 
-// Selection Modal Component
+// ─── Selection Modal ───────────────────────────────────────────────────────────
+
 function SelectionModal({
   title,
   items,
@@ -319,7 +510,8 @@ function SelectionModal({
   );
 }
 
-// Validation error display
+// ─── Validation error display ─────────────────────────────────────────────────
+
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
   return (
@@ -333,7 +525,8 @@ function FieldError({ msg }: { msg?: string }) {
   );
 }
 
-// Document Upload Step
+// ─── Document Upload Step ─────────────────────────────────────────────────────
+
 function UploadStep({
   onBack,
   onSubmit,
@@ -531,7 +724,8 @@ function UploadStep({
   );
 }
 
-// Success Screen
+// ─── Success Screen ───────────────────────────────────────────────────────────
+
 function SuccessScreen({ onReset }: { onReset: () => void }) {
   return (
     <motion.div
@@ -568,6 +762,8 @@ function SuccessScreen({ onReset }: { onReset: () => void }) {
   );
 }
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 interface SabtDarkhastPageProps {
   isDark: boolean;
   toggleTheme: () => void;
@@ -598,8 +794,9 @@ export function SabtDarkhastPage({
   const [step, setStep] = useState<"form" | "upload" | "success">("form");
 
   const [searchValues, setSearchValues] = useState(selectedProperty.codes);
-  const [activeProperty, setActiveProperty] =
-    useState<MockProperty | null>(selectedProperty);
+  const [activeProperty, setActiveProperty] = useState<MockProperty | null>(
+    selectedProperty,
+  );
   const [vakadari, setVakadari] = useState("");
 
   // Editable form state
@@ -658,7 +855,6 @@ export function SabtDarkhastPage({
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       setShowErrors(true);
-      // Scroll to first error
       const firstErrEl = document.querySelector("[data-has-error='true']");
       firstErrEl?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
@@ -1147,18 +1343,14 @@ export function SabtDarkhastPage({
                       desc="کد نوسازی را وارد کنید یا از لیست زیر مجموعه انتخاب کنید."
                     />
                   </div>
-                  {/* Mobile: stacked, Desktop: grid */}
                   <div className="p-3 sm:p-4">
-                    {/* Search button full width on mobile */}
                     <button
                       onClick={handleSearch}
                       className="flex w-full sm:hidden h-10 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20 mb-3"
                     >
                       <Search className="ml-1.5 h-4 w-4" /> جستجو
                     </button>
-                    {/* Code inputs: 2 col on mobile, 4 col on sm, all 8 on md */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
-                      {/* Hidden search button for md+ — placed first in DOM for grid */}
                       <button
                         onClick={handleSearch}
                         className="hidden md:flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20"
@@ -1195,7 +1387,6 @@ export function SabtDarkhastPage({
                         </div>
                       ))}
                     </div>
-                    {/* sm-only search button (between mobile and md) */}
                     <button
                       onClick={handleSearch}
                       className="hidden sm:flex md:hidden mt-2 h-10 w-full items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20"
@@ -1432,12 +1623,6 @@ export function SabtDarkhastPage({
                     {/* Complementary Info */}
                     <div>
                       <SectionHeader icon={Building2} title="اطلاعات تکمیلی" />
-                      {/*
-                        IMPORTANT: Date fields with inline calendars need to be in a
-                        1-column-per-date layout so the calendar expands inline
-                        without overlapping siblings. We use a mixed layout:
-                        text fields in a subgrid, date fields each in their own row.
-                      */}
                       <div className="space-y-5">
                         {/* Row 1: letter no + letter date */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-5">
@@ -1534,16 +1719,18 @@ export function SabtDarkhastPage({
                   <div className="p-3 sm:p-4">
                     {activeProperty?.registration.prevRequests.length ? (
                       <div className="space-y-2">
-                        {activeProperty.registration.prevRequests.map((req, i) => (
-                          <div
-                            key={i}
-                            className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/40 text-xs"
-                          >
-                            <span>شماره: {req.id}</span>
-                            <span>تاریخ: {req.date}</span>
-                            <span className="text-primary">{req.status}</span>
-                          </div>
-                        ))}
+                        {activeProperty.registration.prevRequests.map(
+                          (req, i) => (
+                            <div
+                              key={i}
+                              className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/40 text-xs"
+                            >
+                              <span>شماره: {req.id}</span>
+                              <span>تاریخ: {req.date}</span>
+                              <span className="text-primary">{req.status}</span>
+                            </div>
+                          ),
+                        )}
                       </div>
                     ) : (
                       <div className="rounded-xl border border-rose-200/40 bg-rose-50/30 dark:bg-rose-950/20 dark:border-rose-800/30 p-4 text-center text-xs text-rose-500 dark:text-rose-400">
