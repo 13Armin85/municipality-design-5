@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
@@ -19,96 +19,8 @@ import {
   Activity,
 } from "lucide-react";
 import { Link } from "react-router";
-
-// ۱. ساختار کامل داده‌های فرضی (Mock Data)
-const mockData = [
-  {
-    id: "۷-۱۰۴-۲۷-۴۴-۰-۰-۰",
-    type: "ملک",
-    owner: "بهرام حضرتی",
-    fields: ["7", "104", "27", "44", "0", "0", "0"],
-    retraction: {
-      originalArea: "۲۰۴۹",
-      reformedArea: "۱۲۵",
-      remainingArea: "۱۹۲۴",
-      description:
-        "اصلاحی شمالی: ۱.۲ متر | اصلاحی غربی: ۰.۸ متر | کد طرح: TR-1044",
-    },
-    dimensions: [
-      {
-        dir: "شمال",
-        type: "کوچه",
-        name: "اخلاص",
-        sideExist: "۱۰.۲۰",
-        edgeExist: "۱۰.۲۰",
-      },
-      {
-        dir: "شرق",
-        type: "خیابان",
-        name: "شهید سلیمانی",
-        sideExist: "۲۱.۴۰",
-        edgeExist: "۲۱.۴۰",
-      },
-      {
-        dir: "جنوب",
-        type: "کوچه",
-        name: "گلستان",
-        sideExist: "۱۰.۱۰",
-        edgeExist: "۱۰.۱۰",
-      },
-      {
-        dir: "غرب",
-        type: "پلاک مجاور",
-        name: "پلاک ۴۲",
-        sideExist: "۲۱.۳۵",
-        edgeExist: "۲۱.۳۵",
-      },
-    ],
-  },
-  {
-    id: "۷-۱۰۴-۲۷-۴۴-۱-۲-۰",
-    type: "آپارتمان",
-    owner: "مهسا حضرتی",
-    fields: ["7", "104", "27", "44", "1", "2", "0"],
-    retraction: {
-      originalArea: "۱۳۸۰",
-      reformedArea: "۹۰",
-      remainingArea: "۱۲۹۰",
-      description:
-        "اصلاحی جنوبی: ۰.۹ متر | اصلاحی شرقی: ۰.۵ متر | کد طرح: TR-2210",
-    },
-    dimensions: [
-      {
-        dir: "شمال",
-        type: "خیابان",
-        name: "آزادی",
-        sideExist: "۱۵.۰۰",
-        edgeExist: "۱۴.۵۰",
-      },
-      {
-        dir: "شرق",
-        type: "پلاک مجاور",
-        name: "پلاک ۵",
-        sideExist: "۲۰.۰۰",
-        edgeExist: "۲۰.۰۰",
-      },
-      {
-        dir: "جنوب",
-        type: "کوچه",
-        name: "یاس",
-        sideExist: "۱۵.۱۰",
-        edgeExist: "۱۴.۸۰",
-      },
-      {
-        dir: "غرب",
-        type: "پلاک مجاور",
-        name: "پلاک ۷",
-        sideExist: "۲۰.۰۵",
-        edgeExist: "۲۰.۰۵",
-      },
-    ],
-  },
-];
+import { getRenewalCodeValues, propertyItems, type MockProperty } from "../data/properties";
+import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 interface PropertyInquiryPageProps {
   isDark: boolean;
@@ -119,12 +31,16 @@ export function PropertyInquiryPage({
   isDark,
   toggleTheme,
 }: PropertyInquiryPageProps) {
+  const { selectedProperty, selectProperty } = useSelectedProperty();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // ۲. مدیریت استیت‌ها برای هماهنگی داده‌ها
-  const [searchValues, setSearchValues] = useState(mockData[0].fields);
-  const [selectedCase, setSelectedCase] = useState(mockData[0]); // موردی که کلیک شده
-  const [activeCase, setActiveCase] = useState(mockData[0]); // موردی که جستجو شده (دیتا از این خوانده می‌شود)
+  const [searchValues, setSearchValues] = useState(
+    getRenewalCodeValues(selectedProperty.codes),
+  );
+  const [selectedCase, setSelectedCase] =
+    useState<MockProperty>(selectedProperty);
+  const [activeCase, setActiveCase] = useState<MockProperty>(selectedProperty);
 
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -136,9 +52,16 @@ export function PropertyInquiryPage({
     setIsModalOpen(true);
   };
 
+  useEffect(() => {
+    setSearchValues(getRenewalCodeValues(selectedProperty.codes));
+    setSelectedCase(selectedProperty);
+    setActiveCase(selectedProperty);
+  }, [selectedProperty]);
+
   // ۳. با زدن دکمه جستجو، مورد انتخاب شده به عنوان مورد "فعال" در کل صفحه ست می‌شود
   const handleSearch = () => {
     setActiveCase(selectedCase);
+    selectProperty(selectedCase.id);
   };
 
   const HelpButton = ({ title, desc }: { title: string; desc: string }) => (
@@ -303,12 +226,14 @@ export function PropertyInquiryPage({
               />
             </div>
             <div className="p-4">
-              {mockData.map((caseItem) => (
+              {propertyItems.map((caseItem) => (
                 <button
                   key={caseItem.id}
                   onClick={() => {
                     setSelectedCase(caseItem);
-                    setSearchValues(caseItem.fields);
+                    setSearchValues(getRenewalCodeValues(caseItem.codes));
+                    setActiveCase(caseItem);
+                    selectProperty(caseItem.id);
                   }}
                   className={`mb-2 flex w-full items-center justify-between rounded-xl border p-3 group cursor-pointer transition-all ${
                     selectedCase.id === caseItem.id
@@ -319,7 +244,7 @@ export function PropertyInquiryPage({
                   <div className="flex items-center gap-3">
                     <div className="h-3 w-3 animate-pulse rounded-full bg-orange-400" />
                     <span className="text-xs font-medium md:text-sm">
-                      {caseItem.id} ({caseItem.type}) - {caseItem.owner}
+                      {caseItem.fullCode} ({caseItem.type}) - {caseItem.ownerName}
                     </span>
                   </div>
                   <ChevronLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />
@@ -350,15 +275,15 @@ export function PropertyInquiryPage({
                 {[
                   {
                     label: "مساحت طبق سند",
-                    value: activeCase.retraction.originalArea,
+                    value: activeCase.inquiry.retraction.originalArea,
                   },
                   {
                     label: "مساحت اصلاحی",
-                    value: activeCase.retraction.reformedArea,
+                    value: activeCase.inquiry.retraction.reformedArea,
                   },
                   {
                     label: "مساحت باقیمانده پس از اصلاح",
-                    value: activeCase.retraction.remainingArea,
+                    value: activeCase.inquiry.retraction.remainingArea,
                   },
                 ].map((item, i) => (
                   <div
@@ -390,7 +315,7 @@ export function PropertyInquiryPage({
               </div>
               <div className="p-4">
                 <div className="rounded-xl border border-border/50 bg-card/60 p-4 text-xs text-foreground/80">
-                  {activeCase.retraction.description}
+                  {activeCase.inquiry.retraction.description}
                 </div>
               </div>
             </motion.article>
@@ -433,7 +358,7 @@ export function PropertyInquiryPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {activeCase.dimensions.map((d, i) => (
+                  {activeCase.inquiry.dimensions.map((d, i) => (
                     <tr key={i} className="transition-colors hover:bg-muted/30">
                       <td className="border border-border/50 p-2 text-center font-bold">
                         {d.dir}

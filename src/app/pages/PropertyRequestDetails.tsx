@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -17,87 +17,47 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Link } from "react-router";
+import { getRenewalCodeValues, propertyItems, type MockProperty } from "../data/properties";
+import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 interface Props {
   isDark: boolean;
   toggleTheme: () => void;
 }
 
-type PropertyFileData = {
-  id: string;
-  owner: string;
-  kind: string;
-  fields: string[];
-  requests: { code: string; title: string; status: string; date: string }[];
-  details: { label: string; value: string }[];
-};
-
-const mockFiles: PropertyFileData[] = [
-  {
-    id: "۱-۵۸-۰-۵۹-۵-۷۰۱-۱",
-    owner: "الهام اسدی",
-    kind: "صنفی",
-    fields: ["1", "58", "0", "59", "5", "701", "1"],
-    requests: [
-      {
-        code: "RQ-1405-112",
-        title: "درخواست مفاصاحساب",
-        status: "در حال بررسی",
-        date: "1405/02/21",
-      },
-    ],
-    details: [
-      { label: "آخرین مرحله", value: "ارجاع به کارشناس" },
-      { label: "نوع درخواست", value: "مفاصاحساب صنفی" },
-      { label: "شناسه پیگیری", value: "TRK-889134" },
-      { label: "مهلت پاسخ", value: "۳ روز کاری" },
-    ],
-  },
-  {
-    id: "۳-۲۱-۹-۴۴-۲-۱۲-۰",
-    owner: "محمد رضایی",
-    kind: "آپارتمان",
-    fields: ["3", "21", "9", "44", "2", "12", "0"],
-    requests: [
-      {
-        code: "RQ-1405-027",
-        title: "اصلاح اطلاعات ملک",
-        status: "تکمیل مدارک",
-        date: "1405/01/11",
-      },
-    ],
-    details: [
-      { label: "آخرین مرحله", value: "نیازمند بارگذاری سند" },
-      { label: "نوع درخواست", value: "اصلاح مشخصات" },
-      { label: "شناسه پیگیری", value: "TRK-514220" },
-      { label: "مهلت پاسخ", value: "۲ روز کاری" },
-    ],
-  },
-];
-
 export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
+  const { selectedProperty, selectProperty } = useSelectedProperty();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // فایلی که در لیست انتخاب شده اما هنوز جستجو نشده است
-  const [selectedFile, setSelectedFile] = useState<PropertyFileData>(
-    mockFiles[0],
-  );
+  const [selectedFile, setSelectedFile] =
+    useState<MockProperty>(selectedProperty);
 
   // مقادیری که در اینپوت‌های جستجو نمایش داده می‌شوند
   const [searchValues, setSearchValues] = useState<string[]>(
-    mockFiles[0].fields,
+    getRenewalCodeValues(selectedProperty.codes),
   );
 
   // فایلی که اطلاعاتش در کل صفحه (جدول و جزئیات) نمایش داده می‌شود
-  const [activeFile, setActiveFile] = useState<PropertyFileData>(mockFiles[0]);
+  const [activeFile, setActiveFile] = useState<MockProperty>(selectedProperty);
+
+  useEffect(() => {
+    setSelectedFile(selectedProperty);
+    setSearchValues(getRenewalCodeValues(selectedProperty.codes));
+    setActiveFile(selectedProperty);
+  }, [selectedProperty]);
 
   // وقتی کاربر روی دکمه جستجو کلیک می‌کند
   const handleSearch = () => {
     setActiveFile(selectedFile);
+    selectProperty(selectedFile.id);
   };
 
   // آپدیت لیست درخواست‌ها بر اساس فایل فعال
-  const filledRequestRows = useMemo(() => activeFile.requests, [activeFile]);
+  const filledRequestRows = useMemo(
+    () => activeFile.requestTracking.requests,
+    [activeFile],
+  );
 
   const HelpButton = () => (
     <button
@@ -216,12 +176,14 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               <HelpButton />
             </div>
             <div className="p-4 space-y-2">
-              {mockFiles.map((file) => (
+              {propertyItems.map((file) => (
                 <button
                   key={file.id}
                   onClick={() => {
                     setSelectedFile(file);
-                    setSearchValues(file.fields);
+                    setSearchValues(getRenewalCodeValues(file.codes));
+                    setActiveFile(file);
+                    selectProperty(file.id);
                   }}
                   className={`flex w-full items-center justify-between rounded-xl border p-3 transition-all ${
                     selectedFile.id === file.id
@@ -230,7 +192,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                   }`}
                 >
                   <span className="text-xs md:text-sm">
-                    {file.id} ({file.kind}) - {file.owner}
+                    {file.fullCode} ({file.type}) - {file.ownerName}
                   </span>
                   <ChevronLeft className="h-4 w-4 text-muted-foreground" />
                 </button>
@@ -288,7 +250,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                 </div>
               </div>
               <div className="p-4 space-y-3">
-                {activeFile.details.map((d) => (
+                {activeFile.requestTracking.details.map((d) => (
                   <div
                     key={d.label}
                     className="flex items-center justify-between border-b border-border/40 pb-2 text-sm"

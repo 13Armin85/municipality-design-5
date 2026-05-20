@@ -26,77 +26,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router";
-
-// --- Mock Data ---
-const MOCK_PROPERTIES = [
-  {
-    id: 1,
-    codes: {
-      region: "1",
-      neighborhood: "701",
-      block: "5",
-      property: "56",
-      building: "0",
-      apartment: "0",
-      guild: "0",
-    },
-    owner: {
-      name: "بهرام حضرتی",
-      nationalId: "1234567890",
-      phone: "09121234567",
-      postalCode: "1112223334",
-      address: "تهران، خیابان ولیعصر، پلاک ۵۶",
-    },
-    request: { id: "REQ-101", type: "نوسازی", applicantType: "حقیقی" },
-    complementary: {
-      letterNo: "۱/الف/۱۲۳",
-      letterDate: "1402/05/10",
-      secretNo: "۹۸۷۶",
-      secretDate: "1402/05/12",
-      office: "شهرداری منطقه ۱",
-      desc: "درخواست اولویت‌دار",
-    },
-    buyer: {
-      name: "فاطمه محرم پور",
-      nationalId: "0987654321",
-      phone: "09350001122",
-      share: "۳ دانگ",
-    },
-    prevRequests: [],
-    map: { area: "238.65" },
-  },
-  {
-    id: 2,
-    codes: {
-      region: "2",
-      neighborhood: "805",
-      block: "12",
-      property: "14",
-      building: "1",
-      apartment: "4",
-      guild: "0",
-    },
-    owner: {
-      name: "رضا اکبری",
-      nationalId: "5556667778",
-      phone: "09198887766",
-      postalCode: "4445556667",
-      address: "تهران، سعادت آباد، بن بست دوم",
-    },
-    request: { id: "REQ-202", type: "پایان کار", applicantType: "حقوقی" },
-    complementary: {
-      letterNo: "۲/ب/۴۵۶",
-      letterDate: "1403/01/15",
-      secretNo: "۵۵۴۴",
-      secretDate: "1403/01/16",
-      office: "سازمان نوسازی",
-      desc: "",
-    },
-    buyer: { name: "-", nationalId: "-", phone: "-", share: "-" },
-    prevRequests: [{ id: "۹۹۸۸", date: "1401/12/20", status: "بایگانی شده" }],
-    map: { area: "150.20" },
-  },
-];
+import {
+  areRenewalCodesEqual,
+  findPropertyByCodes,
+  propertyItems,
+  type MockProperty,
+} from "../data/properties";
+import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 const REQUEST_TYPES = [
   "نوسازی",
@@ -641,6 +577,7 @@ export function SabtDarkhastPage({
   isDark,
   toggleTheme,
 }: SabtDarkhastPageProps) {
+  const { selectedProperty, selectProperty } = useSelectedProperty();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -660,36 +597,35 @@ export function SabtDarkhastPage({
   // Step
   const [step, setStep] = useState<"form" | "upload" | "success">("form");
 
-  const [searchValues, setSearchValues] = useState(MOCK_PROPERTIES[0].codes);
-  const [activeProperty, setActiveProperty] = useState<
-    (typeof MOCK_PROPERTIES)[0] | null
-  >(null);
+  const [searchValues, setSearchValues] = useState(selectedProperty.codes);
+  const [activeProperty, setActiveProperty] =
+    useState<MockProperty | null>(selectedProperty);
   const [vakadari, setVakadari] = useState("");
 
   // Editable form state
   const [ownerForm, setOwnerForm] = useState({
-    nationalId: "",
-    name: "",
-    phone: "",
-    postalCode: "",
-    address: "",
+    nationalId: selectedProperty.owner.nationalId,
+    name: selectedProperty.owner.name,
+    phone: selectedProperty.owner.phone,
+    postalCode: selectedProperty.owner.postalCode,
+    address: selectedProperty.owner.address,
   });
   const [requestForm, setRequestForm] = useState({
-    id: "",
-    type: "",
-    applicantType: "",
+    id: selectedProperty.registration.request.id,
+    type: selectedProperty.registration.request.type,
+    applicantType: selectedProperty.registration.request.applicantType,
   });
   const [applicantForm, setApplicantForm] = useState({
-    nationalId: "",
-    name: "",
-    phone: "",
+    nationalId: selectedProperty.owner.nationalId,
+    name: selectedProperty.owner.name,
+    phone: selectedProperty.owner.phone,
   });
   const [complementaryForm, setComplementaryForm] = useState({
-    letterNo: "",
-    letterDate: "",
-    secretNo: "",
-    secretDate: "",
-    office: "",
+    letterNo: selectedProperty.registration.complementary.letterNo,
+    letterDate: selectedProperty.registration.complementary.letterDate,
+    secretNo: selectedProperty.registration.complementary.secretNo,
+    secretDate: selectedProperty.registration.complementary.secretDate,
+    office: selectedProperty.registration.complementary.office,
   });
 
   // Validation errors
@@ -737,42 +673,52 @@ export function SabtDarkhastPage({
     setIsModalOpen(true);
   };
 
-  const handleSelectProperty = (prop: (typeof MOCK_PROPERTIES)[0]) => {
+  const applyPropertyToPage = (property: MockProperty) => {
+    setActiveProperty(property);
+    setOwnerForm({
+      nationalId: property.owner.nationalId,
+      name: property.owner.name,
+      phone: property.owner.phone,
+      postalCode: property.owner.postalCode,
+      address: property.owner.address,
+    });
+    setRequestForm({
+      id: property.registration.request.id,
+      type: property.registration.request.type,
+      applicantType: property.registration.request.applicantType,
+    });
+    setApplicantForm({
+      nationalId: property.owner.nationalId,
+      name: property.owner.name,
+      phone: property.owner.phone,
+    });
+    setComplementaryForm({
+      letterNo: property.registration.complementary.letterNo,
+      letterDate: property.registration.complementary.letterDate,
+      secretNo: property.registration.complementary.secretNo,
+      secretDate: property.registration.complementary.secretDate,
+      office: property.registration.complementary.office,
+    });
+    setErrors({});
+    setShowErrors(false);
+  };
+
+  useEffect(() => {
+    setSearchValues(selectedProperty.codes);
+    applyPropertyToPage(selectedProperty);
+  }, [selectedProperty]);
+
+  const handleSelectProperty = (prop: MockProperty) => {
     setSearchValues(prop.codes);
+    applyPropertyToPage(prop);
+    selectProperty(prop.id);
   };
 
   const handleSearch = () => {
-    const found = MOCK_PROPERTIES.find(
-      (p) => JSON.stringify(p.codes) === JSON.stringify(searchValues),
-    );
+    const found = findPropertyByCodes(searchValues);
     if (found) {
-      setActiveProperty(found);
-      setOwnerForm({
-        nationalId: found.owner.nationalId,
-        name: found.owner.name,
-        phone: found.owner.phone,
-        postalCode: found.owner.postalCode,
-        address: found.owner.address,
-      });
-      setRequestForm({
-        id: found.request.id,
-        type: found.request.type,
-        applicantType: found.request.applicantType,
-      });
-      setApplicantForm({
-        nationalId: found.owner.nationalId,
-        name: found.owner.name,
-        phone: found.owner.phone,
-      });
-      setComplementaryForm({
-        letterNo: found.complementary.letterNo,
-        letterDate: found.complementary.letterDate,
-        secretNo: found.complementary.secretNo,
-        secretDate: found.complementary.secretDate,
-        office: found.complementary.office,
-      });
-      setErrors({});
-      setShowErrors(false);
+      applyPropertyToPage(found);
+      selectProperty(found.id);
     } else {
       alert("ملکی با این مشخصات یافت نشد.");
       setActiveProperty(null);
@@ -1029,7 +975,7 @@ export function SabtDarkhastPage({
             <SuccessScreen
               onReset={() => {
                 setStep("form");
-                setActiveProperty(null);
+                applyPropertyToPage(selectedProperty);
               }}
             />
           </div>
@@ -1279,15 +1225,15 @@ export function SabtDarkhastPage({
                     />
                   </div>
                   <div className="p-3 sm:p-4 space-y-2">
-                    {MOCK_PROPERTIES.map((prop) => (
+                    {propertyItems.map((prop) => (
                       <div
                         key={prop.id}
                         onClick={() => handleSelectProperty(prop)}
-                        className={`flex items-center justify-between rounded-xl border p-2.5 sm:p-3 group cursor-pointer transition-all ${JSON.stringify(searchValues) === JSON.stringify(prop.codes) ? "border-primary bg-primary/5" : "border-border/70 bg-card/50 hover:border-primary/40"}`}
+                        className={`flex items-center justify-between rounded-xl border p-2.5 sm:p-3 group cursor-pointer transition-all ${areRenewalCodesEqual(searchValues, prop.codes) ? "border-primary bg-primary/5" : "border-border/70 bg-card/50 hover:border-primary/40"}`}
                       >
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                           <div
-                            className={`h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0 ${JSON.stringify(searchValues) === JSON.stringify(prop.codes) ? "bg-primary animate-pulse" : "bg-orange-400"}`}
+                            className={`h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0 ${areRenewalCodesEqual(searchValues, prop.codes) ? "bg-primary animate-pulse" : "bg-orange-400"}`}
                           />
                           <span className="text-[11px] sm:text-xs font-medium md:text-sm truncate">
                             {Object.values(prop.codes).join("-")} (ملک) —{" "}
@@ -1586,9 +1532,9 @@ export function SabtDarkhastPage({
                     </div>
                   </div>
                   <div className="p-3 sm:p-4">
-                    {activeProperty?.prevRequests.length ? (
+                    {activeProperty?.registration.prevRequests.length ? (
                       <div className="space-y-2">
-                        {activeProperty.prevRequests.map((req, i) => (
+                        {activeProperty.registration.prevRequests.map((req, i) => (
                           <div
                             key={i}
                             className="flex flex-wrap justify-between gap-2 p-3 rounded-lg bg-muted/40 text-xs"
@@ -1648,7 +1594,7 @@ export function SabtDarkhastPage({
                             مساحت
                           </span>
                           <span className="text-muted-foreground">
-                            {activeProperty.map.area}
+                            {activeProperty.registration.map.area}
                           </span>
                         </div>
                       </div>

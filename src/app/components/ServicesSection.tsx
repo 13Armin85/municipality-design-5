@@ -1,59 +1,7 @@
 ﻿import { motion } from "framer-motion"; // یا 'motion/react' بسته به نسخه نصب شده شما
-import { Link } from "react-router"; // یا 'react-router'
-import {
-  LayoutDashboard,
-  FilePlus2,
-  SearchCode,
-  Landmark,
-  Store,
-  MapPinOff,
-  ArrowUpLeft,
-} from "lucide-react";
-
-const services = [
-  {
-    icon: LayoutDashboard,
-    title: "املاک من",
-    description: "مشاهده و مدیریت املاک ثبت‌شده",
-    color: "from-primary to-secondary",
-    href: "/my-property",
-  },
-  {
-    icon: FilePlus2,
-    title: "ثبت درخواست",
-    description: "ارسال درخواست‌های شهری و پیگیری آن‌ها",
-    color: "from-secondary to-primary",
-    href: "/sabt-darkhast",
-  },
-  {
-    icon: SearchCode,
-    title: "پیگیری درخواست‌ها",
-    description: "بررسی وضعیت پرونده‌های در حال رسیدگی",
-    color: "from-primary/95 to-secondary/85",
-    href: "/property-request",
-  },
-  {
-    icon: Landmark,
-    title: "عوارض نوسازی",
-    description: "پرداخت، مشاهده و چاپ قبض عوارض",
-    color: "from-secondary/95 to-primary/85",
-    href: "/modern-toll",
-  },
-  {
-    icon: Store,
-    title: "عوارض صنفی",
-    description: "مدیریت عوارض واحدهای صنفی",
-    color: "from-primary to-secondary/90",
-    href: "/guild-fees",
-  },
-  {
-    icon: MapPinOff,
-    title: "وضعیت عقب‌نشینی ملک",
-    description: "بررسی وضعیت عقب نشینی املاک",
-    color: "from-secondary to-primary/90",
-    href: "/property-inquiry",
-  },
-];
+import { Link } from "react-router";
+import { ArrowUpLeft } from "lucide-react";
+import { serviceItems } from "../data/services";
 
 export function ServicesSection() {
   return (
@@ -78,7 +26,7 @@ export function ServicesSection() {
         </motion.div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
-          {services.map((service, index) => {
+          {serviceItems.map((service, index) => {
             const serviceBody = (
               <div className="soft-card soft-card-hover mesh-panel relative h-full overflow-hidden p-5 md:p-6">
                 <div

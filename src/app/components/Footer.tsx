@@ -7,17 +7,8 @@ import {
   Twitter,
   Facebook,
 } from "lucide-react";
-import { Link } from "react-router"; // یا 'react-router-dom'
-
-// آرایه خدمات را برای استفاده در فوتر و سایر بخش‌ها اینجا تعریف می‌کنیم
-const services = [
-  { title: "املاک من", href: "/my-property" },
-  { title: "ثبت درخواست", href: "/sabt-darkhast" },
-  { title: "پیگیری درخواست‌ها", href: "/property-request" },
-  { title: "عوارض نوسازی", href: "/modern-toll" },
-  { title: "عوارض صنفی", href: "/guild-fees" },
-  { title: "وضعیت عقب‌نشینی ملک", href: "/property-inquiry" },
-];
+import { Link } from "react-router";
+import { serviceItems } from "../data/services";
 
 export function Footer() {
   const footerLinks = {
@@ -77,7 +68,7 @@ export function Footer() {
           <div>
             <h4 className="font-bold mb-4 md:mb-6">خدمات</h4>
             <ul className="space-y-3">
-              {services.map((service) => (
+              {serviceItems.map((service) => (
                 <li key={service.title}>
                   <Link
                     to={service.href}

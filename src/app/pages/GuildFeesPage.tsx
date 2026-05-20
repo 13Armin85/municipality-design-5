@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
@@ -17,111 +17,20 @@ import {
   X,
 } from "lucide-react";
 import { Link } from "react-router";
+import {
+  findPropertyByCodes,
+  guildCodeFields,
+  propertyItems,
+  type MockProperty,
+  type RenewalCodeKey,
+  type RenewalCodes,
+} from "../data/properties";
+import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 interface GuildFeesPageProps {
   isDark: boolean;
   toggleTheme: () => void;
 }
-
-// --- ماک دیتا جامع ---
-const MOCK_DATABASE = [
-  {
-    id: "case-1",
-    title: "۱-۷۰۱-۱۳-۱۶۲-۴۰۰",
-    type: "ملک",
-    ownerName: "احمد عزیزی",
-    icon: Store,
-    // کدهای نوسازی برای فیلدهای جستجو
-    codes: {
-      منطقه: "1",
-      محله: "701",
-      بلوک: "13",
-      ملک: "162",
-      ساختمان: "400",
-      آپارتمان: "0",
-      صنفی: "12",
-    },
-    feeInfo: {
-      right: [
-        { label: "نام متصدی", value: "احمد عزیزی" },
-        { label: "از تاریخ", value: "1402/01/01" },
-        { label: "مبلغ جاری", value: "4,500,000 ریال" },
-        { label: "مبلغ به حروف", value: "چهارصد و پنجاه هزار تومان" },
-      ],
-      left: [
-        { label: "نوع شغل", value: "خرده فروشی" },
-        { label: "تا تاریخ", value: "1402/12/29" },
-        { label: "مبلغ قسط", value: "1,125,000 ریال" },
-        { label: "آدرس", value: "خیابان اصلی، پلاک 12" },
-      ],
-    },
-    owners: [
-      {
-        firstName: "احمد",
-        lastName: "عزیزی",
-        type: "حقیقی",
-        fatherName: "جعفر",
-        issuePlace: "مشهد",
-      },
-    ],
-  },
-  {
-    id: "case-2",
-    title: "۲-۸۰۵-۲۲-۱۱۰-۵۰۰",
-    type: "ساختمان",
-    ownerName: "رضا محمدی",
-    icon: Home,
-    codes: {
-      منطقه: "2",
-      محله: "805",
-      بلوک: "22",
-      ملک: "110",
-      ساختمان: "500",
-      آپارتمان: "5",
-      صنفی: "0",
-    },
-    feeInfo: {
-      right: [
-        { label: "نام متصدی", value: "رضا محمدی" },
-        { label: "از تاریخ", value: "1401/06/01" },
-        { label: "مبلغ جاری", value: "8,200,000 ریال" },
-        { label: "مبلغ به حروف", value: "هشتصد و بیست هزار تومان" },
-      ],
-      left: [
-        { label: "نوع شغل", value: "دفتر فنی" },
-        { label: "تا تاریخ", value: "1402/06/01" },
-        { label: "مبلغ قسط", value: "2,050,000 ریال" },
-        { label: "آدرس", value: "بلوار پیروزی، مجتمع تجاری" },
-      ],
-    },
-    owners: [
-      {
-        firstName: "رضا",
-        lastName: "محمدی",
-        type: "حقیقی",
-        fatherName: "علی",
-        issuePlace: "تهران",
-      },
-      {
-        firstName: "مریم",
-        lastName: "سادات",
-        type: "حقیقی",
-        fatherName: "حسن",
-        issuePlace: "تهران",
-      },
-    ],
-  },
-];
-
-const searchFields = [
-  { label: "صنفی", key: "صنفی" },
-  { label: "آپارتمان", key: "آپارتمان" },
-  { label: "ساختمان", key: "ساختمان" },
-  { label: "ملک", key: "ملک" },
-  { label: "بلوک", key: "بلوک" },
-  { label: "محله", key: "محله" },
-  { label: "منطقه", key: "منطقه" },
-];
 
 const parcels = [
   {
@@ -217,6 +126,7 @@ const parcels = [
 ];
 
 export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
+  const { selectedProperty, selectProperty } = useSelectedProperty();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -224,18 +134,17 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
   });
 
   // استیت‌های مربوط به جستجو و داده‌های فعال
-  const [searchInputs, setSearchInputs] = useState<Record<string, string>>({
-    صنفی: "",
-    آپارتمان: "",
-    ساختمان: "",
-    ملک: "",
-    بلوک: "",
-    محله: "",
-    منطقه: "",
-  });
-  const [activeData, setActiveData] = useState<
-    (typeof MOCK_DATABASE)[0] | null
-  >(null);
+  const [searchInputs, setSearchInputs] = useState<RenewalCodes>(
+    selectedProperty.codes,
+  );
+  const [activeData, setActiveData] = useState<MockProperty | null>(
+    selectedProperty,
+  );
+
+  useEffect(() => {
+    setSearchInputs(selectedProperty.codes);
+    setActiveData(selectedProperty);
+  }, [selectedProperty]);
 
   const handleOpenHelp = (title: string, description: string) => {
     setModalContent({ title, description });
@@ -243,24 +152,21 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
   };
 
   // وقتی روی یک ملک از لیست کلیک می‌شود
-  const handleCaseClick = (item: (typeof MOCK_DATABASE)[0]) => {
+  const handleCaseClick = (item: MockProperty) => {
     setSearchInputs(item.codes);
+    setActiveData(item);
+    selectProperty(item.id);
   };
 
   // عملیات جستجو
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // پیدا کردن داده بر اساس منطقه و محله و ملک (به عنوان نمونه)
-    const result = MOCK_DATABASE.find(
-      (item) =>
-        item.codes.منطقه === searchInputs.منطقه &&
-        item.codes.محله === searchInputs.محله &&
-        item.codes.ملک === searchInputs.ملک,
-    );
+    const result = findPropertyByCodes(searchInputs);
     setActiveData(result || null);
+    if (result) selectProperty(result.id);
   };
 
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (key: RenewalCodeKey, value: string) => {
     setSearchInputs((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -411,7 +317,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                   جستجو
                 </button>
 
-                {searchFields.map((field) => (
+                {guildCodeFields.map((field) => (
                   <div key={field.label} className="relative mt-2">
                     <input
                       type="text"
@@ -457,23 +363,28 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
 
               <div className="p-4 md:p-5">
                 <div className="space-y-2 rounded-xl border border-border/70 bg-card/50 p-3">
-                  {MOCK_DATABASE.map((item) => (
-                    <article
-                      key={item.id}
-                      onClick={() => handleCaseClick(item)}
-                      className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/80 px-3 py-2.5 text-sm transition-all hover:border-primary/40 hover:shadow-sm group"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {item.title} - ({item.type}) - {item.ownerName}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
-                        <item.icon className="h-4 w-4 text-primary" />
-                        <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                      </div>
-                    </article>
-                  ))}
+                  {propertyItems.map((item) => {
+                    const ItemIcon = item.type === "آپارتمان" ? Home : Store;
+
+                    return (
+                      <article
+                        key={item.id}
+                        onClick={() => handleCaseClick(item)}
+                        className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/80 px-3 py-2.5 text-sm transition-all hover:border-primary/40 hover:shadow-sm group"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {item.guildFees.title} - ({item.guildFees.type}) -{" "}
+                            {item.ownerName}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
+                          <ItemIcon className="h-4 w-4 text-primary" />
+                          <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               </div>
             </motion.article>
@@ -494,7 +405,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                   <div className="p-4 md:p-5">
                     <div className="grid gap-4 rounded-xl border border-border/70 bg-card/40 p-4 md:grid-cols-2 md:gap-8">
                       <ul className="space-y-2">
-                        {activeData.feeInfo.right.map((item) => (
+                        {activeData.guildFees.feeInfo.right.map((item) => (
                           <li
                             key={item.label}
                             className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
@@ -509,7 +420,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                         ))}
                       </ul>
                       <ul className="space-y-2">
-                        {activeData.feeInfo.left.map((item) => (
+                        {activeData.guildFees.feeInfo.left.map((item) => (
                           <li
                             key={item.label}
                             className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
@@ -571,7 +482,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                               {owner.lastName}
                             </td>
                             <td className="px-3 py-2.5 text-foreground">
-                              {owner.type}
+                            {owner.ownerType}
                             </td>
                             <td className="px-3 py-2.5 text-foreground">
                               {owner.fatherName}

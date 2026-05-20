@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
@@ -19,113 +19,14 @@ import {
   History,
 } from "lucide-react";
 import { Link } from "react-router";
-
-// --- Mock Data ---
-const MOCK_PROPERTIES = [
-  {
-    id: "۱",
-    fullCode: "۷-۱۰۴-۳۷-۴۴-۰-۰-۰",
-    searchValues: {
-      region: "2",
-      neighborhood: "104",
-      block: "37",
-      property: "44",
-      building: "0",
-      apartment: "0",
-      guild: "0",
-    },
-    ownerName: "بهرام حضرتی",
-    owners: [
-      {
-        id: "۱",
-        name: "بهرام",
-        lastName: "حضرتی",
-        ownerType: "حقیقی",
-        fatherName: "علی",
-        birthPlace: "مشهد",
-      },
-    ],
-    fees: {
-      right: [
-        { label: "نام مالک", value: "بهرام حضرتی" },
-        { label: "از سال", value: "۱۴۰۱" },
-        { label: "شماره فیش", value: "۸۸۵۴۲" },
-        { label: "خوش‌حسابی", value: "۴۵۰,۰۰۰" },
-        { label: "معافیت", value: "۰" },
-        { label: "آتش‌نشانی", value: "۱۲,۰۰۰" },
-        { label: "ارزش افزوده", value: "۹۰,۰۰۰" },
-        { label: "خدمات", value: "۱۵۰,۰۰۰" },
-        { label: "مبلغ قابل پرداخت", value: "۲,۴۵۰,۰۰۰" },
-      ],
-      left: [
-        { label: "آدرس مالک", value: "خیابان آزادی، ک ۱۰" },
-        { label: "تا سال", value: "۱۴۰۳" },
-        { label: "سهم مالک", value: "۶ دانگ" },
-        { label: "خدمات معوقه", value: "۰" },
-        { label: "بدحسابی", value: "۰" },
-        { label: "آموزش و پرورش", value: "۵,۰۰۰" },
-        { label: "عوارض", value: "۱,۸۰۰,۰۰۰" },
-        { label: "بدهی معوقه", value: "۳۴۰,۰۰۰" },
-        {
-          label: "مبلغ به حروف",
-          value: "دو میلیون و چهارصد و پنجاه هزار تومان",
-        },
-      ],
-    },
-    history: [
-      { id: 1, date: "1402/05/12", amount: "1,200,000", status: "پرداخت شده" },
-    ],
-  },
-  {
-    id: "۲",
-    fullCode: "۷-۲۰۵-۱۲-۱۸-۱-۴-۰",
-    searchValues: {
-      region: "7",
-      neighborhood: "205",
-      block: "12",
-      property: "18",
-      building: "1",
-      apartment: "4",
-      guild: "0",
-    },
-    ownerName: "مریم علوی",
-    owners: [
-      {
-        id: "۱",
-        name: "مریم",
-        lastName: "علوی",
-        ownerType: "حقیقی",
-        fatherName: "رضا",
-        birthPlace: "تهران",
-      },
-    ],
-    fees: {
-      right: [
-        { label: "نام مالک", value: "مریم علوی" },
-        { label: "از سال", value: "۱۴۰۲" },
-        { label: "شماره فیش", value: "۹۹۴۳۱" },
-        { label: "خوش‌حسابی", value: "۱۲۰,۰۰۰" },
-        { label: "معافیت", value: "۰" },
-        { label: "آتش‌نشانی", value: "۸,۰۰۰" },
-        { label: "ارزش افزوده", value: "۴۰,۰۰۰" },
-        { label: "خدمات", value: "۸۰,۰۰۰" },
-        { label: "مبلغ قابل پرداخت", value: "۹۸۰,۰۰۰" },
-      ],
-      left: [
-        { label: "آدرس مالک", value: "بلوار پیروزی، پلاک ۴" },
-        { label: "تا سال", value: "۱۴۰۳" },
-        { label: "سهم مالک", value: "۳ دانگ" },
-        { label: "خدمات معوقه", value: "۲۰,۰۰۰" },
-        { label: "بدحسابی", value: "۱۵,۰۰۰" },
-        { label: "آموزش و پرورش", value: "۲,۰۰۰" },
-        { label: "عوارض", value: "۸۵۰,۰۰۰" },
-        { label: "بدهی معوقه", value: "۰" },
-        { label: "مبلغ به حروف", value: "نهصد و هشتاد هزار تومان" },
-      ],
-    },
-    history: [],
-  },
-];
+import {
+  findPropertyByCodes,
+  propertyItems,
+  type MockProperty,
+  type RenewalCodeKey,
+  type RenewalCodes,
+} from "../data/properties";
+import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 interface ModernTollPageProps {
   isDark: boolean;
@@ -133,6 +34,7 @@ interface ModernTollPageProps {
 }
 
 export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
+  const { selectedProperty, selectProperty } = useSelectedProperty();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -140,20 +42,19 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   });
 
   // وضعیت فیلدهای ورودی جستجو
-  const [searchInputs, setSearchInputs] = useState({
-    region: "2",
-    neighborhood: "104",
-    block: "37",
-    property: "44",
-    building: "0",
-    apartment: "0",
-    guild: "0",
-  });
+  const [searchInputs, setSearchInputs] = useState<RenewalCodes>(
+    selectedProperty.codes,
+  );
 
   // وضعیت داده‌های در حال نمایش در صفحه
-  const [activeData, setActiveData] = useState<
-    (typeof MOCK_PROPERTIES)[0] | null
-  >(null);
+  const [activeData, setActiveData] = useState<MockProperty | null>(
+    selectedProperty,
+  );
+
+  useEffect(() => {
+    setSearchInputs(selectedProperty.codes);
+    setActiveData(selectedProperty);
+  }, [selectedProperty]);
 
   const handleOpenHelp = (title: string, description: string) => {
     setModalContent({ title, description });
@@ -161,24 +62,23 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   };
 
   // هندلر تغییر مقادیر ورودی
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (key: RenewalCodeKey, value: string) => {
     setSearchInputs((prev) => ({ ...prev, [key]: value }));
   };
 
   // هندلر کلیک روی یک ملک از لیست زیرمجموعه
-  const selectPropertyFromList = (property: (typeof MOCK_PROPERTIES)[0]) => {
-    setSearchInputs(property.searchValues);
+  const selectPropertyFromList = (property: MockProperty) => {
+    setSearchInputs(property.codes);
+    setActiveData(property);
+    selectProperty(property.id);
   };
 
   // هندلر دکمه جستجو
   const handleSearch = () => {
-    const found = MOCK_PROPERTIES.find((p) =>
-      Object.entries(p.searchValues).every(
-        ([key, val]) => searchInputs[key as keyof typeof searchInputs] === val,
-      ),
-    );
+    const found = findPropertyByCodes(searchInputs);
     if (found) {
       setActiveData(found);
+      selectProperty(found.id);
     } else {
       alert("پرونده‌ای با این مشخصات یافت نشد.");
       setActiveData(null);
@@ -317,9 +217,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               ].map((field) => (
                 <div key={field.key} className="relative">
                   <input
-                    value={searchInputs[field.key as keyof typeof searchInputs]}
+                    value={searchInputs[field.key as RenewalCodeKey]}
                     onChange={(e) =>
-                      handleInputChange(field.key, e.target.value)
+                      handleInputChange(field.key as RenewalCodeKey, e.target.value)
                     }
                     className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium outline-none focus:border-primary transition-colors"
                   />
@@ -351,7 +251,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               />
             </div>
             <div className="p-4 space-y-2">
-              {MOCK_PROPERTIES.map((prop) => (
+              {propertyItems.map((prop) => (
                 <div
                   key={prop.id}
                   onClick={() => selectPropertyFromList(prop)}
@@ -359,7 +259,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`h-3 w-3 rounded-full ${searchInputs.property === prop.searchValues.property ? "bg-emerald-500" : "bg-orange-400"}`}
+                      className={`h-3 w-3 rounded-full ${searchInputs.property === prop.codes.property ? "bg-emerald-500" : "bg-orange-400"}`}
                     />
                     <span className="text-xs font-medium md:text-sm">
                       {prop.fullCode} (ملک) - {prop.ownerName}
@@ -407,7 +307,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                         {owner.id}
                       </td>
                       <td className="border border-border/50 p-2">
-                        {owner.name}
+                        {owner.firstName}
                       </td>
                       <td className="border border-border/50 p-2">
                         {owner.lastName}
@@ -456,7 +356,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               <div className="grid grid-cols-1 gap-x-8 gap-y-0 md:grid-cols-2">
                 <div className="space-y-0">
                   {(
-                    activeData?.fees.right ||
+                    activeData?.toll.fees.right ||
                     Array(9).fill({ label: "—", value: "—" })
                   ).map((field, i) => (
                     <div
@@ -474,7 +374,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 </div>
                 <div className="space-y-0">
                   {(
-                    activeData?.fees.left ||
+                    activeData?.toll.fees.left ||
                     Array(9).fill({ label: "—", value: "—" })
                   ).map((field, i) => (
                     <div
@@ -517,9 +417,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               </div>
             </div>
             <div className="p-4">
-              {activeData && activeData.history.length > 0 ? (
+              {activeData && activeData.toll.history.length > 0 ? (
                 <div className="space-y-2">
-                  {activeData.history.map((item) => (
+                  {activeData.toll.history.map((item) => (
                     <div
                       key={item.id}
                       className="flex justify-between rounded-lg border p-3 text-xs"

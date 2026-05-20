@@ -13,25 +13,24 @@ import {
   Home,
 } from "lucide-react";
 import { Link } from "react-router";
+import { propertyItems } from "../data/properties";
+import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 interface MyPropertyPageProps {
   isDark: boolean;
   toggleTheme: () => void;
 }
 
-const myProperties = [
-  {
-    id: "۲-۱۰۱-۲۷-۳۸-۰-۰-۰",
-    description:
-      "شماره پرونده : ۷۵۸ ، وضعیت ملک : سکونت ، مساحت طبق سند : ۲۴۹.۲ ، پلاک ثبتی : ۱۶ ، آدرس : خیابان سرتیپ فلاحی کوچه مهکام بن بست مهکام پلاک ۱۶",
-  },
-];
-
 export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<
-    (typeof myProperties)[0] | null
-  >(null);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const { selectedProperty, selectedPropertyId, selectProperty } =
+    useSelectedProperty();
+
+  const handleSelectProperty = (propertyId: string) => {
+    selectProperty(propertyId);
+    setIsMapOpen(true);
+  };
 
   return (
     <div
@@ -151,47 +150,58 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                     <th className="px-4 py-3 font-semibold text-foreground/80 text-right">
                       توضیحات
                     </th>
-                    <th className="px-4 py-3 font-semibold text-foreground/80 text-center w-20">
+                    <th className="px-4 py-3 font-semibold text-foreground/80 text-center w-36">
                       عملیات
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {myProperties.map((property, i) => (
-                    <motion.tr
-                      key={i}
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="border-b border-border/40 hover:bg-muted/10 transition-colors"
-                    >
-                      <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
-                        {property.id}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground leading-6 text-xs">
-                        {property.description}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() =>
-                            setSelectedProperty(
-                              selectedProperty?.id === property.id
-                                ? null
-                                : property,
-                            )
-                          }
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-all active:scale-95 shadow-sm ${
-                            selectedProperty?.id === property.id
-                              ? "bg-emerald-500 text-white shadow-emerald-400/30"
-                              : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
+                  {propertyItems.map((property, i) => {
+                    const isSelected = selectedPropertyId === property.id;
+
+                    return (
+                      <motion.tr
+                        key={property.id}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className={`border-b border-r-4 transition-colors ${
+                          isSelected
+                            ? "border-b-primary/25 border-r-primary bg-primary/10"
+                            : "border-b-border/40 border-r-transparent hover:bg-muted/10"
+                        }`}
+                      >
+                        <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span>{property.fullCode}</span>
+                          </div>
+                        </td>
+                        <td
+                          className={`px-4 py-3 leading-6 text-xs ${
+                            isSelected
+                              ? "font-medium text-foreground"
+                              : "text-muted-foreground"
                           }`}
-                          title="نمایش روی نقشه"
                         >
-                          <MapPin className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </motion.tr>
-                  ))}
+                          {property.description}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleSelectProperty(property.id)}
+                            className={`inline-flex h-9 min-w-28 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-all active:scale-95 shadow-sm ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground shadow-primary/25"
+                                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
+                            }`}
+                            title="نمایش روی نقشه"
+                          >
+                            <MapPin className="h-4 w-4" />
+                            {isSelected ? "انتخاب شده" : "انتخاب ملک"}
+                          </button>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -199,7 +209,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
           {/* نقشه */}
           <AnimatePresence>
-            {selectedProperty && (
+            {isMapOpen && selectedProperty && (
               <motion.article
                 key="map"
                 initial={{ opacity: 0, scale: 0.98, y: 10 }}
@@ -236,7 +246,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
                 {/* دکمه حذف - سمت راست */}
                 <button
-                  onClick={() => setSelectedProperty(null)}
+                  onClick={() => setIsMapOpen(false)}
                   className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg hover:bg-destructive transition-colors z-10"
                   title="بستن نقشه"
                 >

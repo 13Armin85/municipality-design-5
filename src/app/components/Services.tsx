@@ -1,55 +1,11 @@
-import {
-  Home,
-  FileText,
-  Building2,
-  ShoppingCart,
-  MapPin,
-  Phone,
-} from "lucide-react";
+import { ArrowUpLeft } from "lucide-react";
 import { motion } from "motion/react";
+import { Link } from "react-router";
+import { serviceItems } from "../data/services";
 
 interface ServicesProps {
   isDark: boolean;
 }
-
-const services = [
-  {
-    icon: Home,
-    title: "املاک من",
-    desc: "مشاهده و مدیریت اطلاعات املاک ثبت‌شده",
-    color: "from-blue-500 to-cyan-500",
-  },
-  {
-    icon: FileText,
-    title: "ثبت درخواست",
-    desc: "ارسال درخواست‌ها و پیگیری وضعیت آنها",
-    color: "from-purple-500 to-pink-500",
-  },
-  {
-    icon: Building2,
-    title: "پیگیری درخواست‌ها",
-    desc: "مشاهده وضعیت و تاریخچه درخواست‌های ثبت‌شده",
-    color: "from-orange-500 to-red-500",
-  },
-  {
-    icon: ShoppingCart,
-    title: "عوارض نوسازی",
-    desc: "پرداخت و استعلام عوارض نوسازی",
-    color: "from-green-500 to-teal-500",
-  },
-  {
-    icon: ShoppingCart,
-    title: "عوارض صنفی",
-    desc: "مدیریت و پرداخت عوارض صنفی",
-    color: "from-indigo-500 to-blue-500",
-  },
-  {
-    icon: MapPin,
-    title: "وضعیت عقب نشینی ملک",
-    desc: "استعلام وضعیت عقب نشینی و خط ساختمانی",
-    color: "from-cyan-500 to-blue-500",
-  },
-];
 
 export function Services({ isDark }: ServicesProps) {
   return (
@@ -74,9 +30,9 @@ export function Services({ isDark }: ServicesProps) {
         </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service, index) => (
+          {serviceItems.map((service, index) => (
             <motion.div
-              key={index}
+              key={service.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -110,27 +66,17 @@ export function Services({ isDark }: ServicesProps) {
               <p
                 className={`text-sm leading-relaxed ${isDark ? "text-gray-400" : "text-gray-600"}`}
               >
-                {service.desc}
+                {service.description}
               </p>
 
               {/* Arrow indicator */}
               <div
                 className={`mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? "text-blue-400" : "text-blue-600"}`}
               >
-                <span className="text-sm">مشاهده جزئیات</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
+                <Link to={service.href} className="inline-flex items-center gap-2">
+                  <span className="text-sm">مشاهده جزئیات</span>
+                  <ArrowUpLeft className="h-4 w-4" />
+                </Link>
               </div>
             </motion.div>
           ))}
