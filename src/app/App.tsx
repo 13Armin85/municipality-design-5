@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Route, Routes, useLocation } from "react-router";
+import { Route, Routes, useLocation, useNavigate } from "react-router";
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
 import { ServicesSection } from "./components/ServicesSection";
@@ -21,6 +21,41 @@ import { SabtDarkhastPage } from "./pages/Sabtdarkhastpage";
 import { PropertyRequestDetails } from "./pages/PropertyRequestDetails";
 import { ModernTollPage } from "./pages/ModernTollPage";
 import AdminPanel from "./pages/Adminpanel";
+import { AUTH_STORAGE_KEY } from "./components/header/constants";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./components/ui/dialog";
+
+function ServiceAccessGuard() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <Header isDark={false} toggleTheme={() => undefined} />
+      <Dialog
+        open
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            navigate("/");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader className="text-right">
+            <DialogTitle>ورود لازم است</DialogTitle>
+            <DialogDescription>
+              برای استفاده از خدمات لطفاً ابتدا لاگین کنید.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 function HomePageContent() {
   return (
@@ -74,6 +109,11 @@ export default function App() {
     localStorage.setItem("theme", newTheme ? "dark" : "light");
   };
 
+  const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+  const protectedServiceElement = isAuthenticated ? null : (
+    <ServiceAccessGuard />
+  );
+
   return (
     <div
       className="min-h-screen bg-background relative selection:bg-primary/25 selection:text-foreground"
@@ -124,25 +164,34 @@ export default function App() {
         <Route
           path="/guild-fees"
           element={
-            <main>
-              <GuildFeesPage isDark={isDark} toggleTheme={toggleTheme} />
-            </main>
+            protectedServiceElement ?? (
+              <main>
+                <GuildFeesPage isDark={isDark} toggleTheme={toggleTheme} />
+              </main>
+            )
           }
         />
         <Route
           path="/property-inquiry"
           element={
-            <main>
-              <PropertyInquiryPage isDark={isDark} toggleTheme={toggleTheme} />
-            </main>
+            protectedServiceElement ?? (
+              <main>
+                <PropertyInquiryPage
+                  isDark={isDark}
+                  toggleTheme={toggleTheme}
+                />
+              </main>
+            )
           }
         />
         <Route
           path="/my-property"
           element={
-            <main>
-              <MyPropertyPage isDark={isDark} toggleTheme={toggleTheme} />
-            </main>
+            protectedServiceElement ?? (
+              <main>
+                <MyPropertyPage isDark={isDark} toggleTheme={toggleTheme} />
+              </main>
+            )
           }
         />
         <Route
@@ -152,32 +201,38 @@ export default function App() {
         <Route
           path="/sabt-darkhast"
           element={
-            <main>
-              <SabtDarkhastPage isDark={isDark} toggleTheme={toggleTheme} />
-            </main>
+            protectedServiceElement ?? (
+              <main>
+                <SabtDarkhastPage isDark={isDark} toggleTheme={toggleTheme} />
+              </main>
+            )
           }
         />
         <Route
           path="/property-request"
           element={
-            <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
-              <div className="container mx-auto max-w-5xl">
-                <PropertyRequestDetails
-                  isDark={isDark}
-                  toggleTheme={toggleTheme}
-                />
-              </div>
-            </main>
+            protectedServiceElement ?? (
+              <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
+                <div className="container mx-auto max-w-5xl">
+                  <PropertyRequestDetails
+                    isDark={isDark}
+                    toggleTheme={toggleTheme}
+                  />
+                </div>
+              </main>
+            )
           }
         />
         <Route
           path="/modern-toll"
           element={
-            <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
-              <div className="container mx-auto max-w-5xl">
-                <ModernTollPage isDark={isDark} toggleTheme={toggleTheme} />
-              </div>
-            </main>
+            protectedServiceElement ?? (
+              <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
+                <div className="container mx-auto max-w-5xl">
+                  <ModernTollPage isDark={isDark} toggleTheme={toggleTheme} />
+                </div>
+              </main>
+            )
           }
         />
         <Route
