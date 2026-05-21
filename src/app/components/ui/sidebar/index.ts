@@ -9,6 +9,13 @@ export {
   SidebarHeader,
   SidebarInput,
   SidebarInset,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
+  useSidebar,
+} from "./provider";
+export {
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuBadge,
@@ -18,9 +25,4 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
-  useSidebar,
-} from "./sidebar/index";
+} from "./menu";

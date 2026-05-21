@@ -1,0 +1,337 @@
+import type { FormEvent } from "react";
+import { motion } from "motion/react";
+import {
+  Building2,
+  ChevronLeft,
+  FileText,
+  Home,
+  Info,
+  Minus,
+  Plus,
+  Search,
+  Store,
+} from "lucide-react";
+import {
+  guildCodeFields,
+  propertyItems,
+  type MockProperty,
+  type RenewalCodeKey,
+  type RenewalCodes,
+} from "../../data/properties";
+import { parcels } from "./parcels";
+
+interface GuildFeesSearchSectionProps {
+  onHelp: (title: string, description: string) => void;
+  onInputChange: (key: RenewalCodeKey, value: string) => void;
+  onSubmit: (event: FormEvent) => void;
+  searchInputs: RenewalCodes;
+}
+
+export function GuildFeesSearchSection({
+  onHelp,
+  onInputChange,
+  onSubmit,
+  searchInputs,
+}: GuildFeesSearchSectionProps) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      className="soft-card mesh-panel overflow-hidden"
+    >
+      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+        <h2 className="text-sm font-bold text-foreground md:text-base">جستجو</h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              onHelp(
+                "راهنمای جستجو",
+                "در این بخش می‌توانید با وارد کردن کدهای نوسازی ملک اطلاعات دقیق را استعلام بگیرید.",
+              )
+            }
+            className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10"
+          >
+            <Info className="h-3.5 w-3.5" />
+            راهنما
+          </button>
+        </div>
+      </div>
+
+      <form
+        className="grid grid-cols-2 gap-x-2 gap-y-4 p-4 md:grid-cols-8 md:p-5"
+        onSubmit={onSubmit}
+      >
+        <button
+          type="submit"
+          className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 active:scale-95 md:order-first"
+        >
+          <Search className="ml-1.5 h-4 w-4" />
+          جستجو
+        </button>
+
+        {guildCodeFields.map((field) => (
+          <div key={field.label} className="relative mt-2">
+            <input
+              type="text"
+              value={searchInputs[field.key] || ""}
+              onChange={(event) =>
+                onInputChange(field.key, event.target.value)
+              }
+              placeholder={field.label}
+              className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-center text-sm text-foreground outline-none transition-all focus:border-primary/45 focus:ring-2 focus:ring-primary/10"
+            />
+            <label className="absolute -top-2.5 right-3 bg-card px-1.5 text-[10px] font-medium text-muted-foreground transition-all">
+              {field.label}
+            </label>
+          </div>
+        ))}
+      </form>
+    </motion.article>
+  );
+}
+
+interface GuildFeesPropertyListSectionProps {
+  onCaseClick: (item: MockProperty) => void;
+  onHelp: (title: string, description: string) => void;
+}
+
+export function GuildFeesPropertyListSection({
+  onCaseClick,
+  onHelp,
+}: GuildFeesPropertyListSectionProps) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      className="soft-card mesh-panel overflow-hidden"
+    >
+      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+        <h2 className="text-sm font-bold text-foreground md:text-base">
+          پرونده‌های زیر مجموعه
+        </h2>
+        <button
+          onClick={() =>
+            onHelp(
+              "پرونده‌های زیرمجموعه",
+              "لیست واحدهای مستقر در ملک انتخابی.",
+            )
+          }
+          className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10"
+        >
+          <Info className="h-3.5 w-3.5" />
+          راهنما
+        </button>
+      </div>
+
+      <div className="p-4 md:p-5">
+        <div className="space-y-2 rounded-xl border border-border/70 bg-card/50 p-3">
+          {propertyItems.map((item) => {
+            const ItemIcon = item.type === "آپارتمان" ? Home : Store;
+
+            return (
+              <article
+                key={item.id}
+                onClick={() => onCaseClick(item)}
+                className="group flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/80 px-3 py-2.5 text-sm transition-all hover:border-primary/40 hover:shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-foreground transition-colors group-hover:text-primary">
+                    {item.guildFees.title} - ({item.guildFees.type}) -{" "}
+                    {item.ownerName}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
+                  <ItemIcon className="h-4 w-4 text-primary" />
+                  <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+export function GuildFeesCurrentFeesSection({
+  activeData,
+}: {
+  activeData: MockProperty;
+}) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="soft-card mesh-panel overflow-hidden"
+    >
+      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+        <h2 className="text-sm font-bold text-foreground md:text-base">
+          عوارض صنفی جاری
+        </h2>
+      </div>
+      <div className="p-4 md:p-5">
+        <div className="grid gap-4 rounded-xl border border-border/70 bg-card/40 p-4 md:grid-cols-2 md:gap-8">
+          <ul className="space-y-2">
+            {activeData.guildFees.feeInfo.right.map((item) => (
+              <li
+                key={item.label}
+                className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
+              >
+                <span className="text-muted-foreground">{item.label}</span>
+                <strong className="text-foreground">{item.value}</strong>
+              </li>
+            ))}
+          </ul>
+          <ul className="space-y-2">
+            {activeData.guildFees.feeInfo.left.map((item) => (
+              <li
+                key={item.label}
+                className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
+              >
+                <span className="text-muted-foreground">{item.label}</span>
+                <strong className="text-foreground">{item.value}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+export function GuildFeesOwnersSection({
+  activeData,
+}: {
+  activeData: MockProperty;
+}) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="soft-card mesh-panel overflow-hidden"
+    >
+      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+        <h2 className="text-sm font-bold text-foreground md:text-base">مالکین</h2>
+      </div>
+      <div className="overflow-x-auto p-4 md:p-5">
+        <table className="min-w-full overflow-hidden rounded-xl border border-border/70 text-sm">
+          <thead className="bg-[var(--primary-soft)]/70 text-foreground">
+            <tr>
+              <th className="px-3 py-2.5 text-right font-semibold">نام</th>
+              <th className="px-3 py-2.5 text-right font-semibold">
+                نام خانوادگی
+              </th>
+              <th className="px-3 py-2.5 text-right font-semibold">
+                نوع مالک
+              </th>
+              <th className="px-3 py-2.5 text-right font-semibold">نام پدر</th>
+              <th className="px-3 py-2.5 text-right font-semibold">محل صدور</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/70 bg-card/40">
+            {activeData.owners.map((owner, index) => (
+              <tr
+                key={index}
+                className="transition-colors hover:bg-muted/30"
+              >
+                <td className="px-3 py-2.5 text-foreground">
+                  {owner.firstName}
+                </td>
+                <td className="px-3 py-2.5 text-foreground">
+                  {owner.lastName}
+                </td>
+                <td className="px-3 py-2.5 text-foreground">
+                  {owner.ownerType}
+                </td>
+                <td className="px-3 py-2.5 text-foreground">
+                  {owner.fatherName}
+                </td>
+                <td className="px-3 py-2.5 text-foreground">
+                  {owner.issuePlace}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </motion.article>
+  );
+}
+
+export function GuildFeesEmptyState() {
+  return (
+    <motion.article className="soft-card mesh-panel overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+        <h2 className="text-sm font-bold text-foreground md:text-base">عوارض</h2>
+        <FileText className="h-4 w-4 text-primary" />
+      </div>
+      <div className="p-4 md:p-5">
+        <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          موردی برای نمایش وجود ندارد. ابتدا ملکی را انتخاب و جستجو کنید.
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+export function GuildFeesMapSection({
+  activeData,
+}: {
+  activeData: MockProperty | null;
+}) {
+  return (
+    <motion.article className="soft-card mesh-panel overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+        <h2 className="text-sm font-bold text-foreground md:text-base">
+          نقشه زمین (نمادین)
+        </h2>
+        <Building2 className="h-4 w-4 text-primary" />
+      </div>
+      <div className="p-4 md:p-5">
+        <div className="relative h-[30rem] overflow-hidden rounded-2xl border border-border/70 bg-[linear-gradient(145deg,#647257_0%,#7e8f6d_38%,#6a735f_100%)] md:h-[44rem]">
+          {parcels.map((parcel) => (
+            <motion.div
+              key={parcel.id}
+              whileHover={{
+                scale: 1.03,
+                filter: "brightness(1.1)",
+                zIndex: 10,
+              }}
+              className={`group absolute flex cursor-pointer items-center justify-center rounded-sm border border-sky-900/25 transition-all ${parcel.tone}`}
+              style={{
+                top: parcel.top,
+                right: parcel.right,
+                width: parcel.width,
+                height: parcel.height,
+                transform: `rotate(${parcel.rotate}deg)`,
+              }}
+            >
+              <span className="px-1 text-center text-[10px] font-bold text-sky-950 opacity-0 transition-opacity group-hover:opacity-100 md:text-xs">
+                {parcel.title}
+              </span>
+            </motion.div>
+          ))}
+
+          {activeData && (
+            <div className="absolute left-[44%] top-[58%] h-28 w-24 animate-pulse rounded-md border-2 border-dashed border-sky-600 bg-emerald-300/35 shadow-[0_0_0_6px_rgba(18,80,126,0.14)] backdrop-blur-[1px]" />
+          )}
+
+          <div className="absolute left-3 top-3 space-y-1.5 md:left-4 md:top-4">
+            <button className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-card/90 text-foreground shadow-sm transition-colors hover:bg-card">
+              <Plus className="h-4 w-4" />
+            </button>
+            <button className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-card/90 text-foreground shadow-sm transition-colors hover:bg-card">
+              <Minus className="h-4 w-4" />
+            </button>
+            <button className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-card/90 text-foreground shadow-sm transition-colors hover:bg-card">
+              <Home className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
