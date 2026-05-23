@@ -1,8 +1,11 @@
-import { MouseEvent as ReactMouseEvent } from "react";
 import { UserCircle2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { MouseEvent as ReactMouseEvent } from "react";
 import { Link } from "react-router";
-import { MenuItem } from "./types";
+interface MenuItem {
+  title: string;
+  href: string;
+}
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -11,10 +14,8 @@ interface MobileMenuProps {
   isAuthenticated: boolean;
   unreadCount: number;
   onMenuItemClick: (href: string) => void;
-  onOpenNotifications: () => void;
+  onNotificationsClick: () => void;
   onProfileClick: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
-  closeMenu: () => void;
-  closeNotifications: () => void;
 }
 
 export function MobileMenu({
@@ -24,10 +25,8 @@ export function MobileMenu({
   isAuthenticated,
   unreadCount,
   onMenuItemClick,
-  onOpenNotifications,
+  onNotificationsClick,
   onProfileClick,
-  closeMenu,
-  closeNotifications,
 }: MobileMenuProps) {
   return (
     <AnimatePresence>
@@ -51,7 +50,11 @@ export function MobileMenu({
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => onMenuItemClick(item.href)}
-                    className={`relative overflow-hidden rounded-xl px-4 py-3 text-sm font-medium transition-all ${isActive ? "text-primary-foreground" : "text-foreground hover:text-primary"}`}
+                    className={`relative overflow-hidden rounded-xl px-4 py-3 text-sm font-medium transition-all ${
+                      isActive
+                        ? "text-primary-foreground"
+                        : "text-foreground hover:text-primary"
+                    }`}
                   >
                     {isActive && (
                       <motion.span
@@ -73,7 +76,7 @@ export function MobileMenu({
                 {isAuthenticated && (
                   <button
                     type="button"
-                    onClick={onOpenNotifications}
+                    onClick={onNotificationsClick}
                     className="flex items-center justify-between rounded-xl bg-[var(--primary-soft)] px-4 py-3 text-sm text-foreground transition-colors hover:bg-[var(--primary-soft-strong)]"
                   >
                     <span>اعلان‌ها</span>
@@ -85,13 +88,10 @@ export function MobileMenu({
                     </span>
                   </button>
                 )}
+
                 <Link
                   to="/profile"
-                  onClick={(e) => {
-                    closeMenu();
-                    closeNotifications();
-                    onProfileClick(e);
-                  }}
+                  onClick={onProfileClick}
                   className="flex items-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm text-foreground transition-colors hover:bg-[var(--primary-soft)]"
                 >
                   <UserCircle2 className="h-4 w-4" />

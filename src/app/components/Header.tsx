@@ -1,5 +1,7 @@
 import {
+  ClipboardEvent as ReactClipboardEvent,
   FormEvent,
+  KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   useEffect,
   useRef,
@@ -19,21 +21,51 @@ import {
 import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
-import { isAdminToken } from "./header/auth";
-import {
-  API_BASE,
-  AUTH_STORAGE_KEY,
-  AUTH_TYPE_KEY,
-  TOKEN_KEY,
-  menuItems,
-  notifications,
-} from "./header/constants";
-import { AllNotificationsModal } from "./header/AllNotificationsModal";
-import { ForgotPasswordModal } from "./header/ForgotPasswordModal";
-import { LoginModal } from "./header/LoginModal";
-import { MobileMenu } from "./header/MobileMenu";
-import { NotificationsDropdown } from "./header/NotificationsDropdown";
-import { ForgotStep, HeaderProps } from "./header/types";
+
+import { NotificationsPanel } from "../pages/header/NotificationsPanel";
+import { AllNotificationsModal } from "../pages/header/AllNotificationsModal";
+import { LoginModal } from "../pages/header/LoginModal";
+import { ForgotPasswordModal, ForgotStep } from "../pages/header/Forgotpasswordmodal";
+import { MobileMenu } from "../pages/header/MobileMenu";
+
+interface HeaderProps {
+  isDark: boolean;
+  toggleTheme: () => void;
+}
+
+const menuItems = [
+  { title: "صفحه اصلی", href: "#home" },
+  { title: "خدمات", href: "#services" },
+  { title: "فعالیت‌ها", href: "#activities" },
+  { title: "اخبار", href: "#news" },
+  { title: "سوالات متداول", href: "#faq" },
+  { title: "پشتیبانی", href: "#support" },
+];
+
+const notifications = [
+  {
+    id: "n1",
+    title: "وضعیت پرونده PR-22318 به‌روزرسانی شد",
+    time: "5 دقیقه پیش",
+  },
+  {
+    id: "n2",
+    title: "قبض عوارض نوسازی شما آماده پرداخت است",
+    time: "1 ساعت پیش",
+  },
+  { id: "n3", title: "پاسخ تیکت #TK-1082 ثبت شد", time: "امروز، 10:15" },
+];
+
+const AUTH_STORAGE_KEY = "municipality-user-authenticated";
+const AUTH_TYPE_KEY = "municipality-user-type";
+
+const decodeToken = (token: string) => {
+  try {
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch {
+    return null;
+  }
+};
 
 export function Header({ isDark, toggleTheme }: HeaderProps) {
   const navigate = useNavigate();
@@ -65,6 +97,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const [forgotError, setForgotError] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [otpResendTimer, setOtpResendTimer] = useState(0);
+
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -80,6 +113,8 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     (item) => !readNotificationIds.includes(item.id),
   ).length;
 
+  // ─── Notification handlers ───────────────────────────────────────────────
+
   const markNotificationAsRead = (id: string) =>
     setReadNotificationIds((prev) =>
       prev.includes(id) ? prev : [...prev, id],
@@ -88,10 +123,13 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const markAllNotificationsAsRead = () =>
     setReadNotificationIds(notifications.map((item) => item.id));
 
+  // ─── Login handlers ──────────────────────────────────────────────────────
+
   const handleProfileClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
     if (isAuthenticated) return;
     event.preventDefault();
     setLoginError("");
+    setLoginType("user");
     setIsMenuOpen(false);
     setIsNotificationsOpen(false);
     setIsAllNotificationsOpen(false);
@@ -100,7 +138,6 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     if (!username.trim() || !password.trim()) {
       setLoginError("لطفا نام کاربری و رمز عبور را وارد کنید.");
       return;
@@ -110,53 +147,51 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     setLoginError("");
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({ UserName: username, Password: password }),
       });
 
-      if (!res.ok) {
-        let message = "نام کاربری یا رمز عبور اشتباه است.";
-        try {
-          const errData = await res.json();
-          if (errData?.message) message = errData.message;
-          else if (errData?.Message) message = errData.Message;
-        } catch {
-          /* ignore parse errors */
-        }
-        setLoginError(message);
+      if (!response.ok) {
+        setLoginError("نام کاربری یا رمز عبور اشتباه است.");
         return;
       }
 
-      const data = await res.json();
-      const token: string = data.token ?? data.Token ?? "";
+      const data = await response.json();
+      const token = data.token;
 
       if (!token) {
-        setLoginError("خطا در دریافت توکن. لطفا مجددا تلاش کنید.");
+        setLoginError("خطا در دریافت توکن. لطفا دوباره تلاش کنید.");
         return;
       }
 
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem(AUTH_STORAGE_KEY, "true");
+      const payload = decodeToken(token);
+      const isAdmin = payload?.role === "Admin";
 
-      const admin = isAdminToken(token);
-      const resolvedType: "admin" | "user" = admin ? "admin" : "user";
-      localStorage.setItem(AUTH_TYPE_KEY, resolvedType);
+      localStorage.setItem("auth-token", token);
+      localStorage.setItem(AUTH_STORAGE_KEY, "true");
+      localStorage.setItem(AUTH_TYPE_KEY, isAdmin ? "admin" : "user");
 
       setIsAuthenticated(true);
-      setLoginType(resolvedType);
+      setLoginType(isAdmin ? "admin" : "user");
+      setLoginError("");
       setUsername("");
       setPassword("");
       setIsLoginOpen(false);
 
-      navigate(admin ? "/admin" : "/profile");
+      navigate(isAdmin ? "/admin" : "/profile");
     } catch {
       setLoginError("خطا در اتصال به سرور. لطفا دوباره تلاش کنید.");
     } finally {
       setLoginLoading(false);
     }
   };
+
+  // ─── Forgot password handlers ────────────────────────────────────────────
 
   const resetForgotState = () => {
     setForgotStep("phone");
@@ -263,13 +298,14 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
   const handleOtpKeyDown = (
     index: number,
-    event: React.KeyboardEvent<HTMLInputElement>,
+    event: ReactKeyboardEvent<HTMLInputElement>,
   ) => {
-    if (event.key === "Backspace" && !forgotOtp[index] && index > 0)
+    if (event.key === "Backspace" && !forgotOtp[index] && index > 0) {
       otpRefs.current[index - 1]?.focus();
+    }
   };
 
-  const handleOtpPaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+  const handleOtpPaste = (event: ReactClipboardEvent<HTMLInputElement>) => {
     event.preventDefault();
     const pasted = event.clipboardData
       .getData("text")
@@ -282,35 +318,30 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     otpRefs.current[Math.min(pasted.length, 4)]?.focus();
   };
 
-  const formatTimer = (seconds: number) => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    },
-    [],
-  );
+  // ─── Effects ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   useEffect(() => {
-    const sync = () => {
-      const hash = window.location.hash;
-      if (menuItems.some((item) => item.href === hash)) setActiveMenuItem(hash);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const syncActiveMenuItem = () => {
+      const currentHash = window.location.hash;
+      if (menuItems.some((item) => item.href === currentHash)) {
+        setActiveMenuItem(currentHash);
+      }
     };
-    sync();
-    window.addEventListener("hashchange", sync);
-    return () => window.removeEventListener("hashchange", sync);
+    syncActiveMenuItem();
+    window.addEventListener("hashchange", syncActiveMenuItem);
+    return () => window.removeEventListener("hashchange", syncActiveMenuItem);
   }, []);
 
   useEffect(() => {
@@ -322,32 +353,34 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   }, [isAllNotificationsOpen, isLoginOpen, isForgotOpen]);
 
   useEffect(() => {
-    const onClickOutside = (e: MouseEvent) => {
-      const t = e.target as Node;
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
         notificationsRef.current &&
-        !notificationsRef.current.contains(t) &&
+        !notificationsRef.current.contains(target) &&
         notificationButtonRef.current &&
-        !notificationButtonRef.current.contains(t)
+        !notificationButtonRef.current.contains(target)
       ) {
         setIsNotificationsOpen(false);
       }
     };
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
         setIsNotificationsOpen(false);
         setIsAllNotificationsOpen(false);
         setIsLoginOpen(false);
         setIsForgotOpen(false);
       }
     };
-    document.addEventListener("mousedown", onClickOutside);
-    document.addEventListener("keydown", onEscape);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("keydown", onEscape);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, []);
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <motion.header
@@ -360,6 +393,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
           className={`nav-shell nav-shell-overflow-visible ${scrolled ? "nav-shell-scrolled" : ""}`}
         >
           <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
+            {/* Logo */}
             <div className="flex min-w-0 items-center gap-3">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-secondary to-accent text-primary-foreground shadow-[0_12px_28px_rgba(13,86,90,0.35)] md:h-12 md:w-12">
                 <Building2 className="h-5 w-5 md:h-6 md:w-6" />
@@ -383,6 +417,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
               </div>
             </div>
 
+            {/* Desktop nav */}
             <nav className="hidden items-center gap-1 lg:flex">
               {menuItems.map((item) => {
                 const isActive = item.href === activeMenuItem;
@@ -391,7 +426,11 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     key={item.title}
                     href={item.href}
                     onClick={() => setActiveMenuItem(item.href)}
-                    className={`relative overflow-hidden rounded-xl px-4 py-2 text-sm font-medium transition-all ${isActive ? "text-primary-foreground" : "text-foreground hover:text-primary"}`}
+                    className={`relative overflow-hidden rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                      isActive
+                        ? "text-primary-foreground"
+                        : "text-foreground hover:text-primary"
+                    }`}
                   >
                     {isActive && (
                       <motion.span
@@ -410,6 +449,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
               })}
             </nav>
 
+            {/* Actions */}
             <div className="relative flex items-center gap-2 md:gap-3">
               {isAuthenticated && (
                 <>
@@ -419,7 +459,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsAllNotificationsOpen(false);
-                      setIsNotificationsOpen((p) => !p);
+                      setIsNotificationsOpen((prev) => !prev);
                     }}
                     className="header-action-btn relative hidden sm:flex"
                     aria-label="اعلان‌ها"
@@ -448,7 +488,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
               <Link
                 to="/profile"
                 onClick={handleProfileClick}
-                className="header-action-btn hidden items-center gap-2 px-3 sm:inline-flex"
+                className="header-action-btn hidden sm:inline-flex items-center gap-2 px-3"
                 aria-label="پروفایل کاربر"
               >
                 <UserCircle2 className="h-5 w-5" />
@@ -460,33 +500,38 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                 className="header-action-btn"
                 aria-label="تغییر تم"
               >
-                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                {isDark ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
               </motion.button>
 
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
-                  setIsMenuOpen((p) => !p);
+                  setIsMenuOpen((prev) => !prev);
                   setIsNotificationsOpen(false);
                 }}
                 className="header-action-btn lg:hidden"
                 aria-label="منو"
               >
-                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {isMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
               </motion.button>
 
-              <NotificationsDropdown
+              <NotificationsPanel
                 isOpen={isNotificationsOpen}
-                isMobile={isMobile}
                 notifications={notifications}
                 readNotificationIds={readNotificationIds}
                 notificationsRef={notificationsRef}
+                isMobile={isMobile}
                 onClose={() => setIsNotificationsOpen(false)}
-                onOpenAll={() => {
-                  setIsNotificationsOpen(false);
-                  setIsAllNotificationsOpen(true);
-                }}
-                onMarkRead={markNotificationAsRead}
+                onMarkAsRead={markNotificationAsRead}
+                onOpenAll={() => setIsAllNotificationsOpen(true)}
               />
             </div>
           </div>
@@ -495,57 +540,59 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
       <AllNotificationsModal
         isOpen={isAllNotificationsOpen}
-        unreadCount={unreadCount}
         notifications={notifications}
         readNotificationIds={readNotificationIds}
+        unreadCount={unreadCount}
         onClose={() => setIsAllNotificationsOpen(false)}
-        onMarkAllRead={markAllNotificationsAsRead}
-        onMarkRead={markNotificationAsRead}
+        onMarkAsRead={markNotificationAsRead}
+        onMarkAllAsRead={markAllNotificationsAsRead}
       />
 
       <LoginModal
         isOpen={isLoginOpen}
+        loginType={loginType}
         username={username}
         password={password}
         loginError={loginError}
         loginLoading={loginLoading}
         onClose={() => setIsLoginOpen(false)}
-        onOpenForgotPassword={openForgotPassword}
-        onSubmit={handleLogin}
         onUsernameChange={setUsername}
         onPasswordChange={setPassword}
+        onSubmit={handleLogin}
+        onForgotPassword={openForgotPassword}
       />
 
       <ForgotPasswordModal
         isOpen={isForgotOpen}
-        forgotStep={forgotStep}
-        forgotPhone={forgotPhone}
-        forgotOtp={forgotOtp}
-        forgotNewPassword={forgotNewPassword}
-        forgotConfirmPassword={forgotConfirmPassword}
-        forgotError={forgotError}
-        forgotLoading={forgotLoading}
+        step={forgotStep}
+        phone={forgotPhone}
+        otp={forgotOtp}
+        newPassword={forgotNewPassword}
+        confirmPassword={forgotConfirmPassword}
+        error={forgotError}
+        loading={forgotLoading}
         otpResendTimer={otpResendTimer}
         otpRefs={otpRefs}
-        timerRef={timerRef}
         onClose={closeForgot}
+        onPhoneChange={setForgotPhone}
+        onOtpInput={handleOtpInput}
+        onOtpKeyDown={handleOtpKeyDown}
+        onOtpPaste={handleOtpPaste}
+        onNewPasswordChange={setForgotNewPassword}
+        onConfirmPasswordChange={setForgotConfirmPassword}
         onSendOtp={handleSendOtp}
         onVerifyOtp={handleVerifyOtp}
         onResendOtp={handleResendOtp}
         onSetNewPassword={handleSetNewPassword}
-        onOtpInput={handleOtpInput}
-        onOtpKeyDown={handleOtpKeyDown}
-        onOtpPaste={handleOtpPaste}
-        formatTimer={formatTimer}
-        setForgotPhone={setForgotPhone}
-        setForgotNewPassword={setForgotNewPassword}
-        setForgotConfirmPassword={setForgotConfirmPassword}
-        setForgotStep={setForgotStep}
-        setForgotError={setForgotError}
-        setForgotOtp={setForgotOtp}
-        openLogin={() => {
+        onBackToLogin={() => {
           closeForgot();
           setIsLoginOpen(true);
+        }}
+        onGoToOtpStep={() => {
+          setForgotStep("phone");
+          setForgotError("");
+          setForgotOtp(["", "", "", "", ""]);
+          if (timerRef.current) clearInterval(timerRef.current);
         }}
       />
 
@@ -559,15 +606,19 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
           setActiveMenuItem(href);
           setIsMenuOpen(false);
         }}
-        onOpenNotifications={() => {
+        onNotificationsClick={() => {
           setIsMenuOpen(false);
           setIsAllNotificationsOpen(false);
           setIsNotificationsOpen(true);
         }}
-        onProfileClick={handleProfileClick}
-        closeMenu={() => setIsMenuOpen(false)}
-        closeNotifications={() => setIsNotificationsOpen(false)}
+        onProfileClick={(event) => {
+          setIsMenuOpen(false);
+          setIsNotificationsOpen(false);
+          handleProfileClick(event);
+        }}
       />
     </motion.header>
   );
 }
+
+export default Header;

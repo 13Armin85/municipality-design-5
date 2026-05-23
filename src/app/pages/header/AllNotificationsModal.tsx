@@ -1,25 +1,30 @@
 import { Bell, CheckCheck, Clock3, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { NotificationItem } from "./types";
+
+interface Notification {
+  id: string;
+  title: string;
+  time: string;
+}
 
 interface AllNotificationsModalProps {
   isOpen: boolean;
-  unreadCount: number;
-  notifications: NotificationItem[];
+  notifications: Notification[];
   readNotificationIds: string[];
+  unreadCount: number;
   onClose: () => void;
-  onMarkAllRead: () => void;
-  onMarkRead: (id: string) => void;
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
 }
 
 export function AllNotificationsModal({
   isOpen,
-  unreadCount,
   notifications,
   readNotificationIds,
+  unreadCount,
   onClose,
-  onMarkAllRead,
-  onMarkRead,
+  onMarkAsRead,
+  onMarkAllAsRead,
 }: AllNotificationsModalProps) {
   return (
     <AnimatePresence>
@@ -33,6 +38,7 @@ export function AllNotificationsModal({
             onClick={onClose}
             className="fixed inset-0 z-[70] bg-black/45 backdrop-blur-[2px]"
           />
+
           <motion.section
             role="dialog"
             aria-modal="true"
@@ -45,11 +51,13 @@ export function AllNotificationsModal({
           >
             <div className="relative border-b border-border/70 px-4 py-4 sm:px-6">
               <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-primary/60 to-transparent" />
+
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-primary">
                     <Bell className="h-5 w-5" />
                   </span>
+
                   <div className="min-w-0">
                     <h3 className="truncate text-base font-bold text-foreground sm:text-lg">
                       همه اعلان‌ها
@@ -59,6 +67,7 @@ export function AllNotificationsModal({
                     </p>
                   </div>
                 </div>
+
                 <button
                   type="button"
                   onClick={onClose}
@@ -75,9 +84,10 @@ export function AllNotificationsModal({
                 <Bell className="h-3.5 w-3.5" />
                 لیست کامل اعلان‌ها
               </span>
+
               <button
                 type="button"
-                onClick={onMarkAllRead}
+                onClick={onMarkAllAsRead}
                 disabled={unreadCount === 0}
                 className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-[var(--primary-soft)] disabled:pointer-events-none disabled:opacity-45"
               >
@@ -92,16 +102,25 @@ export function AllNotificationsModal({
                 return (
                   <article
                     key={item.id}
-                    className={`group rounded-2xl border border-border/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-[var(--primary-soft)] ${isUnread ? "bg-[var(--primary-soft)]/65" : "bg-background/70"}`}
+                    className={`group rounded-2xl border border-border/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-[var(--primary-soft)] ${
+                      isUnread
+                        ? "bg-[var(--primary-soft)]/65"
+                        : "bg-background/70"
+                    }`}
                   >
                     <div className="mb-2 flex items-start justify-between gap-3">
                       <p className="text-sm leading-6 text-foreground">
                         {item.title}
                       </p>
                       <span
-                        className={`mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${isUnread ? "bg-primary shadow-[0_0_0_4px_var(--primary-soft)]" : "bg-muted-foreground/45"}`}
+                        className={`mt-1 inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${
+                          isUnread
+                            ? "bg-primary shadow-[0_0_0_4px_var(--primary-soft)]"
+                            : "bg-muted-foreground/45"
+                        }`}
                       />
                     </div>
+
                     <div className="flex items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Clock3 className="h-3.5 w-3.5" />
@@ -109,7 +128,7 @@ export function AllNotificationsModal({
                       </span>
                       <button
                         type="button"
-                        onClick={() => onMarkRead(item.id)}
+                        onClick={() => onMarkAsRead(item.id)}
                         className="rounded-lg px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-background/80"
                       >
                         علامت گذاری به عنوان خوانده شده

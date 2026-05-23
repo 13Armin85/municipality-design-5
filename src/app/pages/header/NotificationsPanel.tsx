@@ -1,28 +1,34 @@
-import { RefObject } from "react";
+import { Bell, CheckCheck, Clock3, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { NotificationItem } from "./types";
+import { RefObject } from "react";
 
-interface NotificationsDropdownProps {
-  isOpen: boolean;
-  isMobile: boolean;
-  notifications: NotificationItem[];
-  readNotificationIds: string[];
-  notificationsRef: RefObject<HTMLDivElement | null>;
-  onClose: () => void;
-  onOpenAll: () => void;
-  onMarkRead: (id: string) => void;
+interface Notification {
+  id: string;
+  title: string;
+  time: string;
 }
 
-export function NotificationsDropdown({
+interface NotificationsPanelProps {
+  isOpen: boolean;
+  notifications: Notification[];
+  readNotificationIds: string[];
+  notificationsRef: RefObject<HTMLDivElement | null>;
+  isMobile: boolean;
+  onClose: () => void;
+  onMarkAsRead: (id: string) => void;
+  onOpenAll: () => void;
+}
+
+export function NotificationsPanel({
   isOpen,
-  isMobile,
   notifications,
   readNotificationIds,
   notificationsRef,
+  isMobile,
   onClose,
+  onMarkAsRead,
   onOpenAll,
-  onMarkRead,
-}: NotificationsDropdownProps) {
+}: NotificationsPanelProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -38,6 +44,7 @@ export function NotificationsDropdown({
               className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] sm:hidden"
             />
           )}
+
           <motion.div
             id="notifications-panel"
             ref={notificationsRef}
@@ -50,6 +57,7 @@ export function NotificationsDropdown({
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <h3 className="text-sm font-bold text-foreground">اعلان‌ها</h3>
             </div>
+
             <div className="max-h-[56vh] overflow-y-auto p-2 sm:max-h-72">
               {notifications.map((item) => {
                 const isUnread = !readNotificationIds.includes(item.id);
@@ -58,10 +66,12 @@ export function NotificationsDropdown({
                     key={item.id}
                     type="button"
                     onClick={() => {
-                      onMarkRead(item.id);
+                      onMarkAsRead(item.id);
                       onClose();
                     }}
-                    className={`w-full rounded-xl px-3 py-3 text-right transition-colors hover:bg-[var(--primary-soft)] ${isUnread ? "bg-[var(--primary-soft)]/60" : ""}`}
+                    className={`w-full rounded-xl px-3 py-3 text-right transition-colors hover:bg-[var(--primary-soft)] ${
+                      isUnread ? "bg-[var(--primary-soft)]/60" : ""
+                    }`}
                   >
                     <div className="mb-1 flex items-start justify-between gap-2">
                       <p className="text-sm text-foreground">{item.title}</p>
@@ -74,10 +84,14 @@ export function NotificationsDropdown({
                 );
               })}
             </div>
+
             <div className="border-t border-border/70 p-2">
               <button
                 type="button"
-                onClick={onOpenAll}
+                onClick={() => {
+                  onClose();
+                  onOpenAll();
+                }}
                 className="w-full rounded-xl px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-[var(--primary-soft)]"
               >
                 مشاهده همه اعلان‌ها

@@ -1,31 +1,33 @@
 import { FormEvent } from "react";
-import { KeyRound, Loader2, X } from "lucide-react";
+import { KeyRound, RefreshCw, UserCircle2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 interface LoginModalProps {
   isOpen: boolean;
+  loginType: "user" | "admin";
   username: string;
   password: string;
   loginError: string;
   loginLoading: boolean;
   onClose: () => void;
-  onOpenForgotPassword: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onUsernameChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onForgotPassword: () => void;
 }
 
 export function LoginModal({
   isOpen,
+  loginType,
   username,
   password,
   loginError,
   loginLoading,
   onClose,
-  onOpenForgotPassword,
-  onSubmit,
   onUsernameChange,
   onPasswordChange,
+  onSubmit,
+  onForgotPassword,
 }: LoginModalProps) {
   return (
     <AnimatePresence>
@@ -50,24 +52,35 @@ export function LoginModal({
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5.25rem)] z-[90] mx-auto w-full max-w-md rounded-3xl border border-border/70 bg-card/95 p-6 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl"
           >
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <KeyRound className="h-5 w-5" />
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    loginType === "admin"
+                      ? "bg-amber-500/10 text-amber-600"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {loginType === "admin" ? (
+                    <KeyRound className="h-5 w-5" />
+                  ) : (
+                    <UserCircle2 className="h-5 w-5" />
+                  )}
                 </span>
+
                 <div>
                   <h3 className="text-base font-bold text-foreground">
-                    ورود به پرتال شهروند
+                    ورود به حساب کاربری
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    سطح دسترسی بر اساس حساب شما تعیین می‌شود
+                    دسترسی به خدمات پرتال شهروند
                   </p>
                 </div>
               </div>
+
               <button
                 onClick={onClose}
                 className="rounded-full p-1 transition-colors hover:bg-muted"
-                aria-label="بستن"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -82,7 +95,6 @@ export function LoginModal({
                   value={username}
                   onChange={(e) => onUsernameChange(e.target.value)}
                   placeholder="مثال: 0012345678"
-                  autoComplete="username"
                   disabled={loginLoading}
                   className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
                 />
@@ -95,7 +107,7 @@ export function LoginModal({
                   </label>
                   <button
                     type="button"
-                    onClick={onOpenForgotPassword}
+                    onClick={onForgotPassword}
                     className="text-[11px] font-semibold text-primary hover:underline"
                   >
                     فراموشی رمز عبور؟
@@ -106,13 +118,12 @@ export function LoginModal({
                   value={password}
                   onChange={(e) => onPasswordChange(e.target.value)}
                   placeholder="••••••••"
-                  autoComplete="current-password"
                   disabled={loginLoading}
                   className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
                 />
               </div>
 
-              {loginError && (
+              {loginError ? (
                 <motion.p
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -120,7 +131,7 @@ export function LoginModal({
                 >
                   {loginError}
                 </motion.p>
-              )}
+              ) : null}
 
               <button
                 type="submit"
@@ -129,7 +140,7 @@ export function LoginModal({
               >
                 {loginLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                     در حال ورود...
                   </>
                 ) : (
@@ -137,13 +148,6 @@ export function LoginModal({
                 )}
               </button>
             </form>
-
-            <div className="mt-4 rounded-xl bg-[var(--primary-soft)] px-3 py-2.5">
-              <p className="text-center text-[11px] leading-5 text-muted-foreground">
-                اگر حساب ادمین دارید با همین فرم وارد شوید — دسترسی شما به صورت
-                خودکار تشخیص داده می‌شود.
-              </p>
-            </div>
           </motion.section>
         </>
       )}
