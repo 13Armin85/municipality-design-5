@@ -1,16 +1,8 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 
-type HeroSlide = {
-  id: string;
-  imageSrc: string;
-  alt: string;
-  width: number;
-  height: number;
-};
-
-const heroSlides: HeroSlide[] = [
+const heroSlides = [
   {
     id: "slide-1",
     imageSrc: "/images/Gemini_Generated_Image_a6500ga6500ga650.png",
@@ -36,14 +28,17 @@ const heroSlides: HeroSlide[] = [
 
 // استفاده از Set برای ذخیره عکس‌های preload شده
 const preloadedImages = new Set<string>();
+const requestedImages = new Set<string>();
 
 // Preload تمام تصاویر هنگام load کردن صفحه - فقط یک‌بار
 const preloadImages = () => {
   heroSlides.forEach((slide) => {
-    // اگر قبلاً preload شده، دوباره نکن
-    if (preloadedImages.has(slide.imageSrc)) {
+    // اگر قبلاً درخواست شده، دوباره نکن
+    if (requestedImages.has(slide.imageSrc)) {
       return;
     }
+
+    requestedImages.add(slide.imageSrc);
 
     const img = new Image();
     img.src = slide.imageSrc;
@@ -75,36 +70,41 @@ const slideVariants = {
 
 export function HeroSection() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
+  const [direction, setDirection] = useState(0);
+  const [isAutoPlay, setIsAutoPlay] = useState(true);
 
-  const currentSlide = useMemo(() => heroSlides[activeSlide], [activeSlide]);
+  const currentSlide = heroSlides[activeSlide];
 
-  // Preload تصاویر یک‌بار - فقط در mount
+  // Preload images on mount
   useEffect(() => {
     preloadImages();
-  }, []); // خالی است - فقط یک‌بار اجرا شود
+  }, []);
 
-  // Auto-slide هر 7 ثانیه
+  // Auto-play slides
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
+    if (!isAutoPlay) return;
+
+    const interval = setInterval(() => {
       setDirection(1);
       setActiveSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 7000);
+    }, 5000);
 
-    return () => window.clearInterval(intervalId);
-  }, []);
+    return () => clearInterval(interval);
+  }, [isAutoPlay]);
 
-  const goToSlide = useCallback((index: number) => {
-    setActiveSlide((prev) => {
-      if (index === prev) return prev;
-      setDirection(index > prev ? 1 : -1);
-      return index;
-    });
-  }, []);
+  const goToSlide = useCallback(
+    (index: number) => {
+      setDirection(index > activeSlide ? 1 : -1);
+      setActiveSlide(index);
+      setIsAutoPlay(false);
+    },
+    [activeSlide],
+  );
 
   const goNext = useCallback(() => {
     setDirection(1);
     setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+    setIsAutoPlay(false);
   }, []);
 
   const goPrev = useCallback(() => {
@@ -112,6 +112,7 @@ export function HeroSection() {
     setActiveSlide(
       (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
     );
+    setIsAutoPlay(false);
   }, []);
 
   return (
@@ -130,21 +131,26 @@ export function HeroSection() {
             exit="exit"
             className="absolute inset-0 overflow-hidden"
           >
-            <img
-              src={currentSlide.imageSrc}
-              alt={currentSlide.alt}
-              width={currentSlide.width}
-              height={currentSlide.height}
-              sizes="(max-width: 640px) 94vw, (max-width: 1024px) 92vw, 1280px"
-              className="h-full w-full object-cover object-center"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-              style={{
-                backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden",
-              }}
-            />
+            {heroSlides.map((slide, index) => (
+              <img
+                key={slide.id}
+                src={slide.imageSrc}
+                alt={slide.alt}
+                width={slide.width}
+                height={slide.height}
+                sizes="(max-width: 640px) 94vw, (max-width: 1024px) 92vw, 1280px"
+                className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-500 ${
+                  index === activeSlide ? "opacity-100" : "opacity-0"
+                }`}
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={index === 0 ? "high" : "auto"}
+                style={{
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                }}
+              />
+            ))}
             <div className="absolute inset-0 bg-black/20" />
           </motion.article>
         </AnimatePresence>
@@ -170,8 +176,8 @@ export function HeroSection() {
                   onClick={() => goToSlide(index)}
                   className={`h-2 rounded-full transition-all duration-300 sm:h-2.5 ${
                     index === activeSlide
-                      ? "w-6 bg-white sm:w-8"
-                      : "w-2 bg-white/45 hover:bg-white/65 sm:w-2.5"
+                      ? "w-8 bg-white sm:w-10"
+                      : "w-2 bg-white/50 hover:bg-white/75"
                   }`}
                 />
               ))}
@@ -187,6 +193,7 @@ export function HeroSection() {
             </button>
           </div>
         </div>
+
       </div>
     </section>
   );

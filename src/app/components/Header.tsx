@@ -169,13 +169,20 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
         return;
       }
 
+      // جایگزین این بخش در handleLogin بعد از دریافت token:
       const payload = decodeToken(token);
-      const isAdmin = payload?.role === "Admin";
+      const isAdmin =
+        payload?.role === "Admin" ||
+        (Array.isArray(payload?.role) && payload.role.includes("Admin"));
+
+      // ذخیره nationalCode از data.user
+      if (data.user?.nationalCode) {
+        localStorage.setItem("user-national-code", data.user.nationalCode);
+      }
 
       localStorage.setItem("auth-token", token);
       localStorage.setItem(AUTH_STORAGE_KEY, "true");
       localStorage.setItem(AUTH_TYPE_KEY, isAdmin ? "admin" : "user");
-
       setIsAuthenticated(true);
       setLoginType(isAdmin ? "admin" : "user");
       setLoginError("");

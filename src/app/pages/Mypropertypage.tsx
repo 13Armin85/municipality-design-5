@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
@@ -11,26 +11,119 @@ import {
   Trash2,
   X,
   Home,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router";
-import { propertyItems } from "../data/properties";
-import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 interface MyPropertyPageProps {
   isDark: boolean;
   toggleTheme: () => void;
 }
 
+interface PropertyItem {
+  id: string;
+  fullCode: string;
+  description: string;
+}
+
+const decodeToken = (token: string) => {
+  try {
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch {
+    return null;
+  }
+};
+
 export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const { selectedProperty, selectedPropertyId, selectProperty } =
-    useSelectedProperty();
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
+    null,
+  );
+  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(
+    null,
+  );
 
-  const handleSelectProperty = (propertyId: string) => {
-    selectProperty(propertyId);
+  const [propertyItems, setPropertyItems] = useState<PropertyItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const handleSelectProperty = (property: PropertyItem) => {
+    setSelectedPropertyId(property.id);
+    setSelectedProperty(property);
     setIsMapOpen(true);
   };
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const token = localStorage.getItem("auth-token");
+        const nationalCode = localStorage.getItem("user-national-code");
+
+        if (!token) {
+          setError("توکن احراز هویت یافت نشد. لطفاً دوباره وارد شوید.");
+          setLoading(false);
+          return;
+        }
+
+        if (!nationalCode) {
+          setError("کد ملی یافت نشد. لطفاً دوباره وارد شوید.");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(
+          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (!response.ok) {
+          if (response.status === 401) {
+            setError("دسترسی غیرمجاز. لطفاً دوباره وارد شوید.");
+          } else if (response.status === 404) {
+            setPropertyItems([]);
+          } else {
+            setError("خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.");
+          }
+          setLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+
+        // سازگاری با ساختارهای مختلف پاسخ API
+        const rawList = Array.isArray(data)
+          ? data
+          : (data.items ?? data.data ?? data.files ?? []);
+
+        const mapped: PropertyItem[] = rawList.map(
+          (item: any, index: number) => ({
+            id: String(item.Id ?? item.shop ?? index),
+            fullCode: item.codeN ?? "—",
+            description:
+              item.tvItems?.[0]?.Text?.trim() ?? item.codeN ?? "بدون توضیحات",
+          }),
+        );
+
+        setPropertyItems(mapped);
+      } catch {
+        setError("خطا در اتصال به سرور. لطفاً دوباره تلاش کنید.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
 
   return (
     <div
@@ -92,7 +185,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
         <div className="container mx-auto px-0 md:px-2 lg:px-6">
           <div className="nav-shell bg-card border border-border/50 rounded-2xl shadow-sm">
             <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
-              {/* دکمه بازگشت سمت راست (شروع راست‌چین) */}
               <Link
                 to="/"
                 className="header-action-btn inline-flex items-center gap-2 px-3"
@@ -101,12 +193,10 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                 <span className="hidden text-sm md:block">بازگشت</span>
               </Link>
 
-              {/* عنوان وسط */}
               <h1 className="text-sm font-bold text-foreground md:text-base">
                 املاک من
               </h1>
 
-              {/* دکمه‌های تم و راهنما سمت چپ */}
               <div className="flex items-center gap-1.5 md:gap-3 flex-row-reverse">
                 <button
                   onClick={toggleTheme}
@@ -133,79 +223,112 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
       <main className="px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6 bg-background">
         <div className="container mx-auto max-w-6xl space-y-5">
-          {/* جدول املاک */}
-          <motion.article
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="soft-card bg-card border border-border/50 rounded-2xl overflow-hidden"
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs md:text-sm">
-                <thead>
-                  <tr className="bg-muted/40 border-b border-border/60">
-                    <th className="px-4 py-3 font-semibold text-foreground/80 text-right">
-                      کد نوسازی
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-foreground/80 text-right">
-                      توضیحات
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-foreground/80 text-center w-36">
-                      عملیات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {propertyItems.map((property, i) => {
-                    const isSelected = selectedPropertyId === property.id;
+          {/* حالت لودینگ */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm">در حال دریافت اطلاعات املاک...</p>
+            </div>
+          )}
 
-                    return (
-                      <motion.tr
-                        key={property.id}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className={`border-b border-r-4 transition-colors ${
-                          isSelected
-                            ? "border-b-primary/25 border-r-primary bg-primary/10"
-                            : "border-b-border/40 border-r-transparent hover:bg-muted/10"
-                        }`}
-                      >
-                        <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <span>{property.fullCode}</span>
-                          </div>
-                        </td>
-                        <td
-                          className={`px-4 py-3 leading-6 text-xs ${
+          {/* حالت خطا */}
+          {!loading && error && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 px-5 py-4 text-sm text-destructive"
+            >
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+
+          {/* حالت خالی */}
+          {!loading && !error && propertyItems.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground"
+            >
+              <MapPin className="h-10 w-10 opacity-30" />
+              <p className="text-sm">هیچ ملکی برای این کد ملی یافت نشد.</p>
+            </motion.div>
+          )}
+
+          {/* جدول املاک */}
+          {!loading && !error && propertyItems.length > 0 && (
+            <motion.article
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="soft-card bg-card border border-border/50 rounded-2xl overflow-hidden"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs md:text-sm">
+                  <thead>
+                    <tr className="bg-muted/40 border-b border-border/60">
+                      <th className="px-4 py-3 font-semibold text-foreground/80 text-right">
+                        کد نوسازی
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-foreground/80 text-right">
+                        توضیحات
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-foreground/80 text-center w-36">
+                        عملیات
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {propertyItems.map((property, i) => {
+                      const isSelected = selectedPropertyId === property.id;
+
+                      return (
+                        <motion.tr
+                          key={property.id}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className={`border-b border-r-4 transition-colors ${
                             isSelected
-                              ? "font-medium text-foreground"
-                              : "text-muted-foreground"
+                              ? "border-b-primary/25 border-r-primary bg-primary/10"
+                              : "border-b-border/40 border-r-transparent hover:bg-muted/10"
                           }`}
                         >
-                          {property.description}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => handleSelectProperty(property.id)}
-                            className={`inline-flex h-9 min-w-28 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-all active:scale-95 shadow-sm ${
+                          <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <span>{property.fullCode}</span>
+                            </div>
+                          </td>
+                          <td
+                            className={`px-4 py-3 leading-6 text-xs ${
                               isSelected
-                                ? "bg-primary text-primary-foreground shadow-primary/25"
-                                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
+                                ? "font-medium text-foreground"
+                                : "text-muted-foreground"
                             }`}
-                            title="نمایش روی نقشه"
                           >
-                            <MapPin className="h-4 w-4" />
-                            {isSelected ? "انتخاب شده" : "انتخاب ملک"}
-                          </button>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </motion.article>
+                            {property.description}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => handleSelectProperty(property)}
+                              className={`inline-flex h-9 min-w-28 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-all active:scale-95 shadow-sm ${
+                                isSelected
+                                  ? "bg-primary text-primary-foreground shadow-primary/25"
+                                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20"
+                              }`}
+                            >
+                              <MapPin className="h-4 w-4" />
+                              {isSelected ? "انتخاب شده" : "انتخاب ملک"}
+                            </button>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </motion.article>
+          )}
 
           {/* نقشه */}
           <AnimatePresence>
@@ -218,7 +341,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                 transition={{ duration: 0.3 }}
                 className="soft-card bg-card border border-border/50 rounded-2xl relative h-[480px] overflow-hidden group"
               >
-                {/* نقشه پس‌زمینه */}
                 <div className="absolute inset-0 bg-slate-700">
                   <div className="h-full w-full relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800" />
@@ -231,7 +353,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                   </div>
                 </div>
 
-                {/* کنترل‌های نقشه - سمت چپ */}
                 <div className="absolute left-4 top-4 flex flex-col gap-2 z-10">
                   <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
                     <Plus className="h-4 w-4" />
@@ -244,7 +365,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                   </button>
                 </div>
 
-                {/* دکمه حذف - سمت راست */}
                 <button
                   onClick={() => setIsMapOpen(false)}
                   className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg hover:bg-destructive transition-colors z-10"
@@ -253,7 +373,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                   <Trash2 className="h-4 w-4" />
                 </button>
 
-                {/* برچسب مقیاس */}
                 <div className="absolute bottom-4 left-4 rounded-md bg-card/80 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur-sm z-10">
                   m 50
                 </div>
