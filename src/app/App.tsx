@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// src/app/App.tsx
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router";
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
@@ -11,16 +12,6 @@ import { SupportSection } from "./components/SupportSection";
 import { FaqSection } from "./components/FaqSection";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
-import { AboutPage } from "./pages/AboutPage";
-import { ProfilePage } from "./pages/ProfilePage";
-import { NewsDetailPage } from "./pages/NewsDetailPage";
-import { GuildFeesPage } from "./pages/GuildFeesPage";
-import { PropertyInquiryPage } from "./pages/PropertyInquiryPage";
-import { MyPropertyPage } from "./pages/Mypropertypage";
-import { SabtDarkhastPage } from "./pages/Sabtdarkhastpage";
-import { PropertyRequestDetails } from "./pages/PropertyRequestDetails";
-import { ModernTollPage } from "./pages/ModernTollPage";
-import AdminPanel from "./pages/Adminpanel";
 import { AUTH_STORAGE_KEY } from "./pages/profile/profileData";
 import {
   Dialog,
@@ -125,130 +116,180 @@ export default function App() {
         <div className="absolute -bottom-28 left-1/2 -translate-x-1/2 w-[34rem] h-[18rem] rounded-full bg-[var(--primary-soft)] blur-[110px]" />
       </div>
       <RouteScrollManager />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <Header isDark={isDark} toggleTheme={toggleTheme} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <>
+                <Header isDark={isDark} toggleTheme={toggleTheme} />
+                <main>
+                  <HomePageContent />
+                </main>
+              </>
+            }
+          />
+          <Route
+            path="/about"
+            element={
               <main>
-                <HomePageContent />
+                <AboutPage isDark={isDark} toggleTheme={toggleTheme} />
               </main>
-            </>
-          }
-        />
-        <Route
-          path="/about"
-          element={
-            <main>
-              <AboutPage isDark={isDark} toggleTheme={toggleTheme} />
-            </main>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <main>
-              <ProfilePage isDark={isDark} toggleTheme={toggleTheme} />
-            </main>
-          }
-        />
-        <Route
-          path="/news/:slug"
-          element={
-            <main>
-              <NewsDetailPage isDark={isDark} toggleTheme={toggleTheme} />
-            </main>
-          }
-        />
-        <Route
-          path="/guild-fees"
-          element={
-            protectedServiceElement ?? (
+            }
+          />
+          <Route
+            path="/profile"
+            element={
               <main>
-                <GuildFeesPage isDark={isDark} toggleTheme={toggleTheme} />
+                <ProfilePage isDark={isDark} toggleTheme={toggleTheme} />
               </main>
-            )
-          }
-        />
-        <Route
-          path="/property-inquiry"
-          element={
-            protectedServiceElement ?? (
+            }
+          />
+          <Route
+            path="/news/:slug"
+            element={
               <main>
-                <PropertyInquiryPage
-                  isDark={isDark}
-                  toggleTheme={toggleTheme}
-                />
+                <NewsDetailPage isDark={isDark} toggleTheme={toggleTheme} />
               </main>
-            )
-          }
-        />
-        <Route
-          path="/my-property"
-          element={
-            protectedServiceElement ?? (
-              <main>
-                <MyPropertyPage isDark={isDark} toggleTheme={toggleTheme} />
-              </main>
-            )
-          }
-        />
-        <Route
-          path="/admin"
-          element={<AdminPanel isDark={isDark} toggleTheme={toggleTheme} />}
-        />
-        <Route
-          path="/sabt-darkhast"
-          element={
-            protectedServiceElement ?? (
-              <main>
-                <SabtDarkhastPage isDark={isDark} toggleTheme={toggleTheme} />
-              </main>
-            )
-          }
-        />
-        <Route
-          path="/property-request"
-          element={
-            protectedServiceElement ?? (
-              <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
-                <div className="container mx-auto max-w-5xl">
-                  <PropertyRequestDetails
+            }
+          />
+          <Route
+            path="/guild-fees"
+            element={
+              protectedServiceElement ?? (
+                <main>
+                  <GuildFeesPage isDark={isDark} toggleTheme={toggleTheme} />
+                </main>
+              )
+            }
+          />
+          <Route
+            path="/property-inquiry"
+            element={
+              protectedServiceElement ?? (
+                <main>
+                  <PropertyInquiryPage
                     isDark={isDark}
                     toggleTheme={toggleTheme}
                   />
-                </div>
-              </main>
-            )
-          }
-        />
-        <Route
-          path="/modern-toll"
-          element={
-            protectedServiceElement ?? (
-              <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
-                <div className="container mx-auto max-w-5xl">
-                  <ModernTollPage isDark={isDark} toggleTheme={toggleTheme} />
-                </div>
-              </main>
-            )
-          }
-        />
-        <Route
-          path="*"
-          element={
-            <>
-              <Header isDark={isDark} toggleTheme={toggleTheme} />
-              <main>
-                <HomePageContent />
-              </main>
-            </>
-          }
-        />
-      </Routes>
+                </main>
+              )
+            }
+          />
+          <Route
+            path="/my-property"
+            element={
+              protectedServiceElement ?? (
+                <main>
+                  <MyPropertyPage isDark={isDark} toggleTheme={toggleTheme} />
+                </main>
+              )
+            }
+          />
+          <Route
+            path="/admin"
+            element={<AdminPanel isDark={isDark} toggleTheme={toggleTheme} />}
+          />
+          <Route
+            path="/sabt-darkhast"
+            element={
+              protectedServiceElement ?? (
+                <main>
+                  <SabtDarkhastPage isDark={isDark} toggleTheme={toggleTheme} />
+                </main>
+              )
+            }
+          />
+          <Route
+            path="/property-request"
+            element={
+              protectedServiceElement ?? (
+                <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
+                  <div className="container mx-auto max-w-5xl">
+                    <PropertyRequestDetails
+                      isDark={isDark}
+                      toggleTheme={toggleTheme}
+                    />
+                  </div>
+                </main>
+              )
+            }
+          />
+          <Route
+            path="/modern-toll"
+            element={
+              protectedServiceElement ?? (
+                <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
+                  <div className="container mx-auto max-w-5xl">
+                    <ModernTollPage isDark={isDark} toggleTheme={toggleTheme} />
+                  </div>
+                </main>
+              )
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <>
+                <Header isDark={isDark} toggleTheme={toggleTheme} />
+                <main>
+                  <HomePageContent />
+                </main>
+              </>
+            }
+          />
+        </Routes>
+      </Suspense>
       <ConditionalFooter />
       <ScrollToTop />
     </div>
   );
+}
+const AboutPage = lazy(() =>
+  import("./pages/AboutPage").then((module) => ({ default: module.AboutPage })),
+);
+const ProfilePage = lazy(() =>
+  import("./pages/ProfilePage").then((module) => ({
+    default: module.ProfilePage,
+  })),
+);
+const NewsDetailPage = lazy(() =>
+  import("./pages/NewsDetailPage").then((module) => ({
+    default: module.NewsDetailPage,
+  })),
+);
+const GuildFeesPage = lazy(() =>
+  import("./pages/GuildFeesPage").then((module) => ({
+    default: module.GuildFeesPage,
+  })),
+);
+const PropertyInquiryPage = lazy(() =>
+  import("./pages/PropertyInquiryPage").then((module) => ({
+    default: module.PropertyInquiryPage,
+  })),
+);
+const MyPropertyPage = lazy(() =>
+  import("./pages/Mypropertypage").then((module) => ({
+    default: module.MyPropertyPage,
+  })),
+);
+const SabtDarkhastPage = lazy(() =>
+  import("./pages/Sabtdarkhastpage").then((module) => ({
+    default: module.SabtDarkhastPage,
+  })),
+);
+const PropertyRequestDetails = lazy(() =>
+  import("./pages/PropertyRequestDetails").then((module) => ({
+    default: module.PropertyRequestDetails,
+  })),
+);
+const ModernTollPage = lazy(() =>
+  import("./pages/ModernTollPage").then((module) => ({
+    default: module.ModernTollPage,
+  })),
+);
+const AdminPanel = lazy(() => import("./pages/Adminpanel"));
+
+function PageLoader() {
+  return <div className="section-decor px-3 pb-12 pt-24" />;
 }

@@ -1,8 +1,11 @@
+// src/app/components/Header.tsx
 import {
   ClipboardEvent as ReactClipboardEvent,
   FormEvent,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
+  Suspense,
+  lazy,
   useEffect,
   useRef,
   useState,
@@ -22,11 +25,33 @@ import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
 
-import { NotificationsPanel } from "../pages/header/NotificationsPanel";
-import { AllNotificationsModal } from "../pages/header/AllNotificationsModal";
-import { LoginModal } from "../pages/header/LoginModal";
-import { ForgotPasswordModal, ForgotStep } from "../pages/header/Forgotpasswordmodal";
-import { MobileMenu } from "../pages/header/MobileMenu";
+import { type ForgotStep } from "../pages/header/Forgotpasswordmodal";
+
+const NotificationsPanel = lazy(() =>
+  import("../pages/header/NotificationsPanel").then((module) => ({
+    default: module.NotificationsPanel,
+  })),
+);
+const AllNotificationsModal = lazy(() =>
+  import("../pages/header/AllNotificationsModal").then((module) => ({
+    default: module.AllNotificationsModal,
+  })),
+);
+const LoginModal = lazy(() =>
+  import("../pages/header/LoginModal").then((module) => ({
+    default: module.LoginModal,
+  })),
+);
+const ForgotPasswordModal = lazy(() =>
+  import("../pages/header/Forgotpasswordmodal").then((module) => ({
+    default: module.ForgotPasswordModal,
+  })),
+);
+const MobileMenu = lazy(() =>
+  import("../pages/header/MobileMenu").then((module) => ({
+    default: module.MobileMenu,
+  })),
+);
 
 interface HeaderProps {
   isDark: boolean;
@@ -530,100 +555,106 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                 )}
               </motion.button>
 
-              <NotificationsPanel
-                isOpen={isNotificationsOpen}
-                notifications={notifications}
-                readNotificationIds={readNotificationIds}
-                notificationsRef={notificationsRef}
-                isMobile={isMobile}
-                onClose={() => setIsNotificationsOpen(false)}
-                onMarkAsRead={markNotificationAsRead}
-                onOpenAll={() => setIsAllNotificationsOpen(true)}
-              />
+              <Suspense fallback={null}>
+                <NotificationsPanel
+                  isOpen={isNotificationsOpen}
+                  notifications={notifications}
+                  readNotificationIds={readNotificationIds}
+                  notificationsRef={notificationsRef}
+                  isMobile={isMobile}
+                  onClose={() => setIsNotificationsOpen(false)}
+                  onMarkAsRead={markNotificationAsRead}
+                  onOpenAll={() => setIsAllNotificationsOpen(true)}
+                />
+              </Suspense>
             </div>
           </div>
         </div>
       </div>
 
-      <AllNotificationsModal
-        isOpen={isAllNotificationsOpen}
-        notifications={notifications}
-        readNotificationIds={readNotificationIds}
-        unreadCount={unreadCount}
-        onClose={() => setIsAllNotificationsOpen(false)}
-        onMarkAsRead={markNotificationAsRead}
-        onMarkAllAsRead={markAllNotificationsAsRead}
-      />
+      <Suspense fallback={null}>
+        <AllNotificationsModal
+          isOpen={isAllNotificationsOpen}
+          notifications={notifications}
+          readNotificationIds={readNotificationIds}
+          unreadCount={unreadCount}
+          onClose={() => setIsAllNotificationsOpen(false)}
+          onMarkAsRead={markNotificationAsRead}
+          onMarkAllAsRead={markAllNotificationsAsRead}
+        />
 
-      <LoginModal
-        isOpen={isLoginOpen}
-        loginType={loginType}
-        username={username}
-        password={password}
-        loginError={loginError}
-        loginLoading={loginLoading}
-        onClose={() => setIsLoginOpen(false)}
-        onUsernameChange={setUsername}
-        onPasswordChange={setPassword}
-        onSubmit={handleLogin}
-        onForgotPassword={openForgotPassword}
-      />
+        <LoginModal
+          isOpen={isLoginOpen}
+          loginType={loginType}
+          username={username}
+          password={password}
+          loginError={loginError}
+          loginLoading={loginLoading}
+          onClose={() => setIsLoginOpen(false)}
+          onUsernameChange={setUsername}
+          onPasswordChange={setPassword}
+          onSubmit={handleLogin}
+          onForgotPassword={openForgotPassword}
+        />
 
-      <ForgotPasswordModal
-        isOpen={isForgotOpen}
-        step={forgotStep}
-        phone={forgotPhone}
-        otp={forgotOtp}
-        newPassword={forgotNewPassword}
-        confirmPassword={forgotConfirmPassword}
-        error={forgotError}
-        loading={forgotLoading}
-        otpResendTimer={otpResendTimer}
-        otpRefs={otpRefs}
-        onClose={closeForgot}
-        onPhoneChange={setForgotPhone}
-        onOtpInput={handleOtpInput}
-        onOtpKeyDown={handleOtpKeyDown}
-        onOtpPaste={handleOtpPaste}
-        onNewPasswordChange={setForgotNewPassword}
-        onConfirmPasswordChange={setForgotConfirmPassword}
-        onSendOtp={handleSendOtp}
-        onVerifyOtp={handleVerifyOtp}
-        onResendOtp={handleResendOtp}
-        onSetNewPassword={handleSetNewPassword}
-        onBackToLogin={() => {
-          closeForgot();
-          setIsLoginOpen(true);
-        }}
-        onGoToOtpStep={() => {
-          setForgotStep("phone");
-          setForgotError("");
-          setForgotOtp(["", "", "", "", ""]);
-          if (timerRef.current) clearInterval(timerRef.current);
-        }}
-      />
+        <ForgotPasswordModal
+          isOpen={isForgotOpen}
+          step={forgotStep}
+          phone={forgotPhone}
+          otp={forgotOtp}
+          newPassword={forgotNewPassword}
+          confirmPassword={forgotConfirmPassword}
+          error={forgotError}
+          loading={forgotLoading}
+          otpResendTimer={otpResendTimer}
+          otpRefs={otpRefs}
+          onClose={closeForgot}
+          onPhoneChange={setForgotPhone}
+          onOtpInput={handleOtpInput}
+          onOtpKeyDown={handleOtpKeyDown}
+          onOtpPaste={handleOtpPaste}
+          onNewPasswordChange={setForgotNewPassword}
+          onConfirmPasswordChange={setForgotConfirmPassword}
+          onSendOtp={handleSendOtp}
+          onVerifyOtp={handleVerifyOtp}
+          onResendOtp={handleResendOtp}
+          onSetNewPassword={handleSetNewPassword}
+          onBackToLogin={() => {
+            closeForgot();
+            setIsLoginOpen(true);
+          }}
+          onGoToOtpStep={() => {
+            setForgotStep("phone");
+            setForgotError("");
+            setForgotOtp(["", "", "", "", ""]);
+            if (timerRef.current) clearInterval(timerRef.current);
+          }}
+        />
+      </Suspense>
 
-      <MobileMenu
-        isOpen={isMenuOpen}
-        menuItems={menuItems}
-        activeMenuItem={activeMenuItem}
-        isAuthenticated={isAuthenticated}
-        unreadCount={unreadCount}
-        onMenuItemClick={(href) => {
-          setActiveMenuItem(href);
-          setIsMenuOpen(false);
-        }}
-        onNotificationsClick={() => {
-          setIsMenuOpen(false);
-          setIsAllNotificationsOpen(false);
-          setIsNotificationsOpen(true);
-        }}
-        onProfileClick={(event) => {
-          setIsMenuOpen(false);
-          setIsNotificationsOpen(false);
-          handleProfileClick(event);
-        }}
-      />
+      <Suspense fallback={null}>
+        <MobileMenu
+          isOpen={isMenuOpen}
+          menuItems={menuItems}
+          activeMenuItem={activeMenuItem}
+          isAuthenticated={isAuthenticated}
+          unreadCount={unreadCount}
+          onMenuItemClick={(href) => {
+            setActiveMenuItem(href);
+            setIsMenuOpen(false);
+          }}
+          onNotificationsClick={() => {
+            setIsMenuOpen(false);
+            setIsAllNotificationsOpen(false);
+            setIsNotificationsOpen(true);
+          }}
+          onProfileClick={(event) => {
+            setIsMenuOpen(false);
+            setIsNotificationsOpen(false);
+            handleProfileClick(event);
+          }}
+        />
+      </Suspense>
     </motion.header>
   );
 }

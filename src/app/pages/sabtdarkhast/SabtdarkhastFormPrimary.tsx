@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import {
   areRenewalCodesEqual,
-  propertyItems,
+  type MockProperty,
   type RenewalCodes,
 } from "../../data/properties";
 import { APPLICANT_TYPES, OFFICES, REQUEST_TYPES } from "./constants";
@@ -31,6 +31,7 @@ import {
 } from "./types";
 
 interface SabtdarkhastFormPrimaryProps {
+  propertyItems: MockProperty[];
   showErrors: boolean;
   errors: FormErrors;
   searchValues: RenewalCodes;
@@ -60,6 +61,7 @@ interface SabtdarkhastFormPrimaryProps {
 }
 
 export function SabtdarkhastFormPrimary({
+  propertyItems,
   showErrors,
   errors,
   searchValues,
@@ -201,7 +203,8 @@ export function SabtdarkhastFormPrimary({
                   className={`h-2.5 w-2.5 flex-shrink-0 rounded-full sm:h-3 sm:w-3 ${areRenewalCodesEqual(searchValues, prop.codes) ? "bg-primary animate-pulse" : "bg-orange-400"}`}
                 />
                 <span className="truncate text-[11px] font-medium sm:text-xs md:text-sm">
-                  {Object.values(prop.codes).join("-")} (ملک) — {prop.owner.name}
+                  {Object.values(prop.codes).join("-")} (ملک) —{" "}
+                  {prop.owner.name}
                 </span>
               </div>
               <ChevronLeft className="mr-1 h-3.5 w-3.5 flex-shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-1 sm:h-4 sm:w-4" />
@@ -229,7 +232,11 @@ export function SabtdarkhastFormPrimary({
             <div className="grid grid-cols-1 gap-x-3 gap-y-5 sm:grid-cols-2 md:grid-cols-4">
               <div className="col-span-1 flex items-center gap-4 text-xs text-muted-foreground sm:col-span-2 md:col-span-4">
                 <label className="flex cursor-pointer items-center gap-1.5">
-                  <input type="radio" name="malek-type" className="accent-primary" />{" "}
+                  <input
+                    type="radio"
+                    name="malek-type"
+                    className="accent-primary"
+                  />{" "}
                   کد ملی
                 </label>
                 <label className="flex cursor-pointer items-center gap-1.5">
@@ -358,7 +365,9 @@ export function SabtdarkhastFormPrimary({
                 label="نام متقاضی"
                 required
                 value={applicantForm.name}
-                onChange={(v) => setApplicantForm({ ...applicantForm, name: v })}
+                onChange={(v) =>
+                  setApplicantForm({ ...applicantForm, name: v })
+                }
                 errorKey="applicant.name"
                 showErrors={showErrors}
                 errors={errors}
@@ -368,7 +377,9 @@ export function SabtdarkhastFormPrimary({
                 label="شماره همراه"
                 required
                 value={applicantForm.phone}
-                onChange={(v) => setApplicantForm({ ...applicantForm, phone: v })}
+                onChange={(v) =>
+                  setApplicantForm({ ...applicantForm, phone: v })
+                }
                 errorKey="applicant.phone"
                 showErrors={showErrors}
                 errors={errors}
@@ -411,7 +422,10 @@ export function SabtdarkhastFormPrimary({
                   label="تاریخ نامه"
                   value={complementaryForm.letterDate}
                   onChange={(v) =>
-                    setComplementaryForm({ ...complementaryForm, letterDate: v })
+                    setComplementaryForm({
+                      ...complementaryForm,
+                      letterDate: v,
+                    })
                   }
                   pickerId="letterDate"
                   activeDatePicker={activeDatePicker}
@@ -433,7 +447,10 @@ export function SabtdarkhastFormPrimary({
                   label="تاریخ دبیرخانه"
                   value={complementaryForm.secretDate}
                   onChange={(v) =>
-                    setComplementaryForm({ ...complementaryForm, secretDate: v })
+                    setComplementaryForm({
+                      ...complementaryForm,
+                      secretDate: v,
+                    })
                   }
                   pickerId="secretDate"
                   activeDatePicker={activeDatePicker}

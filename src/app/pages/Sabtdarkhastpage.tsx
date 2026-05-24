@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  findPropertyByCodes,
-  propertyItems,
+  areRenewalCodesEqual,
+  getDefaultProperty,
   type MockProperty,
   type RenewalCodes,
 } from "../data/properties";
-import { useSelectedProperty } from "../hooks/useSelectedProperty";
 import { SelectionModal } from "./sabtdarkhast/FormCommon";
 import { HelpModal } from "./sabtdarkhast/HelpModal";
 import {
@@ -33,8 +32,12 @@ export function SabtDarkhastPage({
   isDark,
   toggleTheme,
 }: SabtDarkhastPageProps) {
-  const { selectedProperty, selectProperty } = useSelectedProperty();
+  const [propertyItems, setPropertyItems] = useState<MockProperty[]>([]);
+  const defaultProperty = getDefaultProperty();
+  const selectedProperty = propertyItems[0] ?? defaultProperty;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [modalContent, setModalContent] = useState<HelpModalContent>({
     title: "",
     description: "",
@@ -48,13 +51,17 @@ export function SabtDarkhastPage({
   });
 
   const [activeDatePicker, setActiveDatePicker] = useState<string | null>(null);
+
   const [step, setStep] = useState<StepState>("form");
+
   const [searchValues, setSearchValues] = useState<RenewalCodes>(
     selectedProperty.codes,
   );
+
   const [activeProperty, setActiveProperty] = useState<MockProperty | null>(
     selectedProperty,
   );
+
   const [vakadari, setVakadari] = useState("");
 
   const [ownerForm, setOwnerForm] = useState<OwnerFormState>({
@@ -64,16 +71,19 @@ export function SabtDarkhastPage({
     postalCode: selectedProperty.owner.postalCode,
     address: selectedProperty.owner.address,
   });
+
   const [requestForm, setRequestForm] = useState<RequestFormState>({
     id: selectedProperty.registration.request.id,
     type: selectedProperty.registration.request.type,
     applicantType: selectedProperty.registration.request.applicantType,
   });
+
   const [applicantForm, setApplicantForm] = useState<ApplicantFormState>({
     nationalId: selectedProperty.owner.nationalId,
     name: selectedProperty.owner.name,
     phone: selectedProperty.owner.phone,
   });
+
   const [complementaryForm, setComplementaryForm] =
     useState<ComplementaryFormState>({
       letterNo: selectedProperty.registration.complementary.letterNo,
@@ -86,30 +96,9 @@ export function SabtDarkhastPage({
   const [errors, setErrors] = useState<FormErrors>({});
   const [showErrors, setShowErrors] = useState(false);
 
-  const clearError = (errorKey: string) => {
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[errorKey];
-      return next;
-    });
-  };
-
-  const validateForm = () => {
-    const newErrors: FormErrors = {};
-    if (!ownerForm.nationalId.trim()) newErrors["owner.nationalId"] = "این فیلد اجباری است";
-    if (!ownerForm.name.trim()) newErrors["owner.name"] = "این فیلد اجباری است";
-    if (!ownerForm.phone.trim()) newErrors["owner.phone"] = "این فیلد اجباری است";
-    if (!requestForm.id.trim()) newErrors["request.id"] = "این فیلد اجباری است";
-    if (!requestForm.type.trim()) newErrors["request.type"] = "این فیلد اجباری است";
-    if (!requestForm.applicantType.trim()) newErrors["request.applicantType"] = "این فیلد اجباری است";
-    if (!applicantForm.nationalId.trim()) newErrors["applicant.nationalId"] = "این فیلد اجباری است";
-    if (!applicantForm.name.trim()) newErrors["applicant.name"] = "این فیلد اجباری است";
-    if (!applicantForm.phone.trim()) newErrors["applicant.phone"] = "این فیلد اجباری است";
-    return newErrors;
-  };
-
   const applyPropertyToPage = (property: MockProperty) => {
     setActiveProperty(property);
+
     setOwnerForm({
       nationalId: property.owner.nationalId,
       name: property.owner.name,
@@ -117,16 +106,19 @@ export function SabtDarkhastPage({
       postalCode: property.owner.postalCode,
       address: property.owner.address,
     });
+
     setRequestForm({
       id: property.registration.request.id,
       type: property.registration.request.type,
       applicantType: property.registration.request.applicantType,
     });
+
     setApplicantForm({
       nationalId: property.owner.nationalId,
       name: property.owner.name,
       phone: property.owner.phone,
     });
+
     setComplementaryForm({
       letterNo: property.registration.complementary.letterNo,
       letterDate: property.registration.complementary.letterDate,
@@ -134,35 +126,183 @@ export function SabtDarkhastPage({
       secretDate: property.registration.complementary.secretDate,
       office: property.registration.complementary.office,
     });
+
     setErrors({});
     setShowErrors(false);
   };
 
   useEffect(() => {
-    setSearchValues(selectedProperty.codes);
-    applyPropertyToPage(selectedProperty);
-  }, [selectedProperty]);
+    const fetchProperties = async () => {
+      try {
+        const token = localStorage.getItem("auth-token");
+        const nationalCode = localStorage.getItem("user-national-code");
+
+        if (!token || !nationalCode) return;
+
+        const response = await fetch(
+          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        const rawList = Array.isArray(data)
+          ? data
+          : (data.items ?? data.data ?? data.files ?? []);
+
+        const base = getDefaultProperty();
+
+        const mapped: MockProperty[] = rawList.map(
+          (item: any, index: number) => {
+            const codeParts = String(item.codeN ?? "0-0-0-0-0-0-0").split("-");
+
+            const ownerName =
+              item.FullName ??
+              item.tvItems?.[0]?.Text?.split(" - ").pop()?.trim() ??
+              "—";
+
+            return {
+              ...base,
+              id: String(item.Id ?? item.shop ?? index),
+              rowNumber: String(index + 1),
+              fullCode: item.codeN ?? base.fullCode,
+              ownerName,
+              description:
+                item.tvItems?.[0]?.Text?.trim() ??
+                item.codeN ??
+                base.description,
+
+              codes: {
+                region: codeParts[0] ?? "0",
+                neighborhood: codeParts[1] ?? "0",
+                block: codeParts[2] ?? "0",
+                property: codeParts[3] ?? "0",
+                building: codeParts[4] ?? "0",
+                apartment: codeParts[5] ?? "0",
+                guild: codeParts[6] ?? "0",
+              },
+
+              owner: {
+                ...base.owner,
+                name: ownerName,
+                nationalId: nationalCode,
+                phone: item.MelkVm?.tel ?? "",
+                postalCode: item.MelkVm?.codeposti ?? "",
+                address: item.MelkVm?.address ?? "",
+              },
+            };
+          },
+        );
+
+        if (mapped.length > 0) {
+          setPropertyItems(mapped);
+          setSearchValues(mapped[0].codes);
+          applyPropertyToPage(mapped[0]);
+        }
+      } catch {
+        //
+      }
+    };
+
+    fetchProperties();
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+
       if (!target.closest("[data-datepicker-container]")) {
         setActiveDatePicker(null);
       }
     };
+
     document.addEventListener("mousedown", handler);
+
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const clearError = (errorKey: string) =>
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[errorKey];
+      return next;
+    });
+
+  const validateForm = () => {
+    const newErrors: FormErrors = {};
+
+    if (!ownerForm.nationalId.trim())
+      newErrors["owner.nationalId"] = "این فیلد اجباری است";
+
+    if (!ownerForm.name.trim()) newErrors["owner.name"] = "این فیلد اجباری است";
+
+    if (!ownerForm.phone.trim())
+      newErrors["owner.phone"] = "این فیلد اجباری است";
+
+    if (!requestForm.id.trim()) newErrors["request.id"] = "این فیلد اجباری است";
+
+    if (!requestForm.type.trim())
+      newErrors["request.type"] = "این فیلد اجباری است";
+
+    if (!requestForm.applicantType.trim())
+      newErrors["request.applicantType"] = "این فیلد اجباری است";
+
+    if (!applicantForm.nationalId.trim())
+      newErrors["applicant.nationalId"] = "این فیلد اجباری است";
+
+    if (!applicantForm.name.trim())
+      newErrors["applicant.name"] = "این فیلد اجباری است";
+
+    if (!applicantForm.phone.trim())
+      newErrors["applicant.phone"] = "این فیلد اجباری است";
+
+    return newErrors;
+  };
+
+  const handleSearch = () => {
+    const found = propertyItems.find((property) =>
+      areRenewalCodesEqual(property.codes, searchValues),
+    );
+
+    if (found) {
+      applyPropertyToPage(found);
+    } else {
+      alert("ملکی با این مشخصات یافت نشد.");
+      setActiveProperty(null);
+    }
+  };
+
+  const handleSelectProperty = (propertyId: string) => {
+    const selected = propertyItems.find((item) => item.id === propertyId);
+
+    if (!selected) return;
+
+    setSearchValues(selected.codes);
+    applyPropertyToPage(selected);
+  };
+
   const handleContinue = () => {
     const nextErrors = validateForm();
+
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       setShowErrors(true);
-      const firstErrEl = document.querySelector("[data-has-error='true']");
-      firstErrEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      document.querySelector("[data-has-error='true']")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
       return;
     }
+
     setErrors({});
     setShowErrors(false);
     setStep("upload");
@@ -173,32 +313,17 @@ export function SabtDarkhastPage({
     setIsModalOpen(true);
   };
 
-  const handleSelectProperty = (propertyId: string) => {
-    const selected = propertyItems.find((item) => item.id === propertyId);
-    if (!selected) return;
-    setSearchValues(selected.codes);
-    applyPropertyToPage(selected);
-    selectProperty(selected.id);
-  };
-
-  const handleSearch = () => {
-    const found = findPropertyByCodes(searchValues);
-    if (found) {
-      applyPropertyToPage(found);
-      selectProperty(found.id);
-    } else {
-      alert("ملکی با این مشخصات یافت نشد.");
-      setActiveProperty(null);
-    }
-  };
-
   const openSelection = (
     title: string,
     items: string[],
     onSelect: (value: string) => void,
-  ) => {
-    setSelectionModal({ open: true, title, items, onSelect });
-  };
+  ) =>
+    setSelectionModal({
+      open: true,
+      title,
+      items,
+      onSelect,
+    });
 
   if (step === "success") {
     return (
@@ -207,14 +332,10 @@ export function SabtDarkhastPage({
         className="min-h-screen bg-background text-foreground transition-colors duration-300"
       >
         <SabtdarkhastSuccessHeader isDark={isDark} toggleTheme={toggleTheme} />
+
         <main className="section-decor px-3 pb-12 pt-20 sm:pt-24 md:pb-20 md:pt-28 lg:px-6">
           <div className="container mx-auto max-w-6xl">
-            <SuccessScreen
-              onReset={() => {
-                setStep("form");
-                applyPropertyToPage(selectedProperty);
-              }}
-            />
+            <SuccessScreen onReset={() => setStep("form")} />
           </div>
         </main>
       </div>
@@ -240,7 +361,10 @@ export function SabtDarkhastPage({
             items={selectionModal.items}
             onSelect={selectionModal.onSelect}
             onClose={() =>
-              setSelectionModal((prev) => ({ ...prev, open: false }))
+              setSelectionModal((prev) => ({
+                ...prev,
+                open: false,
+              }))
             }
           />
         )}
@@ -270,6 +394,7 @@ export function SabtDarkhastPage({
                 exit={{ opacity: 0, x: 30 }}
               >
                 <SabtdarkhastFormPrimary
+                  propertyItems={propertyItems}
                   showErrors={showErrors}
                   errors={errors}
                   searchValues={searchValues}
@@ -293,6 +418,7 @@ export function SabtDarkhastPage({
                   openSelection={openSelection}
                   onContinue={handleContinue}
                 />
+
                 <SabtdarkhastFormSecondary activeProperty={activeProperty} />
               </motion.div>
             )}
