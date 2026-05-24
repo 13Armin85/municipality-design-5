@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type HeroSlide = {
   id: string;
@@ -12,27 +12,49 @@ type HeroSlide = {
 
 const heroSlides: HeroSlide[] = [
   {
-    id: 'slide-1',
-    imageSrc: '/images/Gemini_Generated_Image_a6500ga6500ga650.png',
-    alt: 'Hero slide 1',
+    id: "slide-1",
+    imageSrc: "/images/Gemini_Generated_Image_a6500ga6500ga650.png",
+    alt: "Hero slide 1",
     width: 1376,
     height: 768,
   },
   {
-    id: 'slide-2',
-    imageSrc: '/images/ChatGPT%20Image%20May%2011,%202026,%2001_36_30%20AM.png',
-    alt: 'Hero slide 2',
+    id: "slide-2",
+    imageSrc: "/images/ChatGPT%20Image%20May%2011,%202026,%2001_36_30%20AM.png",
+    alt: "Hero slide 2",
     width: 1774,
     height: 887,
   },
   {
-    id: 'slide-3',
-    imageSrc: '/images/Gemini_Generated_Image_hbitsmhbitsmhbit.png',
-    alt: 'Hero slide 3',
+    id: "slide-3",
+    imageSrc: "/images/Gemini_Generated_Image_hbitsmhbitsmhbit.png",
+    alt: "Hero slide 3",
     width: 1376,
     height: 768,
   },
 ];
+
+// استفاده از Set برای ذخیره عکس‌های preload شده
+const preloadedImages = new Set<string>();
+
+// Preload تمام تصاویر هنگام load کردن صفحه - فقط یک‌بار
+const preloadImages = () => {
+  heroSlides.forEach((slide) => {
+    // اگر قبلاً preload شده، دوباره نکن
+    if (preloadedImages.has(slide.imageSrc)) {
+      return;
+    }
+
+    const img = new Image();
+    img.src = slide.imageSrc;
+    img.onload = () => {
+      preloadedImages.add(slide.imageSrc);
+    };
+    img.onerror = () => {
+      console.error(`Failed to preload image: ${slide.imageSrc}`);
+    };
+  });
+};
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -42,20 +64,27 @@ const slideVariants = {
   center: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.45, ease: 'easeOut' },
+    transition: { duration: 0.45, ease: "easeOut" },
   },
   exit: (direction: number) => ({
     opacity: 0,
     x: direction > 0 ? -70 : 70,
-    transition: { duration: 0.35, ease: 'easeIn' },
+    transition: { duration: 0.35, ease: "easeIn" },
   }),
 };
 
 export function HeroSection() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
-  const currentSlide = heroSlides[activeSlide];
 
+  const currentSlide = useMemo(() => heroSlides[activeSlide], [activeSlide]);
+
+  // Preload تصاویر یک‌بار - فقط در mount
+  useEffect(() => {
+    preloadImages();
+  }, []); // خالی است - فقط یک‌بار اجرا شود
+
+  // Auto-slide هر 7 ثانیه
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setDirection(1);
@@ -65,24 +94,31 @@ export function HeroSection() {
     return () => window.clearInterval(intervalId);
   }, []);
 
-  const goToSlide = (index: number) => {
-    if (index === activeSlide) return;
-    setDirection(index > activeSlide ? 1 : -1);
-    setActiveSlide(index);
-  };
+  const goToSlide = useCallback((index: number) => {
+    setActiveSlide((prev) => {
+      if (index === prev) return prev;
+      setDirection(index > prev ? 1 : -1);
+      return index;
+    });
+  }, []);
 
-  const goNext = () => {
+  const goNext = useCallback(() => {
     setDirection(1);
     setActiveSlide((prev) => (prev + 1) % heroSlides.length);
-  };
+  }, []);
 
-  const goPrev = () => {
+  const goPrev = useCallback(() => {
     setDirection(-1);
-    setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
-  };
+    setActiveSlide(
+      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
+    );
+  }, []);
 
   return (
-    <section id="home" className="relative px-3 pb-8 pt-24 sm:px-4 sm:pt-28 lg:px-6">
+    <section
+      id="home"
+      className="relative px-3 pb-8 pt-24 sm:px-4 sm:pt-28 lg:px-6"
+    >
       <div className="relative mx-auto h-[clamp(15rem,46svh,40rem)] w-full max-w-[92rem] overflow-hidden rounded-[1.25rem] border border-white/25 sm:h-[clamp(18rem,52svh,40rem)] sm:rounded-[1.5rem] lg:rounded-[1.75rem]">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.article
@@ -103,11 +139,17 @@ export function HeroSection() {
               className="h-full w-full object-cover object-center"
               loading="eager"
               decoding="async"
+              fetchPriority="high"
+              style={{
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
+              }}
             />
             <div className="absolute inset-0 bg-black/20" />
           </motion.article>
         </AnimatePresence>
 
+        {/* ناوبری */}
         <div className="absolute inset-x-0 bottom-3 z-20 px-2 sm:bottom-6 sm:px-5 lg:px-6">
           <div className="mx-auto flex w-fit max-w-full items-center justify-center gap-1.5 rounded-2xl border border-white/30 bg-white/10 px-2.5 py-1.5 backdrop-blur-sm sm:gap-3 sm:px-4 sm:py-3">
             <button
@@ -127,7 +169,9 @@ export function HeroSection() {
                   aria-label={`Show slide ${index + 1}`}
                   onClick={() => goToSlide(index)}
                   className={`h-2 rounded-full transition-all duration-300 sm:h-2.5 ${
-                    index === activeSlide ? 'w-6 bg-white sm:w-8' : 'w-2 bg-white/45 hover:bg-white/65 sm:w-2.5'
+                    index === activeSlide
+                      ? "w-6 bg-white sm:w-8"
+                      : "w-2 bg-white/45 hover:bg-white/65 sm:w-2.5"
                   }`}
                 />
               ))}
