@@ -14,7 +14,6 @@ import {
   type MockProperty,
   type RenewalCodes,
 } from "../../data/properties";
-import { APPLICANT_TYPES, OFFICES, REQUEST_TYPES } from "./constants";
 import {
   DateField,
   EditableField,
@@ -41,6 +40,9 @@ interface SabtdarkhastFormPrimaryProps {
   complementaryForm: ComplementaryFormState;
   vakadari: string;
   activeDatePicker: string | null;
+  requestTypeItems: string[];
+  applicantTypeItems: string[];
+  officeItems: string[];
   onOpenHelp: (title: string, description: string) => void;
   onSearch: () => void;
   onSearchValuesChange: (values: RenewalCodes) => void;
@@ -71,6 +73,9 @@ export function SabtdarkhastFormPrimary({
   complementaryForm,
   vakadari,
   activeDatePicker,
+  requestTypeItems,
+  applicantTypeItems,
+  officeItems,
   onOpenHelp,
   onSearch,
   onSearchValuesChange,
@@ -320,7 +325,7 @@ export function SabtdarkhastFormPrimary({
                 required
                 value={requestForm.type}
                 onChange={(v) => setRequestForm({ ...requestForm, type: v })}
-                items={REQUEST_TYPES}
+                items={requestTypeItems}
                 title="انتخاب نوع درخواست"
                 errorKey="request.type"
                 showErrors={showErrors}
@@ -335,7 +340,7 @@ export function SabtdarkhastFormPrimary({
                 onChange={(v) =>
                   setRequestForm({ ...requestForm, applicantType: v })
                 }
-                items={APPLICANT_TYPES}
+                items={applicantTypeItems}
                 title="انتخاب نوع متقاضی"
                 errorKey="request.applicantType"
                 showErrors={showErrors}
@@ -463,7 +468,7 @@ export function SabtdarkhastFormPrimary({
                 onChange={(v) =>
                   setComplementaryForm({ ...complementaryForm, office: v })
                 }
-                items={OFFICES}
+                items={officeItems}
                 title="انتخاب اداره استعلام کننده"
                 showErrors={showErrors}
                 errors={errors}

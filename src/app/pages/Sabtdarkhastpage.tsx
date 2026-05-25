@@ -28,6 +28,35 @@ import {
   StepState,
 } from "./sabtdarkhast/types";
 
+const extractOptions = (data: any): string[] => {
+  const list = Array.isArray(data)
+    ? data
+    : (data?.items ?? data?.data ?? data?.result ?? data?.results ?? []);
+
+  if (!Array.isArray(list)) return [];
+
+  return list
+    .map((item) => {
+      if (typeof item === "string") return item;
+
+      return (
+        item?.title ??
+        item?.name ??
+        item?.text ??
+        item?.label ??
+        item?.value ??
+        item?.TypeName ??
+        item?.typeName ??
+        item?.ApplicantType ??
+        item?.OfficeName ??
+        null
+      );
+    })
+    .filter((item): item is string => Boolean(item))
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
 export function SabtDarkhastPage({
   isDark,
   toggleTheme,
@@ -37,6 +66,10 @@ export function SabtDarkhastPage({
   const selectedProperty = propertyItems[0] ?? defaultProperty;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // ✅ داده‌های سلکشن‌مودال رو اینجا مدیریت کن
+  const [requestTypeItems, setRequestTypeItems] = useState<string[]>([]);
+  const [applicantTypeItems, setApplicantTypeItems] = useState<string[]>([]);
+  const [officeItems, setOfficeItems] = useState<string[]>([]);
 
   const [modalContent, setModalContent] = useState<HelpModalContent>({
     title: "",
@@ -131,6 +164,63 @@ export function SabtDarkhastPage({
     setShowErrors(false);
   };
 
+  // ✅ داده‌های سلکشن را از اول فچ کن - قبل از اینکه صفحه رندر شود
+  useEffect(() => {
+    const fetchSelectOptions = async () => {
+      try {
+        const token = localStorage.getItem("auth-token");
+        const shop = localStorage.getItem("shop") ?? selectedProperty.id;
+
+        const requestTypeUrl = `/api/request/type?shop=${encodeURIComponent(shop)}`;
+
+        const [requestTypeRes, applicantTypeRes, officeRes] = await Promise.all(
+          [
+            fetch(requestTypeUrl, {
+              headers: {
+                Accept: "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+            }),
+            fetch("/api/request/applicant", {
+              headers: {
+                Accept: "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+            }),
+            fetch("/api/request/office", {
+              headers: {
+                Accept: "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+            }),
+          ],
+        );
+
+        if (requestTypeRes.ok) {
+          const requestTypeData = await requestTypeRes.json();
+          const extracted = extractOptions(requestTypeData);
+          setRequestTypeItems(extracted);
+        }
+
+        if (applicantTypeRes.ok) {
+          const applicantTypeData = await applicantTypeRes.json();
+          const extracted = extractOptions(applicantTypeData);
+          setApplicantTypeItems(extracted);
+        }
+
+        if (officeRes.ok) {
+          const officeData = await officeRes.json();
+          const extracted = extractOptions(officeData);
+          setOfficeItems(extracted);
+        }
+      } catch (error) {
+        console.error("Error fetching select options:", error);
+      }
+    };
+
+    fetchSelectOptions();
+  }, [selectedProperty.id]);
+
   useEffect(() => {
     const fetchProperties = async () => {
       try {
@@ -206,8 +296,8 @@ export function SabtDarkhastPage({
           setSearchValues(mapped[0].codes);
           applyPropertyToPage(mapped[0]);
         }
-      } catch {
-        //
+      } catch (error) {
+        console.error("Error fetching properties:", error);
       }
     };
 
@@ -313,17 +403,45 @@ export function SabtDarkhastPage({
     setIsModalOpen(true);
   };
 
+  // ✅ بهتر شده: داده‌ها رو چک کن قبل از باز کردن مودال
   const openSelection = (
     title: string,
     items: string[],
     onSelect: (value: string) => void,
-  ) =>
+  ) => {
+    // اگر items خالی یا undefined بود
+    const safeItems = Array.isArray(items) && items.length > 0 ? items : [];
+
+    if (safeItems.length === 0) {
+      console.warn(`هیچ داده‌ای برای ${title} موجود نیست`);
+      return;
+    }
+
+    console.log("Opening selection modal with:", {
+      title,
+      itemCount: safeItems.length,
+      items: safeItems,
+    });
+
     setSelectionModal({
       open: true,
       title,
-      items,
+      items: safeItems,
       onSelect,
     });
+  };
+
+  const closeSelectionModal = () => {
+    setSelectionModal((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  };
+
+  const handleSelectionConfirm = (value: string) => {
+    selectionModal.onSelect(value);
+    closeSelectionModal();
+  };
 
   if (step === "success") {
     return (
@@ -354,18 +472,15 @@ export function SabtDarkhastPage({
         onClose={() => setIsModalOpen(false)}
       />
 
-      <AnimatePresence>
+      {/* ✅ بهتر شده: SelectionModal رو مستقیم رندر کن */}
+      <AnimatePresence mode="wait">
         {selectionModal.open && (
           <SelectionModal
+            key="selection-modal"
             title={selectionModal.title}
             items={selectionModal.items}
-            onSelect={selectionModal.onSelect}
-            onClose={() =>
-              setSelectionModal((prev) => ({
-                ...prev,
-                open: false,
-              }))
-            }
+            onSelect={handleSelectionConfirm}
+            onClose={closeSelectionModal}
           />
         )}
       </AnimatePresence>
@@ -404,6 +519,10 @@ export function SabtDarkhastPage({
                   complementaryForm={complementaryForm}
                   vakadari={vakadari}
                   activeDatePicker={activeDatePicker}
+                  // ✅ داده‌های سلکشن رو پاس کن
+                  requestTypeItems={requestTypeItems}
+                  applicantTypeItems={applicantTypeItems}
+                  officeItems={officeItems}
                   onOpenHelp={handleOpenHelp}
                   onSearch={handleSearch}
                   onSearchValuesChange={setSearchValues}
