@@ -49,12 +49,15 @@ const extractOptions = (data: any): string[] => {
         item?.typeName ??
         item?.ApplicantType ??
         item?.OfficeName ??
+        item?.GardeshKar ??
+        item?.sharh ??
         null
       );
     })
     .filter((item): item is string => Boolean(item))
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((item, index, self) => self.indexOf(item) === index);
 };
 
 export function SabtDarkhastPage({
