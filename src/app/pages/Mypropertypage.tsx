@@ -15,11 +15,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router";
-import {
-  findPropertyByFullCode,
-  getStoredProperty,
-  persistSelectedProperty,
-} from "../data/properties";
 
 interface MyPropertyPageProps {
   isDark: boolean;
@@ -55,11 +50,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const [error, setError] = useState("");
 
   const handleSelectProperty = (property: PropertyItem) => {
-    localStorage.setItem("shop", property.id);
-    const matchedProperty = findPropertyByFullCode(property.fullCode);
-    if (matchedProperty) {
-      persistSelectedProperty(matchedProperty.id);
-    }
     setSelectedPropertyId(property.id);
     setSelectedProperty(property);
     setIsMapOpen(true);
@@ -125,29 +115,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
         );
 
         setPropertyItems(mapped);
-
-        const savedShop = localStorage.getItem("shop");
-        const savedFromMyProperties = mapped.find(
-          (property) => property.id === savedShop,
-        );
-
-        if (savedFromMyProperties) {
-          setSelectedPropertyId(savedFromMyProperties.id);
-          setSelectedProperty(savedFromMyProperties);
-          setIsMapOpen(true);
-          return;
-        }
-
-        const storedProperty = getStoredProperty();
-        const savedFromOtherPages = mapped.find(
-          (property) => property.fullCode === storedProperty.fullCode,
-        );
-
-        if (savedFromOtherPages) {
-          setSelectedPropertyId(savedFromOtherPages.id);
-          setSelectedProperty(savedFromOtherPages);
-          setIsMapOpen(true);
-        }
       } catch {
         setError("خطا در اتصال به سرور. لطفاً دوباره تلاش کنید.");
       } finally {
@@ -408,13 +375,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
                 <div className="absolute bottom-4 left-4 rounded-md bg-card/80 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur-sm z-10">
                   m 50
-                </div>
-
-                <div className="absolute right-4 bottom-4 z-10 rounded-xl bg-card/90 px-3 py-2 text-xs text-foreground shadow">
-                  <div className="font-semibold">ملک انتخاب‌شده</div>
-                  <div className="text-muted-foreground mt-1">
-                    {selectedProperty.fullCode}
-                  </div>
                 </div>
               </motion.article>
             )}
