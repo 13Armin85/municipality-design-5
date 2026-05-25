@@ -247,7 +247,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               item.malekName ??
               item.ownerFullName ??
               item.name ??
-              selectedProperty.ownerName,
+              "",
             raw: item,
           }),
         );
@@ -334,7 +334,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
         </div>
       </motion.header>
 
-      <main className="container mx-auto space-y-6 px-2 pt-24 md:px-4 md:pt-28 lg:px-6">
+      <main className="container mx-auto space-y-6 px-2 pt-10 md:px-4 md:pt-10 lg:px-6">
         {/* بخش جستجو */}
         <motion.article
           initial={{ opacity: 0, y: 12 }}
@@ -409,8 +409,8 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               </div>
             )}
             {propertyList.map((file) => {
-              // استفاده از نام گیرنده اگر موجود باشد، در غیر این صورت نام مالک
-              const displayName = girandehName || file.ownerName;
+              // استفاده از نام مالک ثابت (نه girandehName)
+              const displayName = girandehName || "-";
 
               return (
                 <button

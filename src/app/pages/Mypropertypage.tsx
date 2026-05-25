@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router";
+import { persistSelectedPropertyByFullCode } from "../data/properties";
 
 interface MyPropertyPageProps {
   isDark: boolean;
@@ -52,6 +53,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const handleSelectProperty = (property: PropertyItem) => {
     setSelectedPropertyId(property.id);
     setSelectedProperty(property);
+    persistSelectedPropertyByFullCode(property.fullCode);
     setIsMapOpen(true);
   };
 
@@ -194,7 +196,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               </Link>
 
               <h1 className="text-sm font-bold text-foreground md:text-base">
-                املاک من
+                پیگیری درخواست ها
               </h1>
 
               <div className="flex items-center gap-1.5 md:gap-3 flex-row-reverse">

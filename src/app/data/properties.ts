@@ -483,6 +483,8 @@ export const propertyItems: MockProperty[] = [
 ];
 
 export const selectedPropertyStorageKey = "municipality-selected-property-id";
+export const selectedPropertyRenewalCodeStorageKey =
+  "municipality-selected-property-renewal-code";
 
 export const getDefaultProperty = () => propertyItems[0];
 
@@ -490,10 +492,28 @@ export const findPropertyById = (id: string | null | undefined) =>
   propertyItems.find((property) => property.id === id) ?? getDefaultProperty();
 
 export const findPropertyByFullCode = (fullCode: string | null | undefined) =>
-  propertyItems.find((property) => property.fullCode === fullCode);
+  propertyItems.find(
+    (property) =>
+      normalizeRenewalCode(property.fullCode) ===
+      normalizeRenewalCode(fullCode),
+  );
+
+export const normalizeRenewalCode = (code: string | null | undefined) =>
+  (code ?? "")
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[^\d]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 
 export const getStoredPropertyId = () => {
   if (typeof window === "undefined") return getDefaultProperty().id;
+  const storedRenewalCode = localStorage.getItem(
+    selectedPropertyRenewalCodeStorageKey,
+  );
+  if (storedRenewalCode) {
+    const propertyByCode = findPropertyByFullCode(storedRenewalCode);
+    if (propertyByCode) return propertyByCode.id;
+  }
   return (
     localStorage.getItem(selectedPropertyStorageKey) ?? getDefaultProperty().id
   );
@@ -503,12 +523,25 @@ export const getStoredProperty = () => findPropertyById(getStoredPropertyId());
 
 export const persistSelectedProperty = (propertyId: string) => {
   if (typeof window === "undefined") return;
+  const matchedProperty = findPropertyById(propertyId);
   localStorage.setItem(selectedPropertyStorageKey, propertyId);
+  localStorage.setItem(
+    selectedPropertyRenewalCodeStorageKey,
+    matchedProperty.fullCode,
+  );
   window.dispatchEvent(
     new CustomEvent("municipality-selected-property-change", {
       detail: propertyId,
     }),
   );
+};
+
+export const persistSelectedPropertyByFullCode = (fullCode: string) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(selectedPropertyRenewalCodeStorageKey, fullCode);
+  const matchedProperty = findPropertyByFullCode(fullCode);
+  if (!matchedProperty) return;
+  persistSelectedProperty(matchedProperty.id);
 };
 
 export const areRenewalCodesEqual = (a: RenewalCodes, b: RenewalCodes) =>
