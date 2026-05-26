@@ -352,7 +352,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 <span className="hidden text-sm md:block">بازگشت</span>
               </Link>
               <h1 className="text-sm font-bold text-foreground md:text-base">
-                استعلام پرونده نوسازی
+                عوارض نوسازی
               </h1>
               <button onClick={toggleTheme} className="header-action-btn">
                 {isDark ? (
