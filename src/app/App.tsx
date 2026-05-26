@@ -1,6 +1,6 @@
 // src/app/App.tsx
 import { Suspense, lazy, useEffect, useState } from "react";
-import { Route, Routes, useLocation, useNavigate } from "react-router";
+import { Route, Routes, useLocation } from "react-router";
 import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
 import { ServicesSection } from "./components/ServicesSection";
@@ -12,63 +12,7 @@ import { SupportSection } from "./components/SupportSection";
 import { FaqSection } from "./components/FaqSection";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
-import { AUTH_STORAGE_KEY } from "./pages/profile/profileData";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "./components/ui/dialog";
-import { Button } from "./components/ui/button";
-import { useAuthModal } from "./components/AuthContext";
-
-function ServiceAccessGuard() {
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(true);
-  const { setIsLoginModalOpen } = useAuthModal();
-
-  const handleLoginClick = () => {
-    setOpen(false);
-    setIsLoginModalOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    navigate("/");
-  };
-
-  return (
-    <>
-      <Header isDark={false} toggleTheme={() => undefined} />
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent>
-          <DialogHeader className="text-right">
-            <DialogTitle>ورود لازم است</DialogTitle>
-            <DialogDescription>
-              برای استفاده از خدمات لطفاً ابتدا لاگین کنید.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-3 flex-row-reverse pt-4">
-            <Button
-              onClick={handleLoginClick}
-              className="flex-1 btn-gradient text-primary-foreground"
-            >
-              ورود حالا
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1"
-            >
-              بازگشت به خانه
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function HomePageContent() {
   return (
@@ -122,11 +66,6 @@ export default function App() {
     localStorage.setItem("theme", newTheme ? "dark" : "light");
   };
 
-  const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
-  const protectedServiceElement = isAuthenticated ? null : (
-    <ServiceAccessGuard />
-  );
-
   return (
     <div
       className="min-h-screen bg-background relative selection:bg-primary/25 selection:text-foreground"
@@ -178,34 +117,34 @@ export default function App() {
           <Route
             path="/guild-fees"
             element={
-              protectedServiceElement ?? (
+              <ProtectedRoute isDark={isDark} toggleTheme={toggleTheme}>
                 <main>
                   <GuildFeesPage isDark={isDark} toggleTheme={toggleTheme} />
                 </main>
-              )
+              </ProtectedRoute>
             }
           />
           <Route
             path="/property-inquiry"
             element={
-              protectedServiceElement ?? (
+              <ProtectedRoute isDark={isDark} toggleTheme={toggleTheme}>
                 <main>
                   <PropertyInquiryPage
                     isDark={isDark}
                     toggleTheme={toggleTheme}
                   />
                 </main>
-              )
+              </ProtectedRoute>
             }
           />
           <Route
             path="/my-property"
             element={
-              protectedServiceElement ?? (
+              <ProtectedRoute isDark={isDark} toggleTheme={toggleTheme}>
                 <main>
                   <MyPropertyPage isDark={isDark} toggleTheme={toggleTheme} />
                 </main>
-              )
+              </ProtectedRoute>
             }
           />
           <Route
@@ -215,17 +154,17 @@ export default function App() {
           <Route
             path="/sabt-darkhast"
             element={
-              protectedServiceElement ?? (
+              <ProtectedRoute isDark={isDark} toggleTheme={toggleTheme}>
                 <main>
                   <SabtDarkhastPage isDark={isDark} toggleTheme={toggleTheme} />
                 </main>
-              )
+              </ProtectedRoute>
             }
           />
           <Route
             path="/property-request"
             element={
-              protectedServiceElement ?? (
+              <ProtectedRoute isDark={isDark} toggleTheme={toggleTheme}>
                 <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
                   <div className="container mx-auto max-w-5xl">
                     <PropertyRequestDetails
@@ -234,19 +173,19 @@ export default function App() {
                     />
                   </div>
                 </main>
-              )
+              </ProtectedRoute>
             }
           />
           <Route
             path="/modern-toll"
             element={
-              protectedServiceElement ?? (
+              <ProtectedRoute isDark={isDark} toggleTheme={toggleTheme}>
                 <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
                   <div className="container mx-auto max-w-5xl">
                     <ModernTollPage isDark={isDark} toggleTheme={toggleTheme} />
                   </div>
                 </main>
-              )
+              </ProtectedRoute>
             }
           />
           <Route
