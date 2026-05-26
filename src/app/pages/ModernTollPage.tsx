@@ -84,8 +84,21 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
 
   const token = localStorage.getItem("auth-token");
 
+  const normalizeCode = (code = ""): string => {
+    const segments = code
+      .split("-")
+      .map((part) => part.trim())
+      .filter((part) => part !== "");
+
+    const normalized = segments.length > 7 ? segments.slice(-7) : [...segments];
+    while (normalized.length < 7) {
+      normalized.push("");
+    }
+    return normalized.join("-");
+  };
+
   const splitCode = (code = ""): RenewalCodes => {
-    const parts = code.split("-");
+    const parts = normalizeCode(code).split("-");
     return {
       guild: parts[0] ?? "",
       apartment: parts[1] ?? "",
@@ -97,7 +110,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     };
   };
 
-  const codeNosazi = `${searchInputs.guild}-${searchInputs.apartment}-${searchInputs.building}-${searchInputs.property}-${searchInputs.block}-${searchInputs.neighborhood}-${searchInputs.region}`;
+  const codeNosazi = normalizeCode(
+    `${searchInputs.guild}-${searchInputs.apartment}-${searchInputs.building}-${searchInputs.property}-${searchInputs.block}-${searchInputs.neighborhood}-${searchInputs.region}`,
+  );
 
   const handleOpenHelp = (title: string, description: string) => {
     setModalContent({ title, description });
@@ -112,9 +127,10 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   const loadRenovationData = async (propertyId: string, code: string) => {
     if (!token) return;
     try {
-      const [renovationRes, recordsRes] = await Promise.all([
+      const normalizedCode = normalizeCode(code);
+      const [renovationRes, recordsRes, ownersRes] = await Promise.all([
         fetch(
-          `/api/renovation?malekId=${encodeURIComponent(propertyId)}&codeNosazi=${encodeURIComponent(code)}`,
+          `/api/renovation?malekId=${encodeURIComponent(propertyId)}&codeNosazi=${encodeURIComponent(normalizedCode)}`,
           {
             headers: {
               Accept: "application/json",
@@ -123,7 +139,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
           },
         ),
         fetch(
-          `/api/renovation/records?malekId=${encodeURIComponent(propertyId)}&codeNosazi=${encodeURIComponent(code)}`,
+          `/api/renovation/records?malekId=${encodeURIComponent(propertyId)}&codeNosazi=${encodeURIComponent(normalizedCode)}`,
           {
             headers: {
               Accept: "application/json",
@@ -131,10 +147,17 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             },
           },
         ),
+        fetch(`/api/owners?codeNosazi=${encodeURIComponent(normalizedCode)}`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }),
       ]);
 
       const renovationData = renovationRes.ok ? await renovationRes.json() : {};
       const recordsData = recordsRes.ok ? await recordsRes.json() : [];
+      const ownersData = ownersRes.ok ? await ownersRes.json() : null;
 
       const feeList = Array.isArray(renovationData)
         ? renovationData
@@ -158,19 +181,26 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         })),
       );
 
-      const rawOwners = Array.isArray(renovationData.owners)
-        ? renovationData.owners
-        : renovationData.owner
-          ? [renovationData.owner]
-          : [];
+      const rawOwners = Array.isArray(ownersData)
+        ? ownersData
+        : Array.isArray(ownersData?.items)
+          ? ownersData.items
+          : Array.isArray(ownersData?.data)
+            ? ownersData.data
+            : Array.isArray(renovationData.owners)
+              ? renovationData.owners
+              : renovationData.owner
+                ? [renovationData.owner]
+                : [];
       setOwners(
         rawOwners.map((owner: any, index: number) => ({
-          id: String(owner.id ?? index + 1),
-          firstName: owner.firstName ?? owner.name ?? "—",
-          lastName: owner.lastName ?? "—",
-          ownerType: owner.ownerType ?? "—",
-          fatherName: owner.fatherName ?? "—",
-          birthPlace: owner.birthPlace ?? "—",
+          id: String(owner.Id ?? owner.id ?? index + 1),
+          firstName: owner.Name ?? owner.firstName ?? owner.name ?? "—",
+          lastName: owner.Family ?? owner.lastName ?? "—",
+          ownerType: owner.NoeMalek ?? owner.ownerType ?? "—",
+          fatherName: owner.Father ?? owner.fatherName ?? "—",
+          birthPlace:
+            owner.Sodor ?? owner.birthPlace ?? owner.issuePlace ?? "—",
         })),
       );
     } catch (error) {
@@ -206,12 +236,17 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
           ? data
           : (data.items ?? data.data ?? data.files ?? []);
         const mapped: PropertyItem[] = rawList.map(
-          (item: any, index: number) => ({
-            id: String(item.Id ?? item.shop ?? index + 1),
-            fullCode: item.codeN ?? "—",
-            ownerName: item.ownerName ?? item.tvItems?.[0]?.Text ?? "—",
-            codes: splitCode(item.codeN ?? ""),
-          }),
+          (item: any, index: number) => {
+            const cleanedCode = normalizeCode(
+              item.codeN ?? item.fullCode ?? "",
+            );
+            return {
+              id: String(item.Id ?? item.shop ?? index + 1),
+              fullCode: cleanedCode || "—",
+              ownerName: item.ownerName ?? item.tvItems?.[0]?.Text ?? "—",
+              codes: splitCode(cleanedCode),
+            };
+          },
         );
         setPropertyItems(mapped);
 
@@ -431,7 +466,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                         }`}
                       />
                       <span className="text-xs font-medium md:text-sm">
-                        {prop.fullCode} - {prop.ownerName}
+                        {prop.ownerName}
                       </span>
                     </div>
                     <ChevronLeft
