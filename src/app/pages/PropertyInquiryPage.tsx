@@ -1,71 +1,234 @@
+// src/pages/PropertyInquiryPage.tsx
+
 import { useEffect, useState } from "react";
+
 import { AnimatePresence, motion } from "motion/react";
+
 import {
+  Activity,
+  AlertCircle,
   ArrowRight,
   ChevronLeft,
   Compass,
+  FileText,
   Home,
   Info,
-  MapPin,
+  Layers,
+  Loader,
   Minus,
+  Moon,
   Plus,
   Search,
-  Moon,
   Sun,
   Trash2,
   X,
-  Layers,
-  FileText,
-  Activity,
 } from "lucide-react";
+
 import { Link } from "react-router";
-import {
-  getRenewalCodeValues,
-  propertyItems,
-  type MockProperty,
-} from "../data/properties";
-import { useSelectedProperty } from "../hooks/useSelectedProperty";
+
+import { useRetreatData } from "../data/Useretreatdata";
 
 interface PropertyInquiryPageProps {
   isDark: boolean;
   toggleTheme: () => void;
 }
 
+interface RenewalCodes {
+  region: string;
+  neighborhood: string;
+  block: string;
+  property: string;
+  building: string;
+  apartment: string;
+  guild: string;
+}
+
+type RenewalCodeKey = keyof RenewalCodes;
+
+interface SubProperty {
+  id: string;
+  fullCode: string;
+  ownerName: string;
+  codes: RenewalCodes;
+}
+
 export function PropertyInquiryPage({
   isDark,
   toggleTheme,
 }: PropertyInquiryPageProps) {
-  const { selectedProperty, selectProperty } = useSelectedProperty();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const {
+    data: retreatData,
+    loading: loadingRetreat,
+    error: retreatError,
+    refetch: refetchRetreat,
+  } = useRetreatData();
 
-  // ۲. مدیریت استیت‌ها برای هماهنگی داده‌ها
-  const [searchValues, setSearchValues] = useState(
-    getRenewalCodeValues(selectedProperty.codes),
+  const [subProperties, setSubProperties] = useState<SubProperty[]>([]);
+
+  const [loadingSubProperties, setLoadingSubProperties] = useState(false);
+
+  const [subPropertiesError, setSubPropertiesError] = useState<string | null>(
+    null,
   );
-  const [selectedCase, setSelectedCase] =
-    useState<MockProperty>(selectedProperty);
-  const [activeCase, setActiveCase] = useState<MockProperty>(selectedProperty);
+
+  const [selectedSubProperty, setSelectedSubProperty] =
+    useState<SubProperty | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [modalContent, setModalContent] = useState({
     title: "",
     description: "",
   });
 
+  const [searchInputs, setSearchInputs] = useState<RenewalCodes>({
+    region: "",
+    neighborhood: "",
+    block: "",
+    property: "",
+    building: "",
+    apartment: "",
+    guild: "",
+  });
+
+  const [error, setError] = useState("");
+
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("auth-token") : null;
+
+  const splitCode = (code = ""): RenewalCodes => {
+    const parts = code.split("-");
+
+    return {
+      guild: parts[0] ?? "",
+      apartment: parts[1] ?? "",
+      building: parts[2] ?? "",
+      property: parts[3] ?? "",
+      block: parts[4] ?? "",
+      neighborhood: parts[5] ?? "",
+      region: parts[6] ?? "",
+    };
+  };
+
+  const codeNosazi = `${searchInputs.guild}-${searchInputs.apartment}-${searchInputs.building}-${searchInputs.property}-${searchInputs.block}-${searchInputs.neighborhood}-${searchInputs.region}`;
+
   const handleOpenHelp = (title: string, description: string) => {
-    setModalContent({ title, description });
+    setModalContent({
+      title,
+      description,
+    });
+
     setIsModalOpen(true);
   };
 
-  useEffect(() => {
-    setSearchValues(getRenewalCodeValues(selectedProperty.codes));
-    setSelectedCase(selectedProperty);
-    setActiveCase(selectedProperty);
-  }, [selectedProperty]);
+  const handleInputChange = (key: RenewalCodeKey, value: string) => {
+    setSearchInputs((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
 
-  // ۳. با زدن دکمه جستجو، مورد انتخاب شده به عنوان مورد "فعال" در کل صفحه ست می‌شود
-  const handleSearch = () => {
-    setActiveCase(selectedCase);
-    selectProperty(selectedCase.id);
+  const loadRetreatData = async (code: string) => {
+    if (!token) return;
+
+    try {
+      await refetchRetreat(code, token);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const selectPropertyFromList = async (subProperty: SubProperty) => {
+    setSelectedSubProperty(subProperty);
+
+    setSearchInputs(subProperty.codes);
+
+    setError("");
+
+    await loadRetreatData(subProperty.fullCode);
+  };
+
+  useEffect(() => {
+    const loadSubProperties = async () => {
+      const nationalCode =
+        typeof window !== "undefined"
+          ? localStorage.getItem("user-national-code")
+          : null;
+
+      if (!token || !nationalCode) return;
+
+      setLoadingSubProperties(true);
+
+      setSubPropertiesError(null);
+
+      try {
+        const response = await fetch(
+          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+          {
+            method: "GET",
+
+            headers: {
+              Accept: "application/json",
+
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("خطا در دریافت پرونده‌ها");
+        }
+
+        const result = await response.json();
+
+        const rawList = Array.isArray(result)
+          ? result
+          : (result.items ?? result.data ?? result.files ?? []);
+
+        const mapped: SubProperty[] = rawList.map(
+          (item: any, index: number) => ({
+            id: String(item.Id ?? item.shop ?? index + 1),
+
+            fullCode: item.codeN ?? "—",
+
+            ownerName: item.ownerName ?? item.tvItems?.[0]?.Text ?? "—",
+
+            codes: splitCode(item.codeN ?? ""),
+          }),
+        );
+
+        setSubProperties(mapped);
+
+        // انتخاب اولیه
+        if (mapped[0]) {
+          setSelectedSubProperty(mapped[0]);
+
+          setSearchInputs(mapped[0].codes);
+
+          await loadRetreatData(mapped[0].fullCode);
+        }
+      } catch (err) {
+        console.error(err);
+
+        setSubPropertiesError("خطا در بارگذاری پرونده‌ها");
+      } finally {
+        setLoadingSubProperties(false);
+      }
+    };
+
+    void loadSubProperties();
+  }, [token]);
+
+  const handleSearch = async () => {
+    if (!codeNosazi || codeNosazi === "-------") {
+      setError("کد نوسازی کامل نیست");
+
+      return;
+    }
+
+    setError("");
+
+    await loadRetreatData(codeNosazi);
   };
 
   const HelpButton = ({ title, desc }: { title: string; desc: string }) => (
@@ -73,8 +236,23 @@ export function PropertyInquiryPage({
       onClick={() => handleOpenHelp(title, desc)}
       className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 md:text-xs"
     >
-      <Info className="h-3.5 w-3.5" /> راهنما
+      <Info className="h-3.5 w-3.5" />
+      راهنما
     </button>
+  );
+
+  const ErrorAlert = ({ message }: { message: string }) => (
+    <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-start gap-3 text-sm text-destructive">
+      <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+
+      <span>{message}</span>
+    </div>
+  );
+
+  const LoadingSpinner = () => (
+    <div className="flex items-center justify-center py-8">
+      <Loader className="h-6 w-6 animate-spin text-primary" />
+    </div>
   );
 
   return (
@@ -82,28 +260,48 @@ export function PropertyInquiryPage({
       dir="rtl"
       className="min-h-screen bg-background text-foreground transition-colors duration-300"
     >
-      {/* مودال راهنما */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
               onClick={() => setIsModalOpen(false)}
               className="absolute inset-0 bg-background/40 backdrop-blur-md"
             />
+
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{
+                scale: 0.9,
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+                y: 0,
+              }}
+              exit={{
+                scale: 0.9,
+                opacity: 0,
+                y: 20,
+              }}
               className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-card shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
                 <h3 className="flex items-center gap-2 text-base font-bold text-primary">
                   <Info className="h-5 w-5" />
+
                   {modalContent.title}
                 </h3>
+
                 <button
                   onClick={() => setIsModalOpen(false)}
                   className="rounded-full p-1.5 text-muted-foreground hover:bg-muted"
@@ -111,309 +309,228 @@ export function PropertyInquiryPage({
                   <X className="h-5 w-5" />
                 </button>
               </div>
+
               <div className="p-6 text-sm leading-7 text-foreground/80">
                 {modalContent.description}
-              </div>
-              <div className=" px-6 py-4 text-left">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="rounded-xl bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-lg transition-transform active:scale-95"
-                >
-                  فهمیدم
-                </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* هدر */}
-      <motion.header
-        initial={{ y: -80 }}
-        animate={{ y: 0 }}
-        className="fixed inset-x-0 top-0 z-50 px-2 pt-2 md:px-4 md:pt-3"
-      >
-        <div className="container mx-auto px-0 md:px-2 lg:px-6">
-          <div className="nav-shell">
-            <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
-              <Link
-                to="/"
-                className="header-action-btn inline-flex items-center gap-2 px-3"
-              >
-                <ArrowRight className="h-4 w-4" />
-                <span className="hidden text-sm md:block">بازگشت</span>
-              </Link>
-              <h1 className="text-sm font-bold text-foreground md:text-base">
-                وضعیت عقب نشینی ملک
-              </h1>
-              <button onClick={toggleTheme} className="header-action-btn">
-                {isDark ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </motion.header>
-
-      <main className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
+      <main className="px-3 pb-12 pt-10">
         <div className="container mx-auto max-w-6xl space-y-5">
-          <div className="rounded-2xl border border-primary/25 bg-[var(--primary-soft)] px-4 py-3 text-xs text-primary md:text-sm">
-            کاربر گرامی، لطفاً پس از انتخاب ملک خود دکمه جستجو را بفشارید.
-          </div>
-
-          {/* بخش جستجو */}
-          <motion.article
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="soft-card mesh-panel overflow-hidden"
-          >
+          {/* search */}
+          <motion.article className="soft-card mesh-panel overflow-hidden">
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <div className="flex items-center gap-2">
                 <Search className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold text-foreground">جستجو ملک</h2>
+
+                <h2 className="text-sm font-bold">جستجو</h2>
               </div>
-              <HelpButton
-                title="جستجو"
-                desc="کد نوسازی ۷ رقمی خود را از روی قبض نوسازی در کادرهای مربوطه وارد کنید. ترتیب وارد کردن از منطقه (سمت راست) شروع می‌شود."
-              />
+
+              <HelpButton title="جستجو" desc="کد نوسازی" />
             </div>
+
             <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-8">
               <button
                 onClick={handleSearch}
-                className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-600/20"
+                className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white"
               >
-                <Search className="ml-1.5 h-4 w-4" /> جستجو
+                <Search className="ml-1.5 h-4 w-4" />
+                جستجو
               </button>
+
               {[
-                "منطقه",
-                "محله",
-                "بلوک",
-                "ملک",
-                "ساختمان",
-                "آپارتمان",
-                "صنفی",
-              ].map((label, i) => (
-                <div key={i} className="relative">
+                {
+                  label: "منطقه",
+                  key: "region",
+                },
+                {
+                  label: "محله",
+                  key: "neighborhood",
+                },
+                {
+                  label: "بلوک",
+                  key: "block",
+                },
+                {
+                  label: "ملک",
+                  key: "property",
+                },
+                {
+                  label: "ساختمان",
+                  key: "building",
+                },
+                {
+                  label: "آپارتمان",
+                  key: "apartment",
+                },
+                {
+                  label: "صنفی",
+                  key: "guild",
+                },
+              ].map((field) => (
+                <div key={field.key} className="relative">
                   <input
-                    value={searchValues[i]}
-                    readOnly
-                    placeholder={label}
-                    className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium outline-none focus:border-primary transition-colors"
+                    value={searchInputs[field.key as RenewalCodeKey]}
+                    onChange={(e) =>
+                      handleInputChange(
+                        field.key as RenewalCodeKey,
+                        e.target.value,
+                      )
+                    }
+                    className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm"
                   />
+
                   <span className="absolute -top-2 right-3 bg-card px-1 text-[9px] text-muted-foreground">
-                    {label}
+                    {field.label}
                   </span>
                 </div>
               ))}
             </div>
           </motion.article>
 
-          {/* پرونده‌های زیر مجموعه */}
-          <motion.article
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="soft-card mesh-panel"
-          >
-            <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold">پرونده های زیر مجموعه</h2>
-              </div>
-              <HelpButton
-                title="زیر مجموعه"
-                desc="در صورتی که ملک شما دارای واحدهای آپارتمانی یا صنفی متعدد باشد، لیست آن‌ها در این بخش نمایش داده می‌شود."
-              />
+          {/* files */}
+          <motion.article className="soft-card mesh-panel">
+            <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
+              <Layers className="h-4 w-4 text-primary" />
+
+              <h2 className="text-sm font-bold">پرونده های زیر مجموعه</h2>
             </div>
-            <div className="p-4">
-              {propertyItems.map((caseItem) => (
-                <button
-                  key={caseItem.id}
-                  onClick={() => {
-                    setSelectedCase(caseItem);
-                    setSearchValues(getRenewalCodeValues(caseItem.codes));
-                    setActiveCase(caseItem);
-                    selectProperty(caseItem.id);
-                  }}
-                  className={`mb-2 flex w-full items-center justify-between rounded-xl border p-3 group cursor-pointer transition-all ${
-                    selectedCase.id === caseItem.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border/70 bg-card/50 hover:border-primary/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-3 w-3 animate-pulse rounded-full bg-orange-400" />
-                    <span className="text-xs font-medium md:text-sm">
-                      {caseItem.fullCode} ({caseItem.type}) -{" "}
-                      {caseItem.ownerName}
-                    </span>
-                  </div>
-                  <ChevronLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />
-                </button>
-              ))}
+
+            <div className="p-4 space-y-2">
+              {loadingSubProperties ? (
+                <LoadingSpinner />
+              ) : subPropertiesError ? (
+                <ErrorAlert message={subPropertiesError} />
+              ) : (
+                subProperties.map((subProp) => {
+                  const isSelected = selectedSubProperty?.id === subProp.id;
+
+                  return (
+                    <div
+                      key={subProp.id}
+                      onClick={() => selectPropertyFromList(subProp)}
+                      className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-all ${
+                        isSelected
+                          ? "bg-primary/10 border-primary"
+                          : "border-border/70"
+                      }`}
+                    >
+                      <span className="text-sm font-medium">
+                        {subProp.ownerName}
+                      </span>
+
+                      <ChevronLeft className="h-4 w-4" />
+                    </div>
+                  );
+                })
+              )}
             </div>
           </motion.article>
 
-          {/* وضعیت عقب نشینی - خواندن از activeCase */}
+          {/* area */}
           <div className="grid gap-5 md:grid-cols-2">
-            <motion.article
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="soft-card mesh-panel"
-            >
-              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 font-bold text-sm">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" />
-                  <span>وضعیت عقب نشینی</span>
-                </div>
-                <HelpButton
-                  title="مساحت"
-                  desc="مساحت طبق سند همان متراژ اولیه است. مساحت اصلاحی متراژی است که در طرح تعریض قرار گرفته است."
-                />
+            <motion.article className="soft-card mesh-panel">
+              <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
+                <FileText className="h-4 w-4 text-primary" />
+
+                <span className="text-sm font-bold">وضعیت عقب نشینی</span>
               </div>
+
               <div className="space-y-3 p-4">
-                {[
-                  {
-                    label: "مساحت طبق سند",
-                    value: activeCase.inquiry.retraction.originalArea,
-                  },
-                  {
-                    label: "مساحت اصلاحی",
-                    value: activeCase.inquiry.retraction.reformedArea,
-                  },
-                  {
-                    label: "مساحت باقیمانده پس از اصلاح",
-                    value: activeCase.inquiry.retraction.remainingArea,
-                  },
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between border-b border-border/40 pb-2 text-sm"
-                  >
-                    <span className="text-muted-foreground">{item.label}:</span>
-                    <span className="font-bold">{item.value}</span>
+                {loadingRetreat ? (
+                  <LoadingSpinner />
+                ) : retreatError ? (
+                  <ErrorAlert message={retreatError} />
+                ) : retreatData?.area ? (
+                  [
+                    {
+                      label: "مساحت طبق سند",
+                      value: retreatData.area.originalArea,
+                    },
+                    {
+                      label: "مساحت اصلاحی",
+                      value: retreatData.area.reformedArea,
+                    },
+                    {
+                      label: "مساحت باقیمانده",
+                      value: retreatData.area.remainingArea,
+                    },
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex justify-between border-b border-border/40 pb-2 text-sm"
+                    >
+                      <span>{item.label}</span>
+
+                      <span className="font-bold">{item.value}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    ابتدا جستجو کنید
                   </div>
-                ))}
+                )}
               </div>
             </motion.article>
 
-            <motion.article
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="soft-card mesh-panel"
-            >
-              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 font-bold text-sm">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary" />
-                  <span>عقب نشینی</span>
-                </div>
-                <HelpButton
-                  title="عقب نشینی"
-                  desc="در این بخش جزئیات دقیق متراژی که باید از هر سمت ملک آزاد شود (در صورت وجود طرح) نمایش داده می‌شود."
-                />
+            {/* directions */}
+            <motion.article className="soft-card mesh-panel">
+              <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
+                <Compass className="h-4 w-4 text-primary" />
+
+                <span className="text-sm font-bold">جهات چهارگانه</span>
               </div>
-              <div className="p-4">
-                <div className="rounded-xl border border-border/50 bg-card/60 p-4 text-xs text-foreground/80">
-                  {activeCase.inquiry.retraction.description}
-                </div>
+
+              <div className="overflow-x-auto p-4">
+                {loadingRetreat ? (
+                  <LoadingSpinner />
+                ) : retreatError ? (
+                  <ErrorAlert message={retreatError} />
+                ) : retreatData?.directions?.length ? (
+                  <table className="w-full text-right text-xs">
+                    <thead>
+                      <tr>
+                        <th className="border p-2">جهت</th>
+
+                        <th className="border p-2">نوع</th>
+
+                        <th className="border p-2">نام</th>
+
+                        <th className="border p-2">طول ضلع</th>
+
+                        <th className="border p-2">طول بر</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {retreatData.directions.map((d, i) => (
+                        <tr key={i}>
+                          <td className="border p-2">{d.dir}</td>
+
+                          <td className="border p-2">{d.type}</td>
+
+                          <td className="border p-2">{d.name}</td>
+
+                          <td className="border p-2">{d.sideExist}</td>
+
+                          <td className="border p-2">{d.edgeExist}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    اطلاعاتی موجود نیست
+                  </div>
+                )}
               </div>
             </motion.article>
           </div>
 
-          {/* جهات چهارگانه - خواندن از activeCase */}
-          <motion.article
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="soft-card mesh-panel overflow-hidden"
-          >
-            <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Compass className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold">
-                  طول بر و ابعاد (جهات چهارگانه)
-                </h2>
-              </div>
-              <HelpButton
-                title="جهات چهارگانه"
-                desc="این جدول ابعاد دقیق ملک شما را از شمال، جنوب، شرق و غرب به همراه نام معبر و وضعیت فعلی نمایش می‌دهد."
-              />
-            </div>
-            <div className="overflow-x-auto p-4">
-              <table className="w-full text-right text-[11px] md:text-xs">
-                <thead>
-                  <tr className="bg-[var(--primary-soft)] text-primary">
-                    <th className="border border-border/50 p-2 text-center">
-                      جهت
-                    </th>
-                    <th className="border border-border/50 p-2">نوع معبر</th>
-                    <th className="border border-border/50 p-2">نام معبر</th>
-                    <th className="border border-border/50 p-2 text-center">
-                      طول ضلع
-                    </th>
-                    <th className="border border-border/50 p-2 text-center">
-                      طول بر
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeCase.inquiry.dimensions.map((d, i) => (
-                    <tr key={i} className="transition-colors hover:bg-muted/30">
-                      <td className="border border-border/50 p-2 text-center font-bold">
-                        {d.dir}
-                      </td>
-                      <td className="border border-border/50 p-2 text-muted-foreground">
-                        {d.type}
-                      </td>
-                      <td className="border border-border/50 p-2">{d.name}</td>
-                      <td className="border border-border/50 p-2 text-center font-medium">
-                        {d.sideExist}
-                      </td>
-                      <td className="border border-border/50 p-2 text-center font-medium">
-                        {d.edgeExist}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </motion.article>
-
-          {/* نقشه */}
-          <motion.article
-            initial={{ opacity: 0, scale: 0.98 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="soft-card mesh-panel relative h-[400px] overflow-hidden group"
-          >
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-              <img
-                src="/map-placeholder.jpg"
-                alt="Map"
-                className="h-full w-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
-            <div className="absolute left-4 top-16 flex flex-col gap-2">
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card">
-                <Plus className="h-4 w-4" />
-              </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card">
-                <Minus className="h-4 w-4" />
-              </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card">
-                <Home className="h-4 w-4" />
-              </button>
-            </div>
-            <button className="absolute right-4 top-16 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg">
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </motion.article>
+          {error && <ErrorAlert message={error} />}
         </div>
       </main>
     </div>
