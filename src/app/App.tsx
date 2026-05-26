@@ -20,21 +20,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./components/ui/dialog";
+import { Button } from "./components/ui/button";
+import { useAuthModal } from "./components/AuthContext";
 
 function ServiceAccessGuard() {
   const navigate = useNavigate();
+  const [open, setOpen] = useState(true);
+  const { setIsLoginModalOpen } = useAuthModal();
+
+  const handleLoginClick = () => {
+    setOpen(false);
+    setIsLoginModalOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    navigate("/");
+  };
 
   return (
     <>
       <Header isDark={false} toggleTheme={() => undefined} />
-      <Dialog
-        open
-        onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            navigate("/");
-          }
-        }}
-      >
+      <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent>
           <DialogHeader className="text-right">
             <DialogTitle>ورود لازم است</DialogTitle>
@@ -42,6 +49,21 @@ function ServiceAccessGuard() {
               برای استفاده از خدمات لطفاً ابتدا لاگین کنید.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex gap-3 flex-row-reverse pt-4">
+            <Button
+              onClick={handleLoginClick}
+              className="flex-1 btn-gradient text-primary-foreground"
+            >
+              ورود حالا
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              className="flex-1"
+            >
+              بازگشت به خانه
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
