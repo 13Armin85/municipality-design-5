@@ -19,14 +19,35 @@ import {
   History,
 } from "lucide-react";
 import { Link } from "react-router";
-import {
-  findPropertyByCodes,
-  propertyItems,
-  type MockProperty,
-  type RenewalCodeKey,
-  type RenewalCodes,
-} from "../data/properties";
-import { useSelectedProperty } from "../hooks/useSelectedProperty";
+import { type RenewalCodeKey, type RenewalCodes } from "../data/properties";
+
+interface PropertyItem {
+  id: string;
+  fullCode: string;
+  ownerName: string;
+  codes: RenewalCodes;
+}
+
+interface OwnerItem {
+  id: string;
+  firstName: string;
+  lastName: string;
+  ownerType: string;
+  fatherName: string;
+  birthPlace: string;
+}
+
+interface LabelValue {
+  label: string;
+  value: string;
+}
+
+interface HistoryItem {
+  id: string;
+  date: string;
+  amount: string;
+  status: string;
+}
 
 interface ModernTollPageProps {
   isDark: boolean;
@@ -34,7 +55,14 @@ interface ModernTollPageProps {
 }
 
 export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
-  const { selectedProperty, selectProperty } = useSelectedProperty();
+  const [propertyItems, setPropertyItems] = useState<PropertyItem[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(
+    null,
+  );
+  const [owners, setOwners] = useState<OwnerItem[]>([]);
+  const [feesRight, setFeesRight] = useState<LabelValue[]>([]);
+  const [feesLeft, setFeesLeft] = useState<LabelValue[]>([]);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -42,19 +70,34 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   });
 
   // وضعیت فیلدهای ورودی جستجو
-  const [searchInputs, setSearchInputs] = useState<RenewalCodes>(
-    selectedProperty.codes,
-  );
+  const [searchInputs, setSearchInputs] = useState<RenewalCodes>({
+    region: "",
+    neighborhood: "",
+    block: "",
+    property: "",
+    building: "",
+    apartment: "",
+    guild: "",
+  });
 
-  // وضعیت داده‌های در حال نمایش در صفحه
-  const [activeData, setActiveData] = useState<MockProperty | null>(
-    selectedProperty,
-  );
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    setSearchInputs(selectedProperty.codes);
-    setActiveData(selectedProperty);
-  }, [selectedProperty]);
+  const token = localStorage.getItem("auth-token");
+
+  const splitCode = (code = ""): RenewalCodes => {
+    const parts = code.split("-");
+    return {
+      guild: parts[0] ?? "",
+      apartment: parts[1] ?? "",
+      building: parts[2] ?? "",
+      property: parts[3] ?? "",
+      block: parts[4] ?? "",
+      neighborhood: parts[5] ?? "",
+      region: parts[6] ?? "",
+    };
+  };
+
+  const codeNosazi = `${searchInputs.guild}-${searchInputs.apartment}-${searchInputs.building}-${searchInputs.property}-${searchInputs.block}-${searchInputs.neighborhood}-${searchInputs.region}`;
 
   const handleOpenHelp = (title: string, description: string) => {
     setModalContent({ title, description });
@@ -66,22 +109,135 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     setSearchInputs((prev) => ({ ...prev, [key]: value }));
   };
 
-  // هندلر کلیک روی یک ملک از لیست زیرمجموعه
-  const selectPropertyFromList = (property: MockProperty) => {
-    setSearchInputs(property.codes);
-    setActiveData(property);
-    selectProperty(property.id);
+  const loadRenovationData = async (propertyId: string, code: string) => {
+    if (!token) return;
+    try {
+      const [renovationRes, recordsRes] = await Promise.all([
+        fetch(
+          `/api/renovation?malekId=${encodeURIComponent(propertyId)}&codeNosazi=${encodeURIComponent(code)}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        ),
+        fetch(
+          `/api/renovation/records?malekId=${encodeURIComponent(propertyId)}&codeNosazi=${encodeURIComponent(code)}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        ),
+      ]);
+
+      const renovationData = renovationRes.ok ? await renovationRes.json() : {};
+      const recordsData = recordsRes.ok ? await recordsRes.json() : [];
+
+      const feeList = Array.isArray(renovationData)
+        ? renovationData
+        : (renovationData.items ?? renovationData.data ?? []);
+      const feePairs: LabelValue[] = feeList.map((item: any) => ({
+        label: item.title ?? item.label ?? item.key ?? "—",
+        value: String(item.value ?? item.text ?? "—"),
+      }));
+      setFeesRight(feePairs.filter((_: unknown, i: number) => i % 2 === 0));
+      setFeesLeft(feePairs.filter((_: unknown, i: number) => i % 2 === 1));
+
+      const rawRecords = Array.isArray(recordsData)
+        ? recordsData
+        : (recordsData.items ?? recordsData.data ?? []);
+      setHistoryItems(
+        rawRecords.map((item: any, index: number) => ({
+          id: String(item.id ?? index + 1),
+          date: item.date ?? item.tarikh ?? "—",
+          amount: String(item.amount ?? item.mablagh ?? "—"),
+          status: item.status ?? "—",
+        })),
+      );
+
+      const rawOwners = Array.isArray(renovationData.owners)
+        ? renovationData.owners
+        : renovationData.owner
+          ? [renovationData.owner]
+          : [];
+      setOwners(
+        rawOwners.map((owner: any, index: number) => ({
+          id: String(owner.id ?? index + 1),
+          firstName: owner.firstName ?? owner.name ?? "—",
+          lastName: owner.lastName ?? "—",
+          ownerType: owner.ownerType ?? "—",
+          fatherName: owner.fatherName ?? "—",
+          birthPlace: owner.birthPlace ?? "—",
+        })),
+      );
+    } catch (error) {
+      console.error("خطا در دریافت اطلاعات نوسازی:", error);
+    }
   };
 
-  // هندلر دکمه جستجو
-  const handleSearch = () => {
-    const found = findPropertyByCodes(searchInputs);
-    if (found) {
-      setActiveData(found);
-      selectProperty(found.id);
-    } else {
-      alert("پرونده‌ای با این مشخصات یافت نشد.");
-      setActiveData(null);
+  // هندلر کلیک روی یک ملک از لیست زیرمجموعه
+  const selectPropertyFromList = async (property: PropertyItem) => {
+    setSearchInputs(property.codes);
+    setSelectedProperty(property);
+    const code = `${property.codes.guild}-${property.codes.apartment}-${property.codes.building}-${property.codes.property}-${property.codes.block}-${property.codes.neighborhood}-${property.codes.region}`;
+    await loadRenovationData(property.id, code);
+  };
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      const nationalCode = localStorage.getItem("user-national-code");
+      if (!token || !nationalCode) return;
+      try {
+        const response = await fetch(
+          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (!response.ok) return;
+        const data = await response.json();
+        const rawList = Array.isArray(data)
+          ? data
+          : (data.items ?? data.data ?? data.files ?? []);
+        const mapped: PropertyItem[] = rawList.map(
+          (item: any, index: number) => ({
+            id: String(item.Id ?? item.shop ?? index + 1),
+            fullCode: item.codeN ?? "—",
+            ownerName: item.ownerName ?? item.tvItems?.[0]?.Text ?? "—",
+            codes: splitCode(item.codeN ?? ""),
+          }),
+        );
+        setPropertyItems(mapped);
+
+        // انتخاب خودکار آیتم اول و پر کردن اطلاعات مالکین
+        if (mapped[0]) {
+          setSelectedProperty(mapped[0]);
+          setSearchInputs(mapped[0].codes);
+          const initialCode = `${mapped[0].codes.guild}-${mapped[0].codes.apartment}-${mapped[0].codes.building}-${mapped[0].codes.property}-${mapped[0].codes.block}-${mapped[0].codes.neighborhood}-${mapped[0].codes.region}`;
+          await loadRenovationData(mapped[0].id, initialCode);
+        }
+      } catch (err) {
+        console.error("Failed to load properties", err);
+      }
+    };
+    void loadProperties();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  const handleSearch = async () => {
+    if (!selectedProperty) return;
+    setError("");
+    setOwners([]);
+    try {
+      await loadRenovationData(selectedProperty.id, codeNosazi);
+    } catch {
+      setError("خطا در دریافت اطلاعات نوسازی.");
     }
   };
 
@@ -219,7 +375,10 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   <input
                     value={searchInputs[field.key as RenewalCodeKey]}
                     onChange={(e) =>
-                      handleInputChange(field.key as RenewalCodeKey, e.target.value)
+                      handleInputChange(
+                        field.key as RenewalCodeKey,
+                        e.target.value,
+                      )
                     }
                     className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium outline-none focus:border-primary transition-colors"
                   />
@@ -251,23 +410,40 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               />
             </div>
             <div className="p-4 space-y-2">
-              {propertyItems.map((prop) => (
-                <div
-                  key={prop.id}
-                  onClick={() => selectPropertyFromList(prop)}
-                  className="flex items-center justify-between rounded-xl border border-border/70 bg-card/50 p-3 group cursor-pointer hover:border-primary/40 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`h-3 w-3 rounded-full ${searchInputs.property === prop.codes.property ? "bg-emerald-500" : "bg-orange-400"}`}
+              {propertyItems.map((prop) => {
+                const isSelected = selectedProperty?.id === prop.id;
+                return (
+                  <div
+                    key={prop.id}
+                    onClick={() => selectPropertyFromList(prop)}
+                    className={`flex items-center justify-between rounded-xl border p-3 group cursor-pointer transition-all ${
+                      isSelected
+                        ? "bg-primary/10 border-primary shadow-sm"
+                        : "border-border/70 bg-card/50 hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`h-3 w-3 rounded-full transition-colors ${
+                          isSelected
+                            ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                            : "bg-orange-400"
+                        }`}
+                      />
+                      <span className="text-xs font-medium md:text-sm">
+                        {prop.fullCode} - {prop.ownerName}
+                      </span>
+                    </div>
+                    <ChevronLeft
+                      className={`h-4 w-4 transition-transform ${
+                        isSelected
+                          ? "text-primary -translate-x-1"
+                          : "text-muted-foreground group-hover:-translate-x-1"
+                      }`}
                     />
-                    <span className="text-xs font-medium md:text-sm">
-                      {prop.fullCode} (ملک) - {prop.ownerName}
-                    </span>
                   </div>
-                  <ChevronLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.article>
 
@@ -301,7 +477,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {activeData?.owners.map((owner, i) => (
+                  {owners.map((owner, i) => (
                     <tr key={i} className="transition-colors hover:bg-muted/30">
                       <td className="border border-border/50 p-2 text-center font-bold">
                         {owner.id}
@@ -355,9 +531,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             <div className="p-4">
               <div className="grid grid-cols-1 gap-x-8 gap-y-0 md:grid-cols-2">
                 <div className="space-y-0">
-                  {(
-                    activeData?.toll.fees.right ||
-                    Array(9).fill({ label: "—", value: "—" })
+                  {(feesRight.length
+                    ? feesRight
+                    : Array(9).fill({ label: "—", value: "—" })
                   ).map((field, i) => (
                     <div
                       key={i}
@@ -373,9 +549,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   ))}
                 </div>
                 <div className="space-y-0">
-                  {(
-                    activeData?.toll.fees.left ||
-                    Array(9).fill({ label: "—", value: "—" })
+                  {(feesLeft.length
+                    ? feesLeft
+                    : Array(9).fill({ label: "—", value: "—" })
                   ).map((field, i) => (
                     <div
                       key={i}
@@ -391,7 +567,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   ))}
                 </div>
               </div>
-              {activeData && (
+              {selectedProperty && (
                 <div className="mt-5 flex justify-start">
                   <button className="flex items-center gap-2 rounded-xl bg-destructive px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-destructive/20 transition-all hover:bg-destructive/90 active:scale-95">
                     <FileText className="h-4 w-4" /> دریافت فیش
@@ -417,9 +593,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               </div>
             </div>
             <div className="p-4">
-              {activeData && activeData.toll.history.length > 0 ? (
+              {historyItems.length > 0 ? (
                 <div className="space-y-2">
-                  {activeData.toll.history.map((item) => (
+                  {historyItems.map((item) => (
                     <div
                       key={item.id}
                       className="flex justify-between rounded-lg border p-3 text-xs"
@@ -434,6 +610,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center text-xs text-destructive">
                   موردی برای نمایش وجود ندارد.
                 </div>
+              )}
+              {error && (
+                <div className="mt-3 text-xs text-destructive">{error}</div>
               )}
             </div>
           </motion.article>
