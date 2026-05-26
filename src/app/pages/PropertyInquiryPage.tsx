@@ -19,7 +19,11 @@ import {
   Activity,
 } from "lucide-react";
 import { Link } from "react-router";
-import { getRenewalCodeValues, propertyItems, type MockProperty } from "../data/properties";
+import {
+  getRenewalCodeValues,
+  propertyItems,
+  type MockProperty,
+} from "../data/properties";
 import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 interface PropertyInquiryPageProps {
@@ -140,7 +144,7 @@ export function PropertyInquiryPage({
                 <span className="hidden text-sm md:block">بازگشت</span>
               </Link>
               <h1 className="text-sm font-bold text-foreground md:text-base">
-                استعلام پرونده نوسازی
+                وضعیت عقب نشینی ملک
               </h1>
               <button onClick={toggleTheme} className="header-action-btn">
                 {isDark ? (
@@ -244,7 +248,8 @@ export function PropertyInquiryPage({
                   <div className="flex items-center gap-3">
                     <div className="h-3 w-3 animate-pulse rounded-full bg-orange-400" />
                     <span className="text-xs font-medium md:text-sm">
-                      {caseItem.fullCode} ({caseItem.type}) - {caseItem.ownerName}
+                      {caseItem.fullCode} ({caseItem.type}) -{" "}
+                      {caseItem.ownerName}
                     </span>
                   </div>
                   <ChevronLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-1" />

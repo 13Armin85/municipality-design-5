@@ -8,6 +8,10 @@ import {
   AUTH_STORAGE_KEY,
   PROFILE_IMAGE_STORAGE_KEY,
 } from "./profile/profileData";
+import {
+  selectedPropertyStorageKey,
+  selectedPropertyRenewalCodeStorageKey,
+} from "../data/properties";
 
 interface ProfilePageProps {
   isDark: boolean;
@@ -93,6 +97,12 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
 
   const handleLogout = () => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(PROFILE_IMAGE_STORAGE_KEY);
+    localStorage.removeItem(selectedPropertyStorageKey);
+    localStorage.removeItem(selectedPropertyRenewalCodeStorageKey);
+    localStorage.removeItem("auth-token");
+    localStorage.removeItem("user-national-code");
+    localStorage.removeItem("municipality-user-type");
 
     setIsLogoutConfirmOpen(false);
 

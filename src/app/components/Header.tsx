@@ -24,6 +24,7 @@ import {
 import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
+import { useAuthModal } from "./AuthContext";
 
 import { type ForgotStep } from "../pages/header/Forgotpasswordmodal";
 
@@ -134,9 +135,25 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const notificationsRef = useRef<HTMLDivElement | null>(null);
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  const { isLoginModalOpen, setIsLoginModalOpen } = useAuthModal();
+
   const unreadCount = notifications.filter(
     (item) => !readNotificationIds.includes(item.id),
   ).length;
+
+  // ─── Auth Context sync ────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (isLoginModalOpen) {
+      setLoginError("");
+      setLoginType("user");
+      setIsMenuOpen(false);
+      setIsNotificationsOpen(false);
+      setIsAllNotificationsOpen(false);
+      setIsLoginOpen(true);
+      setIsLoginModalOpen(false);
+    }
+  }, [isLoginModalOpen, setIsLoginModalOpen]);
 
   // ─── Notification handlers ───────────────────────────────────────────────
 
