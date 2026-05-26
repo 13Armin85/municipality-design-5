@@ -1,99 +1,36 @@
-// API endpoints for Retreat (عقب نشینی) status
-// Swagger Endpoint: /api/retreat
-// This handles the retreat/rollback status for properties
+// src/data/retreat.ts
 
-export interface RetreatResponse {
-  success: boolean;
-  data: RetreatData;
-}
-
-export interface RetreatData {
-  originalArea: string;
-  reformedArea: string;
-  remainingArea: string;
-  description: string;
-  dimensions: RetreatDimension[];
+export interface RetreatAreaData {
+  originalArea: number;
+  reformedArea: number;
+  remainingArea: number;
 }
 
 export interface RetreatDimension {
-  dir: string; // جهت (North, East, South, West)
-  type: string; // نوع (Street, Lane, Adjacent Property, Corridor, etc.)
-  name: string; // نام
-  sideExist: string; // ضلع موجود
-  edgeExist: string; // لبه موجود
+  dir: string;
+  type: string;
+  name: string;
+  sideExist: string | number;
+  edgeExist: string | number;
 }
 
-// Sub-endpoints:
-// GET /api/retreat - Get retreat status data
-//   Query Parameters:
-//     - codeNosazi (string, required): Property code
-//   Headers:
-//     - Authorization: Bearer <token>
-//   Response: RetreatResponse
-
-// GET /api/retreat/area - Get retreat area information
-//   Query Parameters:
-//     - codeNosazi (string, required): Property code
-//   Headers:
-//     - Authorization: Bearer <token>
-//   Response: { success: boolean; data: { originalArea, reformedArea, remainingArea } }
-
-// GET /api/retreat/directions - Get retreat directions/dimensions
-//   Query Parameters:
-//     - codeNosazi (string, required): Property code
-//   Headers:
-//     - Authorization: Bearer <token>
-//   Response: { success: boolean; data: RetreatDimension[] }
-
-/**
- * Fetch retreat status data
- * Retrieves complete retreat information including area and dimensions
- */
-export const fetchRetreatData = async (
-  codeNosazi: string,
-  token: string,
-): Promise<RetreatData | null> => {
-  try {
-    const response = await fetch(
-      `/api/retreat?codeNosazi=${encodeURIComponent(codeNosazi)}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch retreat data");
-    }
-
-    const data: RetreatResponse = await response.json();
-
-    if (data.success) {
-      return data.data;
-    }
-
-    throw new Error("API returned unsuccessful response");
-  } catch (error) {
-    console.error("Error fetching retreat data:", error);
-    return null;
+const normalizeText = (value: unknown, fallback = "—") => {
+  if (value === null || value === undefined) {
+    return fallback;
   }
+
+  const text = String(value).trim();
+
+  return text.length ? text : fallback;
 };
 
 /**
- * Fetch retreat area information
- * Retrieves original area, reformed area, and remaining area
+ * GET /api/retreat/area
  */
 export const fetchRetreatArea = async (
   codeNosazi: string,
   token: string,
-): Promise<{
-  originalArea: string;
-  reformedArea: string;
-  remainingArea: string;
-} | null> => {
+): Promise<RetreatAreaData | null> => {
   try {
     const response = await fetch(
       `/api/retreat/area?codeNosazi=${encodeURIComponent(codeNosazi)}`,
@@ -107,30 +44,33 @@ export const fetchRetreatArea = async (
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch retreat area data");
+      throw new Error("خطا در دریافت وضعیت عقب نشینی");
     }
 
-    const data = await response.json();
+    const result = await response.json();
 
-    if (data.success) {
-      return data.data;
+    if (!result.success) {
+      throw new Error("پاسخ نامعتبر");
     }
 
-    throw new Error("API returned unsuccessful response");
-  } catch (error) {
-    console.error("Error fetching retreat area:", error);
+    return {
+      originalArea: result.data?.masahat_s ?? 0,
+      reformedArea: result.data?.masahat_e ?? 0,
+      remainingArea: result.data?.masahat_b ?? 0,
+    };
+  } catch (err) {
+    console.error("fetchRetreatArea error:", err);
     return null;
   }
 };
 
 /**
- * Fetch retreat directions/dimensions
- * Retrieves dimension information for all sides of the property
+ * GET /api/retreat/directions
  */
 export const fetchRetreatDirections = async (
   codeNosazi: string,
   token: string,
-): Promise<RetreatDimension[] | null> => {
+): Promise<RetreatDimension[]> => {
   try {
     const response = await fetch(
       `/api/retreat/directions?codeNosazi=${encodeURIComponent(codeNosazi)}`,
@@ -144,18 +84,26 @@ export const fetchRetreatDirections = async (
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch retreat directions");
+      throw new Error("خطا در دریافت جهات");
     }
 
-    const data = await response.json();
+    const result = await response.json();
 
-    if (data.success) {
-      return data.data;
+    if (!result.success) {
+      throw new Error("پاسخ نامعتبر");
     }
 
-    throw new Error("API returned unsuccessful response");
-  } catch (error) {
-    console.error("Error fetching retreat directions:", error);
-    return null;
+    const list = Array.isArray(result.data) ? result.data : [];
+
+    return list.map((item: any) => ({
+      dir: normalizeText(item.jahat_m),
+      type: normalizeText(item.noe_m),
+      name: normalizeText(item.name_m),
+      sideExist: item.tolzel_s || item.tolzel || item.arz_m || "—",
+      edgeExist: item.tolbar_s || item.tolbar || "—",
+    }));
+  } catch (err) {
+    console.error("fetchRetreatDirections error:", err);
+    return [];
   }
 };
