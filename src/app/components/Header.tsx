@@ -204,7 +204,8 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
       }
 
       const data = await response.json();
-      const token = data.token;
+      const token =
+        data.token ?? data.Token ?? data.access_token ?? data.AccessToken;
 
       if (!token) {
         setLoginError("خطا در دریافت توکن. لطفا دوباره تلاش کنید.");
@@ -217,9 +218,16 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
         payload?.role === "Admin" ||
         (Array.isArray(payload?.role) && payload.role.includes("Admin"));
 
-      // ذخیره nationalCode از data.user
-      if (data.user?.nationalCode) {
-        localStorage.setItem("user-national-code", data.user.nationalCode);
+      const nationalCode =
+        data.user?.nationalCode ??
+        data.user?.NationalCode ??
+        data.nationalCode ??
+        data.NationalCode;
+
+      if (nationalCode) {
+        localStorage.setItem("user-national-code", String(nationalCode));
+      } else if (/^\d{10}$/.test(username.trim())) {
+        localStorage.setItem("user-national-code", username.trim());
       }
 
       localStorage.setItem("auth-token", token);
