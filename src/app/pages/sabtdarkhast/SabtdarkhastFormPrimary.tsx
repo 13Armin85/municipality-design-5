@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import {
   areRenewalCodesEqual,
+  guildCodeFields,
   type MockProperty,
   type RenewalCodes,
 } from "../../data/properties";
@@ -140,32 +141,20 @@ export function SabtdarkhastFormPrimary({
             >
               <Search className="ml-1.5 h-4 w-4" /> جستجو
             </button>
-            {Object.entries(searchValues).map(([key, val]) => (
-              <div key={key} className="relative">
+            {guildCodeFields.map((field) => (
+              <div key={field.key} className="relative">
                 <input
-                  value={val}
+                  value={searchValues[field.key]}
                   onChange={(e) =>
                     onSearchValuesChange({
                       ...searchValues,
-                      [key]: e.target.value,
+                      [field.key]: e.target.value,
                     } as RenewalCodes)
                   }
                   className="h-10 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-xs font-medium outline-none transition-colors focus:border-primary sm:h-11 sm:text-sm"
                 />
                 <span className="absolute -top-2 right-2 bg-card px-1 text-[8px] text-muted-foreground sm:text-[9px]">
-                  {key === "region"
-                    ? "منطقه"
-                    : key === "neighborhood"
-                      ? "محله"
-                      : key === "block"
-                        ? "بلوک"
-                        : key === "property"
-                          ? "ملک"
-                          : key === "building"
-                            ? "ساختمان"
-                            : key === "apartment"
-                              ? "آپارتمان"
-                              : "صنفی"}
+                  {field.label}
                 </span>
               </div>
             ))}

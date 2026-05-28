@@ -196,7 +196,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               </Link>
 
               <h1 className="text-sm font-bold text-foreground md:text-base">
-                پیگیری درخواست ها
+                املاک من
               </h1>
 
               <div className="flex items-center gap-1.5 md:gap-3 flex-row-reverse">

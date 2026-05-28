@@ -45,9 +45,12 @@ export function SabtdarkhastFormHeader({
               </Link>
             )}
             <h1 className="truncate px-2 text-xs font-bold text-foreground sm:text-sm md:text-base">
-              ثبت درخواست نوسازی {isUploadStep && "— آپلود مدارک"}
+              ثبت درخواست {isUploadStep && "— آپلود مدارک"}
             </h1>
-            <button onClick={toggleTheme} className="header-action-btn flex-shrink-0">
+            <button
+              onClick={toggleTheme}
+              className="header-action-btn flex-shrink-0"
+            >
               {isDark ? (
                 <Sun className="h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
@@ -81,7 +84,11 @@ export function SabtdarkhastSuccessHeader({
               ثبت درخواست نوسازی
             </h1>
             <button onClick={toggleTheme} className="header-action-btn">
-              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              {isDark ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>

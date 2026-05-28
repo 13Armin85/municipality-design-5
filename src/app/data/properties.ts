@@ -1,11 +1,11 @@
 export const renewalCodeKeys = [
-  "region",
-  "neighborhood",
-  "block",
-  "property",
-  "building",
-  "apartment",
   "guild",
+  "apartment",
+  "building",
+  "property",
+  "block",
+  "neighborhood",
+  "region",
 ] as const;
 
 export type RenewalCodeKey = (typeof renewalCodeKeys)[number];

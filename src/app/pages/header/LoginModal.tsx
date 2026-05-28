@@ -2,6 +2,31 @@ import { FormEvent, useState } from "react";
 import { KeyRound, RefreshCw, UserCircle2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
+const REGISTER_ENDPOINT = "/api/auth/register";
+const DEFAULT_REGISTER_ROLE = "User";
+
+const extractRegisterError = (data: any) => {
+  if (!data) return "";
+
+  if (typeof data === "string") return data;
+
+  if (data.Message) return String(data.Message);
+  if (data.message) return String(data.message);
+  if (data.error) return String(data.error);
+
+  const modelState = data.ModelState ?? data.modelState;
+  if (modelState && typeof modelState === "object") {
+    const messages = Object.values(modelState)
+      .flat()
+      .filter(Boolean)
+      .map(String);
+
+    if (messages.length) return messages.join(" ");
+  }
+
+  return "";
+};
+
 interface LoginModalProps {
   isOpen: boolean;
   loginType: "user" | "admin";
@@ -30,8 +55,10 @@ export function LoginModal({
   onForgotPassword,
 }: LoginModalProps) {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [regUsername, setRegUsername] = useState("");
   const [regNationalCode, setRegNationalCode] = useState("");
   const [regPhone, setRegPhone] = useState("");
+  const [regEmail, setRegEmail] = useState("");
   const [regFirstName, setRegFirstName] = useState("");
   const [regLastName, setRegLastName] = useState("");
   const [regPassword, setRegPassword] = useState("");
@@ -166,12 +193,27 @@ export function LoginModal({
                   setRegError("");
                   setRegSuccess("");
 
+                  if (!regUsername.trim()) {
+                    setRegError("نام کاربری را وارد کنید.");
+                    return;
+                  }
                   if (!/^\d{10}$/.test(regNationalCode)) {
                     setRegError("کد ملی باید ۱۰ رقم باشد.");
                     return;
                   }
                   if (!/^(09)\d{9}$/.test(regPhone)) {
                     setRegError("شماره موبایل معتبر نیست.");
+                    return;
+                  }
+                  if (!regEmail.trim()) {
+                    setRegError("ایمیل را وارد کنید.");
+                    return;
+                  }
+                  if (
+                    regEmail.trim() &&
+                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim())
+                  ) {
+                    setRegError("ایمیل وارد شده معتبر نیست.");
                     return;
                   }
                   if (!regFirstName.trim() || !regLastName.trim()) {
@@ -189,16 +231,24 @@ export function LoginModal({
 
                   setRegLoading(true);
                   try {
-                    // Try to call register API if exists; otherwise simulate success
-                    const response = await fetch("/api/auth/register", {
+                    const registerUsername = regUsername.trim();
+                    const registerPassword = regPassword;
+                    const response = await fetch(REGISTER_ENDPOINT, {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
+                      headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                      },
                       body: JSON.stringify({
-                        nationalCode: regNationalCode,
-                        phone: regPhone,
-                        firstName: regFirstName,
-                        lastName: regLastName,
-                        password: regPassword,
+                        Name: regFirstName.trim(),
+                        Family: regLastName.trim(),
+                        NationalCode: regNationalCode.trim(),
+                        PhoneNumber: regPhone.trim(),
+                        Email: regEmail.trim(),
+                        UserName: registerUsername,
+                        Password: registerPassword,
+                        RepeatPassword: regConfirmPassword,
+                        Roles: [DEFAULT_REGISTER_ROLE],
                       }),
                     });
 
@@ -206,9 +256,12 @@ export function LoginModal({
                       setRegSuccess(
                         "ثبت نام با موفقیت انجام شد. لطفا وارد شوید.",
                       );
-                      // clear fields
+                      onUsernameChange(registerUsername);
+                      onPasswordChange(registerPassword);
+                      setRegUsername("");
                       setRegNationalCode("");
                       setRegPhone("");
+                      setRegEmail("");
                       setRegFirstName("");
                       setRegLastName("");
                       setRegPassword("");
@@ -217,7 +270,7 @@ export function LoginModal({
                     } else {
                       const data = await response.json().catch(() => null);
                       setRegError(
-                        data?.message ||
+                        extractRegisterError(data) ||
                           "خطا در ثبت نام. لطفا مجددا تلاش کنید.",
                       );
                     }
@@ -229,6 +282,19 @@ export function LoginModal({
                 }}
                 className="space-y-3"
               >
+                <div className="space-y-1">
+                  <label className="pr-1 text-[11px] font-medium text-muted-foreground">
+                    نام کاربری
+                  </label>
+                  <input
+                    value={regUsername}
+                    onChange={(e) => setRegUsername(e.target.value)}
+                    placeholder="مثال: 0012345678"
+                    disabled={regLoading}
+                    className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                  />
+                </div>
+
                 <div className="space-y-1">
                   <label className="pr-1 text-[11px] font-medium text-muted-foreground">
                     کد ملی
@@ -250,6 +316,20 @@ export function LoginModal({
                     value={regPhone}
                     onChange={(e) => setRegPhone(e.target.value)}
                     placeholder="09xxxxxxxxx"
+                    disabled={regLoading}
+                    className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="pr-1 text-[11px] font-medium text-muted-foreground">
+                    ایمیل
+                  </label>
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="example@email.com"
                     disabled={regLoading}
                     className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
                   />
@@ -335,6 +415,12 @@ export function LoginModal({
                 </button>
               </form>
             )}
+
+            {regSuccess && !isRegistering ? (
+              <p className="mt-3 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
+                {regSuccess}
+              </p>
+            ) : null}
 
             <div className="mt-3 text-center text-[13px]">
               {!isRegistering ? (

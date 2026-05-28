@@ -19,6 +19,7 @@ import {
 import { Link } from "react-router";
 import {
   getRenewalCodeValues,
+  guildCodeFields,
   propertyItems,
   type MockProperty,
 } from "../data/properties";
@@ -75,7 +76,6 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   const [selectedCodeNosazi, setSelectedCodeNosazi] = useState(
     selectedProperty.fullCode,
   );
-  const [girandehName, setGirandehName] = useState<string>("");
 
   const propertyList =
     ownerProperties.length > 0
@@ -96,15 +96,33 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     return normalized.slice(0, 7);
   };
 
+  const getTextValue = (value: unknown): string => {
+    if (typeof value === "string") return value.trim();
+    if (value === null || value === undefined) return "";
+    return String(value).trim();
+  };
+
+  const getOwnerNameFromItem = (item: any): string => {
+    const firstName = getTextValue(item.Name ?? item.firstName);
+    const lastName = getTextValue(item.Family ?? item.lastName);
+    const combinedName = [firstName, lastName].filter(Boolean).join(" ");
+
+    return (
+      getTextValue(item.ownerName) ||
+      getTextValue(item.owner?.name) ||
+      getTextValue(item.malekName) ||
+      getTextValue(item.ownerFullName) ||
+      getTextValue(item.tvItems?.[0]?.Text) ||
+      combinedName ||
+      getTextValue(item.name) ||
+      "-"
+    );
+  };
+
   const mapApiResponseToRequests = (data: any): RequestRow[] => {
     if (!data || !data.data) return [];
 
     const rawList = Array.isArray(data.data) ? data.data : [data.data];
-
-    // استخراج نام گیرنده از اولین آیتم
-    if (rawList.length > 0 && rawList[0].girandeh) {
-      setGirandehName(rawList[0].girandeh);
-    }
 
     return rawList.map((item: any, index: number) => ({
       code: String(item.shodarkhast ?? item.requestId ?? item.id ?? index + 1),
@@ -241,13 +259,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
             id: String(item.Id ?? item.id ?? index),
             fullCode: item.codeN ?? item.fullCode ?? "—",
             type: item.type ?? "ملک",
-            ownerName:
-              item.ownerName ??
-              item.owner?.name ??
-              item.malekName ??
-              item.ownerFullName ??
-              item.name ??
-              "",
+            ownerName: getOwnerNameFromItem(item),
             raw: item,
           }),
         );
@@ -306,29 +318,39 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
         className="fixed inset-x-0 top-0 z-50 px-2 pt-2 md:px-4 md:pt-3"
       >
         <div className="container mx-auto px-0 md:px-2 lg:px-6">
-          <div className="nav-shell">
+          <div className="nav-shell bg-card border border-border/50 rounded-2xl shadow-sm">
             <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
               <Link
                 to="/"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20 md:text-sm"
+                className="header-action-btn inline-flex items-center gap-2 px-3"
               >
-                <Home className="h-4 w-4" />
-                <span className="hidden md:inline">بازگشت به خانه</span>
+                <ArrowRight className="h-4 w-4" />
+                <span className="hidden text-sm md:block">بازگشت</span>
               </Link>
-              <h1 className="text-sm font-extrabold md:text-lg lg:text-xl">
-                پیگیری جزئیات درخواست
+
+              <h1 className="text-sm font-bold text-foreground md:text-base">
+                پیگیری درخواست ها
               </h1>
-              <button
-                onClick={toggleTheme}
-                className="rounded-xl bg-muted p-2 transition-colors hover:bg-muted/80"
-                aria-label="Toggle theme"
-              >
-                {isDark ? (
-                  <Sun className="h-5 w-5 text-yellow-400" />
-                ) : (
-                  <Moon className="h-5 w-5 text-slate-700" />
-                )}
-              </button>
+
+              <div className="flex items-center gap-1.5 md:gap-3 flex-row-reverse">
+                <button
+                  onClick={toggleTheme}
+                  className="header-action-btn flex items-center justify-center p-2 rounded-lg hover:bg-muted transition-colors text-foreground"
+                >
+                  {isDark ? (
+                    <Sun className="h-5 w-5" />
+                  ) : (
+                    <Moon className="h-5 w-5" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 md:py-2 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                  راهنما
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -351,14 +373,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           <div className="p-4">
             <div className="flex flex-wrap items-end gap-3">
               {searchValues.map((value, index) => {
-                const label =
-                  index === 0
-                    ? "منطقه"
-                    : index === 1
-                      ? "بلوک"
-                      : index === 2
-                        ? "قطعه"
-                        : "کد";
+                const label = guildCodeFields[index]?.label ?? "کد";
                 return (
                   <div key={index} className="relative flex-1 min-w-[80px]">
                     <input
@@ -409,8 +424,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               </div>
             )}
             {propertyList.map((file) => {
-              // استفاده از نام مالک ثابت (نه girandehName)
-              const displayName = girandehName || "-";
+              const displayName = getTextValue(file.ownerName) || "-";
 
               return (
                 <button
@@ -437,9 +451,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                       : "border-border/70 bg-card/40 hover:bg-card/60"
                   }`}
                 >
-                  <span className="text-xs md:text-sm">
-                    {file.fullCode} ({file.type}) - {displayName}
-                  </span>
+                  <span className="text-xs md:text-sm">{displayName}</span>
                   <ChevronLeft className="h-4 w-4 text-muted-foreground" />
                 </button>
               );

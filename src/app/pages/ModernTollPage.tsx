@@ -19,7 +19,11 @@ import {
   History,
 } from "lucide-react";
 import { Link } from "react-router";
-import { type RenewalCodeKey, type RenewalCodes } from "../data/properties";
+import {
+  guildCodeFields,
+  type RenewalCodeKey,
+  type RenewalCodes,
+} from "../data/properties";
 
 interface PropertyItem {
   id: string;
@@ -352,7 +356,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 <span className="hidden text-sm md:block">بازگشت</span>
               </Link>
               <h1 className="text-sm font-bold text-foreground md:text-base">
-                استعلام پرونده نوسازی
+                عوارض نوسازی
               </h1>
               <button onClick={toggleTheme} className="header-action-btn">
                 {isDark ? (
@@ -397,23 +401,12 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 <Search className="ml-1.5 h-4 w-4" /> جستجو
               </button>
 
-              {[
-                { label: "منطقه", key: "region" },
-                { label: "محله", key: "neighborhood" },
-                { label: "بلوک", key: "block" },
-                { label: "ملک", key: "property" },
-                { label: "ساختمان", key: "building" },
-                { label: "آپارتمان", key: "apartment" },
-                { label: "صنفی", key: "guild" },
-              ].map((field) => (
+              {guildCodeFields.map((field) => (
                 <div key={field.key} className="relative">
                   <input
-                    value={searchInputs[field.key as RenewalCodeKey]}
+                    value={searchInputs[field.key]}
                     onChange={(e) =>
-                      handleInputChange(
-                        field.key as RenewalCodeKey,
-                        e.target.value,
-                      )
+                      handleInputChange(field.key, e.target.value)
                     }
                     className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium outline-none focus:border-primary transition-colors"
                   />
