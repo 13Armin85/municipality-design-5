@@ -26,24 +26,17 @@ import {
 
 import { Link } from "react-router";
 
+import {
+  guildCodeFields,
+  type RenewalCodeKey,
+  type RenewalCodes,
+} from "../data/properties";
 import { useRetreatData } from "../data/Useretreatdata";
 
 interface PropertyInquiryPageProps {
   isDark: boolean;
   toggleTheme: () => void;
 }
-
-interface RenewalCodes {
-  region: string;
-  neighborhood: string;
-  block: string;
-  property: string;
-  building: string;
-  apartment: string;
-  guild: string;
-}
-
-type RenewalCodeKey = keyof RenewalCodes;
 
 interface SubProperty {
   id: string;
@@ -384,44 +377,12 @@ export function PropertyInquiryPage({
                 جستجو
               </button>
 
-              {[
-                {
-                  label: "منطقه",
-                  key: "region",
-                },
-                {
-                  label: "محله",
-                  key: "neighborhood",
-                },
-                {
-                  label: "بلوک",
-                  key: "block",
-                },
-                {
-                  label: "ملک",
-                  key: "property",
-                },
-                {
-                  label: "ساختمان",
-                  key: "building",
-                },
-                {
-                  label: "آپارتمان",
-                  key: "apartment",
-                },
-                {
-                  label: "صنفی",
-                  key: "guild",
-                },
-              ].map((field) => (
+              {guildCodeFields.map((field) => (
                 <div key={field.key} className="relative">
                   <input
-                    value={searchInputs[field.key as RenewalCodeKey]}
+                    value={searchInputs[field.key]}
                     onChange={(e) =>
-                      handleInputChange(
-                        field.key as RenewalCodeKey,
-                        e.target.value,
-                      )
+                      handleInputChange(field.key, e.target.value)
                     }
                     className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm"
                   />

@@ -19,6 +19,7 @@ import {
 import { Link } from "react-router";
 import {
   getRenewalCodeValues,
+  guildCodeFields,
   propertyItems,
   type MockProperty,
 } from "../data/properties";
@@ -75,7 +76,6 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   const [selectedCodeNosazi, setSelectedCodeNosazi] = useState(
     selectedProperty.fullCode,
   );
-  const [girandehName, setGirandehName] = useState<string>("");
 
   const propertyList =
     ownerProperties.length > 0
@@ -96,15 +96,33 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     return normalized.slice(0, 7);
   };
 
+  const getTextValue = (value: unknown): string => {
+    if (typeof value === "string") return value.trim();
+    if (value === null || value === undefined) return "";
+    return String(value).trim();
+  };
+
+  const getOwnerNameFromItem = (item: any): string => {
+    const firstName = getTextValue(item.Name ?? item.firstName);
+    const lastName = getTextValue(item.Family ?? item.lastName);
+    const combinedName = [firstName, lastName].filter(Boolean).join(" ");
+
+    return (
+      getTextValue(item.ownerName) ||
+      getTextValue(item.owner?.name) ||
+      getTextValue(item.malekName) ||
+      getTextValue(item.ownerFullName) ||
+      getTextValue(item.tvItems?.[0]?.Text) ||
+      combinedName ||
+      getTextValue(item.name) ||
+      "-"
+    );
+  };
+
   const mapApiResponseToRequests = (data: any): RequestRow[] => {
     if (!data || !data.data) return [];
 
     const rawList = Array.isArray(data.data) ? data.data : [data.data];
-
-    // استخراج نام گیرنده از اولین آیتم
-    if (rawList.length > 0 && rawList[0].girandeh) {
-      setGirandehName(rawList[0].girandeh);
-    }
 
     return rawList.map((item: any, index: number) => ({
       code: String(item.shodarkhast ?? item.requestId ?? item.id ?? index + 1),
@@ -241,13 +259,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
             id: String(item.Id ?? item.id ?? index),
             fullCode: item.codeN ?? item.fullCode ?? "—",
             type: item.type ?? "ملک",
-            ownerName:
-              item.ownerName ??
-              item.owner?.name ??
-              item.malekName ??
-              item.ownerFullName ??
-              item.name ??
-              "",
+            ownerName: getOwnerNameFromItem(item),
             raw: item,
           }),
         );
@@ -361,14 +373,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           <div className="p-4">
             <div className="flex flex-wrap items-end gap-3">
               {searchValues.map((value, index) => {
-                const label =
-                  index === 0
-                    ? "منطقه"
-                    : index === 1
-                      ? "بلوک"
-                      : index === 2
-                        ? "قطعه"
-                        : "کد";
+                const label = guildCodeFields[index]?.label ?? "کد";
                 return (
                   <div key={index} className="relative flex-1 min-w-[80px]">
                     <input
@@ -419,8 +424,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               </div>
             )}
             {propertyList.map((file) => {
-              // استفاده از نام مالک ثابت (نه girandehName)
-              const displayName = girandehName || "-";
+              const displayName = getTextValue(file.ownerName) || "-";
 
               return (
                 <button
@@ -447,9 +451,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                       : "border-border/70 bg-card/40 hover:bg-card/60"
                   }`}
                 >
-                  <span className="text-xs md:text-sm">
-                    {file.fullCode} ({file.type}) - {displayName}
-                  </span>
+                  <span className="text-xs md:text-sm">{displayName}</span>
                   <ChevronLeft className="h-4 w-4 text-muted-foreground" />
                 </button>
               );
