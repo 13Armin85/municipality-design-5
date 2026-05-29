@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   areRenewalCodesEqual,
-  getDefaultProperty,
   type MockProperty,
   type RenewalCodes,
 } from "../data/properties";
@@ -60,13 +59,91 @@ const extractOptions = (data: any): string[] => {
     .filter((item, index, self) => self.indexOf(item) === index);
 };
 
+const emptyProperty: MockProperty = {
+  id: "",
+  rowNumber: "",
+  fullCode: "",
+  type: "",
+  ownerName: "",
+  description: "",
+  codes: {
+    region: "",
+    neighborhood: "",
+    block: "",
+    property: "",
+    building: "",
+    apartment: "",
+    guild: "",
+  },
+  owner: {
+    firstName: "",
+    lastName: "",
+    name: "",
+    nationalId: "",
+    phone: "",
+    postalCode: "",
+    address: "",
+    ownerType: "",
+    fatherName: "",
+    birthPlace: "",
+    issuePlace: "",
+  },
+  owners: [],
+  toll: {
+    fees: {
+      right: [],
+      left: [],
+    },
+    history: [],
+  },
+  guildFees: {
+    title: "",
+    type: "",
+    feeInfo: {
+      right: [],
+      left: [],
+    },
+  },
+  inquiry: {
+    retraction: {
+      originalArea: "",
+      reformedArea: "",
+      remainingArea: "",
+      description: "",
+    },
+    dimensions: [],
+  },
+  requestTracking: {
+    requests: [],
+    details: [],
+  },
+  registration: {
+    request: { id: "", type: "", applicantType: "" },
+    complementary: {
+      letterNo: "",
+      letterDate: "",
+      secretNo: "",
+      secretDate: "",
+      office: "",
+      desc: "",
+    },
+    buyer: {
+      name: "",
+      nationalId: "",
+      phone: "",
+      share: "",
+    },
+    prevRequests: [],
+    map: { area: "" },
+  },
+};
+
 export function SabtDarkhastPage({
   isDark,
   toggleTheme,
 }: SabtDarkhastPageProps) {
   const [propertyItems, setPropertyItems] = useState<MockProperty[]>([]);
-  const defaultProperty = getDefaultProperty();
-  const selectedProperty = propertyItems[0] ?? defaultProperty;
+  const selectedProperty = propertyItems[0] ?? emptyProperty;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   // ✅ داده‌های سلکشن‌مودال رو اینجا مدیریت کن
@@ -250,7 +327,7 @@ export function SabtDarkhastPage({
           ? data
           : (data.items ?? data.data ?? data.files ?? []);
 
-        const base = getDefaultProperty();
+        const base = emptyProperty;
 
         const mapped: MockProperty[] = rawList.map(
           (item: any, index: number) => {
@@ -297,7 +374,7 @@ export function SabtDarkhastPage({
         if (mapped.length > 0) {
           setPropertyItems(mapped);
           setSearchValues(mapped[0].codes);
-          applyPropertyToPage(mapped[0]);
+          setActiveProperty(null);
         }
       } catch (error) {
         console.error("Error fetching properties:", error);
@@ -378,7 +455,9 @@ export function SabtDarkhastPage({
     if (!selected) return;
 
     setSearchValues(selected.codes);
-    applyPropertyToPage(selected);
+    setActiveProperty(null);
+    setErrors({});
+    setShowErrors(false);
   };
 
   const handleContinue = () => {

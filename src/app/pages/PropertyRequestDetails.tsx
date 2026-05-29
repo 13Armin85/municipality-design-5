@@ -18,12 +18,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 import {
-  getRenewalCodeValues,
   guildCodeFields,
-  propertyItems,
-  type MockProperty,
 } from "../data/properties";
-import { useSelectedProperty } from "../hooks/useSelectedProperty";
 
 interface OwnerPropertyItem {
   id: string;
@@ -51,20 +47,16 @@ interface Props {
 }
 
 export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
-  const { selectedProperty, selectProperty } = useSelectedProperty();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // فایلی که در لیست انتخاب شده اما هنوز جستجو نشده است
-  const [selectedFile, setSelectedFile] =
-    useState<MockProperty>(selectedProperty);
-
+  const emptySearchValues = ["", "", "", "", "", "", ""];
   // مقادیری که در اینپوت‌های جستجو نمایش داده می‌شوند
   const [searchValues, setSearchValues] = useState<string[]>(
-    getRenewalCodeValues(selectedProperty.codes),
+    emptySearchValues,
   );
 
   // فایلی که اطلاعاتش در کل صفحه (جدول و جزئیات) نمایش داده می‌شود
-  const [activeFile, setActiveFile] = useState<MockProperty>(selectedProperty);
   const [ownerProperties, setOwnerProperties] = useState<OwnerPropertyItem[]>(
     [],
   );
@@ -73,19 +65,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [apiError, setApiError] = useState("");
-  const [selectedCodeNosazi, setSelectedCodeNosazi] = useState(
-    selectedProperty.fullCode,
-  );
-
-  const propertyList =
-    ownerProperties.length > 0
-      ? ownerProperties
-      : propertyItems.map((file) => ({
-          id: file.id,
-          fullCode: file.fullCode,
-          type: file.type,
-          ownerName: file.ownerName,
-        }));
+  const [selectedCodeNosazi, setSelectedCodeNosazi] = useState("");
 
   const toSearchValuesFromCode = (fullCode: string): string[] => {
     const clean = fullCode.trim();
@@ -95,6 +75,9 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     while (normalized.length < 7) normalized.push("");
     return normalized.slice(0, 7);
   };
+
+  const buildCodeFromSearchValues = (values: string[]) =>
+    values.map((value) => value.trim()).join("-");
 
   const getTextValue = (value: unknown): string => {
     if (typeof value === "string") return value.trim();
@@ -265,6 +248,10 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
         );
 
         setOwnerProperties(mappedProperties);
+        if (mappedProperties[0]) {
+          setSelectedCodeNosazi(mappedProperties[0].fullCode);
+          setSearchValues(toSearchValuesFromCode(mappedProperties[0].fullCode));
+        }
       } catch (error) {
         setApiError(
           error instanceof Error ? error.message : "خطا در دریافت اطلاعات",
@@ -277,22 +264,11 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     fetchOwnerProperties();
   }, []);
 
-  useEffect(() => {
-    setSelectedFile(selectedProperty);
-    setSearchValues(getRenewalCodeValues(selectedProperty.codes));
-    setActiveFile(selectedProperty);
-    setSelectedCodeNosazi(selectedProperty.fullCode);
-
-    // بارگذاری اولیه داده‌های درخواست
-    fetchRequestData(selectedProperty.fullCode);
-  }, [selectedProperty]);
-
   // وقتی کاربر روی دکمه جستجو کلیک می‌کند
   const handleSearch = () => {
-    setActiveFile(selectedFile);
-    setSelectedCodeNosazi(selectedFile.fullCode);
-    selectProperty(selectedFile.id);
-    void fetchRequestData(selectedFile.fullCode);
+    const codeNosazi = buildCodeFromSearchValues(searchValues);
+    setSelectedCodeNosazi(codeNosazi);
+    void fetchRequestData(codeNosazi);
   };
 
   // آپدیت لیست درخواست‌ها بر اساس فایل فعال
@@ -423,27 +399,18 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                 در حال دریافت املاک مالک...
               </div>
             )}
-            {propertyList.map((file) => {
+            {ownerProperties.map((file) => {
               const displayName = getTextValue(file.ownerName) || "-";
 
               return (
                 <button
                   key={file.id}
                   onClick={() => {
-                    const matchedFile = propertyItems.find(
-                      (item) => item.fullCode === file.fullCode,
-                    );
-                    const effectiveFile = matchedFile ?? selectedProperty;
-                    setSelectedFile(effectiveFile);
                     setSelectedCodeNosazi(file.fullCode);
-                    setSearchValues(
-                      matchedFile
-                        ? getRenewalCodeValues(matchedFile.codes)
-                        : toSearchValuesFromCode(file.fullCode),
-                    );
-                    setActiveFile(effectiveFile);
-                    selectProperty(effectiveFile.id);
-                    void fetchRequestData(file.fullCode);
+                    setSearchValues(toSearchValuesFromCode(file.fullCode));
+                    setRequests([]);
+                    setRequestDetails([]);
+                    setApiError("");
                   }}
                   className={`flex w-full items-center justify-between rounded-xl border p-3 transition-all ${
                     selectedCodeNosazi === file.fullCode
