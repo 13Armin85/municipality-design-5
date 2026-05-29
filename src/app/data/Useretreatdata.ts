@@ -19,6 +19,7 @@ interface UseRetreatDataResult {
   loading: boolean;
   error: string | null;
   refetch: (codeNosazi: string, token: string) => Promise<void>;
+  reset: () => void;
 }
 
 export const useRetreatData = (): UseRetreatDataResult => {
@@ -58,10 +59,17 @@ export const useRetreatData = (): UseRetreatDataResult => {
     }
   }, []);
 
+  const reset = useCallback(() => {
+    setData(null);
+    setError(null);
+    setLoading(false);
+  }, []);
+
   return {
     data,
     loading,
     error,
     refetch,
+    reset,
   };
 };

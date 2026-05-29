@@ -16,6 +16,8 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 
 export type ForgotStep = "phone" | "otp" | "newPassword" | "success";
+const MODAL_PANEL_CLASS =
+  "fixed inset-x-2 top-[calc(env(safe-area-inset-top)_+_4.75rem)] z-[90] mx-auto flex max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_env(safe-area-inset-bottom)_-_5.75rem)] w-[calc(100vw_-_1rem)] max-w-md flex-col overflow-y-auto overscroll-contain rounded-2xl border border-border/70 bg-card/95 p-4 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl sm:inset-x-4 sm:top-[calc(env(safe-area-inset-top)_+_5.25rem)] sm:max-h-none sm:w-[calc(100vw_-_2rem)] sm:overflow-visible sm:rounded-3xl sm:p-6";
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -145,20 +147,20 @@ export function ForgotPasswordModal({
             initial={{ opacity: 0, y: -10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5.25rem)] z-[90] mx-auto w-full max-w-md rounded-3xl border border-border/70 bg-card/95 p-6 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl"
+            className={MODAL_PANEL_CLASS}
           >
             {/* Header */}
-            <div className="mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div className="mb-5 flex shrink-0 items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Smartphone className="h-5 w-5" />
                 </span>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-base font-bold text-foreground">بازیابی رمز عبور</h3>
-                  <p className="text-[11px] text-muted-foreground">{stepSubtitle[step]}</p>
+                  <p className="break-words text-[11px] leading-5 text-muted-foreground">{stepSubtitle[step]}</p>
                 </div>
               </div>
-              <button onClick={onClose} className="rounded-full p-1 transition-colors hover:bg-muted" aria-label="بستن">
+              <button onClick={onClose} className="shrink-0 rounded-full p-1 transition-colors hover:bg-muted" aria-label="بستن">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -227,7 +229,7 @@ export function ForgotPasswordModal({
                 >
                   <div className="space-y-3">
                     <label className="block pr-1 text-[11px] font-medium text-muted-foreground">کد ۵ رقمی دریافتی</label>
-                    <div className="flex items-center justify-center gap-2" dir="ltr">
+                    <div className="grid grid-cols-5 gap-1.5 min-[360px]:gap-2" dir="ltr">
                       {otp.map((digit, idx) => (
                         <input
                           key={idx}
@@ -239,7 +241,7 @@ export function ForgotPasswordModal({
                           onChange={(e) => onOtpInput(idx, e.target.value)}
                           onKeyDown={(e) => onOtpKeyDown(idx, e)}
                           onPaste={idx === 0 ? onOtpPaste : undefined}
-                          className={`h-12 w-12 rounded-xl border text-center text-lg font-bold outline-none transition-all ${
+                          className={`h-11 w-full min-w-0 rounded-xl border text-center text-base font-bold outline-none transition-all min-[360px]:h-12 min-[360px]:text-lg ${
                             digit
                               ? "border-primary bg-[var(--primary-soft)] text-primary"
                               : "border-border/70 bg-background text-foreground"

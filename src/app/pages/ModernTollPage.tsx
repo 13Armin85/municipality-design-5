@@ -213,11 +213,14 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   };
 
   // هندلر کلیک روی یک ملک از لیست زیرمجموعه
-  const selectPropertyFromList = async (property: PropertyItem) => {
+  const selectPropertyFromList = (property: PropertyItem) => {
     setSearchInputs(property.codes);
     setSelectedProperty(property);
-    const code = `${property.codes.guild}-${property.codes.apartment}-${property.codes.building}-${property.codes.property}-${property.codes.block}-${property.codes.neighborhood}-${property.codes.region}`;
-    await loadRenovationData(property.id, code);
+    setOwners([]);
+    setFeesRight([]);
+    setFeesLeft([]);
+    setHistoryItems([]);
+    setError("");
   };
 
   useEffect(() => {
@@ -258,8 +261,6 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         if (mapped[0]) {
           setSelectedProperty(mapped[0]);
           setSearchInputs(mapped[0].codes);
-          const initialCode = `${mapped[0].codes.guild}-${mapped[0].codes.apartment}-${mapped[0].codes.building}-${mapped[0].codes.property}-${mapped[0].codes.block}-${mapped[0].codes.neighborhood}-${mapped[0].codes.region}`;
-          await loadRenovationData(mapped[0].id, initialCode);
         }
       } catch (err) {
         console.error("Failed to load properties", err);
@@ -273,6 +274,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     if (!selectedProperty) return;
     setError("");
     setOwners([]);
+    setFeesRight([]);
+    setFeesLeft([]);
+    setHistoryItems([]);
     try {
       await loadRenovationData(selectedProperty.id, codeNosazi);
     } catch {

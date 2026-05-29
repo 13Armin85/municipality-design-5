@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from "motion/react";
 
 const REGISTER_ENDPOINT = "/api/auth/register";
 const DEFAULT_REGISTER_ROLE = "User";
+const MODAL_PANEL_CLASS =
+  "fixed inset-x-2 top-[calc(env(safe-area-inset-top)_+_4.75rem)] z-[90] mx-auto flex max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_env(safe-area-inset-bottom)_-_5.75rem)] w-[calc(100vw_-_1rem)] max-w-md flex-col overflow-y-auto overscroll-contain rounded-2xl border border-border/70 bg-card/95 p-4 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl sm:inset-x-4 sm:top-[calc(env(safe-area-inset-top)_+_5.25rem)] sm:max-h-none sm:w-[calc(100vw_-_2rem)] sm:overflow-visible sm:rounded-3xl sm:p-6";
 
 const extractRegisterError = (data: any) => {
   if (!data) return "";
@@ -87,12 +89,12 @@ export function LoginModal({
             initial={{ opacity: 0, y: -10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5.25rem)] z-[90] mx-auto w-full max-w-md rounded-3xl border border-border/70 bg-card/95 p-6 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl"
+            className={MODAL_PANEL_CLASS}
           >
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                     loginType === "admin"
                       ? "bg-amber-500/10 text-amber-600"
                       : "bg-primary/10 text-primary"
@@ -105,11 +107,11 @@ export function LoginModal({
                   )}
                 </span>
 
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-base font-bold text-foreground">
                     ورود به حساب کاربری
                   </h3>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[11px] leading-5 text-muted-foreground">
                     دسترسی به خدمات پرتال شهروند
                   </p>
                 </div>
@@ -117,7 +119,7 @@ export function LoginModal({
 
               <button
                 onClick={onClose}
-                className="rounded-full p-1 transition-colors hover:bg-muted"
+                className="shrink-0 rounded-full p-1 transition-colors hover:bg-muted"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -335,7 +337,7 @@ export function LoginModal({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
                   <div className="space-y-1">
                     <label className="pr-1 text-[11px] font-medium text-muted-foreground">
                       نام

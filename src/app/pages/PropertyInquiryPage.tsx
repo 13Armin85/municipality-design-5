@@ -54,6 +54,7 @@ export function PropertyInquiryPage({
     loading: loadingRetreat,
     error: retreatError,
     refetch: refetchRetreat,
+    reset: resetRetreat,
   } = useRetreatData();
 
   const [subProperties, setSubProperties] = useState<SubProperty[]>([]);
@@ -131,14 +132,13 @@ export function PropertyInquiryPage({
     }
   };
 
-  const selectPropertyFromList = async (subProperty: SubProperty) => {
+  const selectPropertyFromList = (subProperty: SubProperty) => {
     setSelectedSubProperty(subProperty);
 
     setSearchInputs(subProperty.codes);
 
     setError("");
-
-    await loadRetreatData(subProperty.fullCode);
+    resetRetreat();
   };
 
   useEffect(() => {
@@ -197,8 +197,6 @@ export function PropertyInquiryPage({
           setSelectedSubProperty(mapped[0]);
 
           setSearchInputs(mapped[0].codes);
-
-          await loadRetreatData(mapped[0].fullCode);
         }
       } catch (err) {
         console.error(err);
