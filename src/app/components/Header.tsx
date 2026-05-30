@@ -217,8 +217,21 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
       }
 
       const data = await response.json();
+
+      // بررسی IsSuccess flag از API
+      if (data.IsFailure || !data.IsSuccess) {
+        setLoginError(
+          data.Error?.Description || "نام کاربری یا رمز عبور اشتباه است.",
+        );
+        return;
+      }
+
       const token =
-        data.token ?? data.Token ?? data.access_token ?? data.AccessToken;
+        data.Value?.token ??
+        data.token ??
+        data.Token ??
+        data.access_token ??
+        data.AccessToken;
 
       if (!token) {
         setLoginError("خطا در دریافت توکن. لطفا دوباره تلاش کنید.");
@@ -233,6 +246,8 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
       // دریافت کد ملی از response
       const nationalCode =
+        data.Value?.user?.nationalCode ??
+        data.Value?.user?.NationalCode ??
         data.user?.nationalCode ??
         data.user?.NationalCode ??
         data.nationalCode ??
@@ -240,6 +255,10 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
       // دریافت شماره تلفن از response
       const mobile =
+        data.Value?.user?.phoneNumber ??
+        data.Value?.user?.PhoneNumber ??
+        data.Value?.user?.mobile ??
+        data.Value?.user?.Mobile ??
         data.user?.phoneNumber ??
         data.user?.PhoneNumber ??
         data.user?.mobile ??

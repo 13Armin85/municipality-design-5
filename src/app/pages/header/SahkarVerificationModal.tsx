@@ -42,6 +42,7 @@ export function SahkarVerificationModal({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -70,7 +71,6 @@ export function SahkarVerificationModal({
     event.preventDefault();
     setError("");
 
-    // اعتبارسنجی اطلاعات
     if (!validateNationalCode(nationalCode) || !validateMobileNumber(mobile)) {
       setError("اطلاعات کد ملی یا شماره تلفن معتبر نیستند.");
       return;
@@ -100,13 +100,23 @@ export function SahkarVerificationModal({
         const errorData = await response.json().catch(() => ({}));
         setError(
           errorData.message ||
+            errorData.Error?.Description ||
             "شماره تلفن با کد ملی مطابقت ندارد. لطفا اطلاعات خود را دوباره بررسی کنید.",
         );
         setLoading(false);
         return;
       }
 
-      // Send SMS code
+      const shahkarData = await response.json();
+      if (shahkarData.IsFailure || !shahkarData.IsSuccess) {
+        setError(
+          shahkarData.Error?.Description ||
+            "شماره تلفن با کد ملی مطابقت ندارد. لطفا اطلاعات خود را دوباره بررسی کنید.",
+        );
+        setLoading(false);
+        return;
+      }
+
       const sendResponse = await fetch("/api/auth/send-code", {
         method: "POST",
         headers: {
@@ -122,6 +132,16 @@ export function SahkarVerificationModal({
 
       if (!sendResponse.ok) {
         setError("خطا در ارسال کد. لطفا دوباره تلاش کنید.");
+        setLoading(false);
+        return;
+      }
+
+      const sendData = await sendResponse.json();
+      if (sendData.IsFailure || !sendData.IsSuccess) {
+        setError(
+          sendData.Error?.Description ||
+            "خطا در ارسال کد. لطفا دوباره تلاش کنید.",
+        );
         setLoading(false);
         return;
       }
@@ -171,7 +191,19 @@ export function SahkarVerificationModal({
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         setError(
-          errorData.message || "کد وارد شده اشتباه است. لطفا مجددا تلاش کنید.",
+          errorData.message ||
+            errorData.Error?.Description ||
+            "کد وارد شده اشتباه است. لطفا مجددا تلاش کنید.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      const verifyData = await response.json();
+      if (verifyData.IsFailure || !verifyData.IsSuccess) {
+        setError(
+          verifyData.Error?.Description ||
+            "کد وارد شده اشتباه است. لطفا مجددا تلاش کنید.",
         );
         setLoading(false);
         return;
@@ -180,7 +212,6 @@ export function SahkarVerificationModal({
       setLoading(false);
       setStep("success");
 
-      // Show success for 2 seconds then complete
       setTimeout(() => {
         onSuccess();
       }, 2000);
@@ -236,6 +267,16 @@ export function SahkarVerificationModal({
         return;
       }
 
+      const resendData = await response.json();
+      if (resendData.IsFailure || !resendData.IsSuccess) {
+        setError(
+          resendData.Error?.Description ||
+            "خطا در ارسال کد. لطفا دوباره تلاش کنید.",
+        );
+        setLoading(false);
+        return;
+      }
+
       setLoading(false);
       startResendTimer();
     } catch (err) {
@@ -244,16 +285,39 @@ export function SahkarVerificationModal({
     }
   };
 
-  // ─── Code input handlers ────────────────────────────────────────────────
+  // ─── Code input handlers ──────────────────────────────────────────────────
 
   const handleCodeInput = (index: number, value: string) => {
-    const digit = value.replace(/\D/g, "").slice(-1);
-    const newCode = [...code];
-    newCode[index] = digit;
-    setCode(newCode);
+    const digits = value.replace(/\D/g, "");
 
-    if (digit && index < 5) {
-      codeRefs.current[index + 1]?.focus();
+    // اگر کاربر مقدار را پاک کرد
+    if (!digits) {
+      const newCode = [...code];
+      newCode[index] = "";
+      setCode(newCode);
+      return;
+    }
+
+    // اگر دقیقاً ۶ رقم وارد شد (تشخیص Autofill پیامک در iOS/Android)
+    if (digits.length === 6) {
+      const newCode = ["", "", "", "", "", ""];
+      for (let i = 0; i < 6; i++) {
+        newCode[i] = digits[i];
+      }
+      setCode(newCode);
+      // بعد از پر شدن کامل، برو به آخرین باکس
+      codeRefs.current[5]?.focus();
+    } else {
+      // تایپ عادی (چه جایگزین شود چه به ته عدد قبلی بچسبد)
+      const newCode = [...code];
+      // فقط جدیدترین (آخرین) عددی که کاربر تایپ کرده را برمیداریم
+      newCode[index] = digits.slice(-1);
+      setCode(newCode);
+
+      // فقط و فقط یک قدم برو جلو
+      if (index < 5) {
+        codeRefs.current[index + 1]?.focus();
+      }
     }
   };
 
@@ -261,8 +325,19 @@ export function SahkarVerificationModal({
     index: number,
     event: ReactKeyboardEvent<HTMLInputElement>,
   ) => {
-    if (event.key === "Backspace" && !code[index] && index > 0) {
+    if (event.key === "Backspace") {
+      // اگر کاربر دکمه پاک کردن را زد و باکس فعلی خالی بود
+      if (!code[index] && index > 0) {
+        // مقدار باکس قبلی رو پاک کن و برگرد روی اون باکس
+        const newCode = [...code];
+        newCode[index - 1] = "";
+        setCode(newCode);
+        codeRefs.current[index - 1]?.focus();
+      }
+    } else if (event.key === "ArrowLeft" && index > 0) {
       codeRefs.current[index - 1]?.focus();
+    } else if (event.key === "ArrowRight" && index < 5) {
+      codeRefs.current[index + 1]?.focus();
     }
   };
 
@@ -272,13 +347,20 @@ export function SahkarVerificationModal({
       .getData("text")
       .replace(/\D/g, "")
       .slice(0, 6);
+
     if (!pasted) return;
 
     const newCode = ["", "", "", "", "", ""];
     for (let i = 0; i < pasted.length; i++) newCode[i] = pasted[i];
     setCode(newCode);
 
-    codeRefs.current[Math.min(pasted.length, 5)]?.focus();
+    const focusIndex = Math.min(pasted.length, 5);
+    codeRefs.current[focusIndex]?.focus();
+  };
+
+  const handleBoxFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    // به محض فوکوس شدن روی هر اینپوت (چه با کلیک چه با تایپ)، مقدار داخلش سلکت میشه
+    event.target.select();
   };
 
   // ─── Effects ────────────────────────────────────────────────────────────
@@ -299,6 +381,15 @@ export function SahkarVerificationModal({
       if (timerRef.current) clearInterval(timerRef.current);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (step === "code") {
+      // فوکوس خودکار روی اولین باکس هنگام باز شدن مرحله وارد کردن کد
+      setTimeout(() => {
+        codeRefs.current[0]?.focus();
+      }, 100);
+    }
+  }, [step]);
 
   // ─── Format phone for display ────────────────────────────────────────────
 
@@ -396,7 +487,8 @@ export function SahkarVerificationModal({
                   </motion.div>
                 )}
 
-                <div className="flex justify-center gap-2">
+                {/* dir="ltr" اطمینان حاصل می‌کند که باکس‌ها از چپ به راست پر می‌شوند */}
+                <div className="flex justify-center gap-2" dir="ltr">
                   {code.map((digit, index) => (
                     <Input
                       key={index}
@@ -405,12 +497,14 @@ export function SahkarVerificationModal({
                       }}
                       type="text"
                       inputMode="numeric"
-                      maxLength={1}
+                      autoComplete={index === 0 ? "one-time-code" : "off"}
+                      maxLength={6}
                       value={digit}
                       onChange={(e) => handleCodeInput(index, e.target.value)}
                       onKeyDown={(e) => handleCodeKeyDown(index, e)}
                       onPaste={handleCodePaste}
-                      className="h-12 w-10 text-center text-xl font-bold"
+                      onFocus={handleBoxFocus}
+                      className="h-12 w-10 text-center text-xl font-bold transition-all focus:scale-105"
                       placeholder="•"
                     />
                   ))}
@@ -468,7 +562,7 @@ export function SahkarVerificationModal({
                 </motion.div>
                 <div className="text-center">
                   <p className="text-lg font-semibold">
-                    تایید هویت موفقیت‌آمیز!
+                    تایید هویت موفقیت‌آمیز
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
                     درحال تکمیل ورود...
