@@ -48,6 +48,11 @@ const ForgotPasswordModal = lazy(() =>
     default: module.ForgotPasswordModal,
   })),
 );
+const SahkarVerificationModal = lazy(() =>
+  import("../pages/header/SahkarVerificationModal").then((module) => ({
+    default: module.SahkarVerificationModal,
+  })),
+);
 const MobileMenu = lazy(() =>
   import("../pages/header/MobileMenu").then((module) => ({
     default: module.MobileMenu,
@@ -123,6 +128,14 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const [forgotError, setForgotError] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
   const [otpResendTimer, setOtpResendTimer] = useState(0);
+
+  const [isSahkarOpen, setIsSahkarOpen] = useState(false);
+  const [sahkarNationalCode, setSahkarNationalCode] = useState("");
+  const [sahkarMobile, setSahkarMobile] = useState("");
+  const [sahkarLoginType, setSahkarLoginType] = useState<"user" | "admin">(
+    "user",
+  );
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -214,33 +227,53 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
       // جایگزین این بخش در handleLogin بعد از دریافت token:
       const payload = decodeToken(token);
-      const isAdmin =
+      const adminStatus =
         payload?.role === "Admin" ||
         (Array.isArray(payload?.role) && payload.role.includes("Admin"));
 
+      // دریافت کد ملی از response
       const nationalCode =
         data.user?.nationalCode ??
         data.user?.NationalCode ??
         data.nationalCode ??
         data.NationalCode;
 
+      // دریافت شماره تلفن از response
+      const mobile =
+        data.user?.phoneNumber ??
+        data.user?.PhoneNumber ??
+        data.user?.mobile ??
+        data.user?.Mobile ??
+        data.phoneNumber ??
+        data.PhoneNumber ??
+        data.mobile ??
+        data.Mobile;
+
+      // بررسی اینکه هر دوی کد ملی و شماره تلفن موجود هستند
+      if (!nationalCode || !mobile) {
+        setLoginError(
+          "خطا: اطلاعات کاربر ناقص است. لطفا با پشتیبانی تماس بگیرید.",
+        );
+        return;
+      }
+
       if (nationalCode) {
         localStorage.setItem("user-national-code", String(nationalCode));
-      } else if (/^\d{10}$/.test(username.trim())) {
-        localStorage.setItem("user-national-code", username.trim());
       }
 
       localStorage.setItem("auth-token", token);
-      localStorage.setItem(AUTH_STORAGE_KEY, "true");
-      localStorage.setItem(AUTH_TYPE_KEY, isAdmin ? "admin" : "user");
-      setIsAuthenticated(true);
-      setLoginType(isAdmin ? "admin" : "user");
-      setLoginError("");
+
+      // Store data temporarily for Sahkar verification
+      setSahkarNationalCode(String(nationalCode));
+      setSahkarMobile(String(mobile));
+      setSahkarLoginType(adminStatus ? "admin" : "user");
+      setIsAdmin(adminStatus);
+
+      // Show Sahkar verification modal
+      setIsLoginOpen(false);
       setUsername("");
       setPassword("");
-      setIsLoginOpen(false);
-
-      navigate(isAdmin ? "/admin" : "/profile");
+      setIsSahkarOpen(true);
     } catch {
       setLoginError("خطا در اتصال به سرور. لطفا دوباره تلاش کنید.");
     } finally {
@@ -375,6 +408,17 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     otpRefs.current[Math.min(pasted.length, 4)]?.focus();
   };
 
+  // ─── Sahkar verification handlers ────────────────────────────────────────
+
+  const handleSahkarSuccess = () => {
+    localStorage.setItem(AUTH_STORAGE_KEY, "true");
+    localStorage.setItem(AUTH_TYPE_KEY, sahkarLoginType);
+    setIsAuthenticated(true);
+    setLoginType(sahkarLoginType);
+    setIsSahkarOpen(false);
+    navigate(sahkarLoginType === "admin" ? "/admin" : "/profile");
+  };
+
   // ─── Effects ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -403,11 +447,13 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
   useEffect(() => {
     document.body.style.overflow =
-      isAllNotificationsOpen || isLoginOpen || isForgotOpen ? "hidden" : "";
+      isAllNotificationsOpen || isLoginOpen || isForgotOpen || isSahkarOpen
+        ? "hidden"
+        : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isAllNotificationsOpen, isLoginOpen, isForgotOpen]);
+  }, [isAllNotificationsOpen, isLoginOpen, isForgotOpen, isSahkarOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -654,6 +700,18 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
             setForgotOtp(["", "", "", "", ""]);
             if (timerRef.current) clearInterval(timerRef.current);
           }}
+        />
+
+        <SahkarVerificationModal
+          isOpen={isSahkarOpen}
+          nationalCode={sahkarNationalCode}
+          mobile={sahkarMobile}
+          onClose={() => {
+            setIsSahkarOpen(false);
+            localStorage.removeItem("auth-token");
+          }}
+          onSuccess={handleSahkarSuccess}
+          onError={setLoginError}
         />
       </Suspense>
 
