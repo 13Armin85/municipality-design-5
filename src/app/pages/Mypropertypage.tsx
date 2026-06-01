@@ -21,7 +21,7 @@ import {
   getApiErrorMessage,
   getApiValue,
   type ApiResponse,
-} from "@/utils/apiResponseHandler";
+} from "../utils/apiResponseHandler";
 
 interface MyPropertyPageProps {
   isDark: boolean;

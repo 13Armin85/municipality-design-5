@@ -30,6 +30,7 @@ interface OwnerPropertyItem {
   fullCode: string;
   type: string;
   ownerName: string;
+  description: string;
   raw?: Record<string, unknown>;
 }
 
@@ -97,7 +98,6 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
       getTextValue(item.owner?.name) ||
       getTextValue(item.malekName) ||
       getTextValue(item.ownerFullName) ||
-      getTextValue(item.tvItems?.[0]?.Text) ||
       combinedName ||
       getTextValue(item.name) ||
       "-"
@@ -252,6 +252,10 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
             fullCode: item.codeN ?? item.fullCode ?? "—",
             type: item.type ?? "ملک",
             ownerName: getOwnerNameFromItem(item),
+            description:
+              getTextValue(item.tvItems?.[0]?.Text?.trim()) ||
+              getTextValue(item.codeN) ||
+              "بدون توضیحات",
             raw: item,
           }),
         );
@@ -409,7 +413,10 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               </div>
             )}
             {ownerProperties.map((file) => {
-              const displayName = getTextValue(file.ownerName) || "-";
+              const displayName =
+                getTextValue(file.description) ||
+                getTextValue(file.ownerName) ||
+                "-";
 
               return (
                 <button

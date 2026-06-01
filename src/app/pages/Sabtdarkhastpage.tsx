@@ -348,10 +348,7 @@ export function SabtDarkhastPage({
           (item: any, index: number) => {
             const codeParts = String(item.codeN ?? "0-0-0-0-0-0-0").split("-");
 
-            const ownerName =
-              item.FullName ??
-              item.tvItems?.[0]?.Text?.split(" - ").pop()?.trim() ??
-              "—";
+            const ownerName = item.FullName ?? "—";
 
             return {
               ...base,

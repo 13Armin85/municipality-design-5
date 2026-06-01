@@ -178,6 +178,9 @@ const mapFileItem = (item: any, index: number): GuildPropertyItem => {
   const fullCode = normalizeCode(
     item.codeN ?? item.fullCode ?? item.codeNosazi,
   );
+  const description = toDisplay(
+    item.tvItems?.[0]?.Text?.trim() ?? item.codeN ?? "بدون توضیحات",
+  );
   return {
     id: String(item.Id ?? item.id ?? item.shop ?? index + 1),
     fullCode: fullCode || "—",
@@ -187,6 +190,7 @@ const mapFileItem = (item: any, index: number): GuildPropertyItem => {
         item.tvItems?.[0]?.Text?.trim() ??
         item.Name,
     ),
+    description: description,
     type: toDisplay(item.type ?? item.fileType ?? item.noeMelk ?? "صنفی"),
     codes: splitCode(fullCode),
     shop: firstDefined(item.shop, item.Shop, item.Id, item.id)?.toString(),

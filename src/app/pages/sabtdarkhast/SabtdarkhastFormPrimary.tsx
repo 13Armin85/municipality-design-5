@@ -197,8 +197,7 @@ export function SabtdarkhastFormPrimary({
                   className={`h-2.5 w-2.5 flex-shrink-0 rounded-full sm:h-3 sm:w-3 ${areRenewalCodesEqual(searchValues, prop.codes) ? "bg-primary animate-pulse" : "bg-orange-400"}`}
                 />
                 <span className="truncate text-[11px] font-medium sm:text-xs md:text-sm">
-                  {Object.values(prop.codes).join("-")} (ملک) —{" "}
-                  {prop.owner.name}
+                  {prop.description || prop.owner.name}
                 </span>
               </div>
               <ChevronLeft className="mr-1 h-3.5 w-3.5 flex-shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-1 sm:h-4 sm:w-4" />

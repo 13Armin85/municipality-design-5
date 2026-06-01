@@ -48,6 +48,7 @@ interface SubProperty {
   id: string;
   fullCode: string;
   ownerName: string;
+  description: string;
   codes: RenewalCodes;
 }
 
@@ -196,6 +197,9 @@ export function PropertyInquiryPage({
             fullCode: item.codeN ?? "—",
 
             ownerName: item.ownerName ?? item.tvItems?.[0]?.Text ?? "—",
+
+            description:
+              item.tvItems?.[0]?.Text?.trim() ?? item.codeN ?? "بدون توضیحات",
 
             codes: splitCode(item.codeN ?? ""),
           }),
@@ -432,7 +436,7 @@ export function PropertyInquiryPage({
                       }`}
                     >
                       <span className="text-sm font-medium">
-                        {subProp.ownerName}
+                        {subProp.description || subProp.ownerName}
                       </span>
 
                       <ChevronLeft className="h-4 w-4" />

@@ -29,12 +29,13 @@ import {
   getApiErrorMessage,
   getApiValue,
   type ApiResponse,
-} from "@/utils/apiResponseHandler";
+} from "../utils/apiResponseHandler";
 
 interface PropertyItem {
   id: string;
   fullCode: string;
   ownerName: string;
+  description: string;
   codes: RenewalCodes;
 }
 
@@ -277,6 +278,8 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               id: String(item.Id ?? item.shop ?? index + 1),
               fullCode: cleanedCode || "—",
               ownerName: item.ownerName ?? item.tvItems?.[0]?.Text ?? "—",
+              description:
+                item.tvItems?.[0]?.Text?.trim() ?? item.codeN ?? "بدون توضیحات",
               codes: splitCode(cleanedCode),
             };
           },
@@ -489,7 +492,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                         }`}
                       />
                       <span className="text-xs font-medium md:text-sm">
-                        {prop.ownerName}
+                        {prop.description || prop.ownerName}
                       </span>
                     </div>
                     <ChevronLeft

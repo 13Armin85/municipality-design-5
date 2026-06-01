@@ -28,6 +28,7 @@ export type GuildPropertyItem = {
   id: string;
   fullCode: string;
   ownerName: string;
+  description: string;
   type: string;
   codes: RenewalCodes;
   shop?: string;
@@ -188,23 +189,8 @@ export function GuildFeesPropertyListSection({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--primary-soft)] px-2 py-1 text-[11px] font-semibold text-primary">
-                        <ItemIcon className="h-3.5 w-3.5" />
-                        {item.type || "پرونده"}
-                      </span>
                       <span className="font-semibold text-foreground transition-colors group-hover:text-primary">
-                        {item.ownerName}
-                      </span>
-                    </div>
-                    <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-3">
-                      <span className="rounded-md border border-border/50 bg-card/70 px-2 py-1">
-                        کد نوسازی: {item.fullCode}
-                      </span>
-                      <span className="rounded-md border border-border/50 bg-card/70 px-2 py-1">
-                        ملک: {item.shop ?? "—"}
-                      </span>
-                      <span className="rounded-md border border-border/50 bg-card/70 px-2 py-1">
-                        صنفی: {item.jobCode ?? item.codes.guild ?? "—"}
+                        {item.description || item.ownerName}
                       </span>
                     </div>
                   </div>
@@ -219,7 +205,13 @@ export function GuildFeesPropertyListSection({
   );
 }
 
-function DataGrid({ right, left }: { right: LabelValue[]; left: LabelValue[] }) {
+function DataGrid({
+  right,
+  left,
+}: {
+  right: LabelValue[];
+  left: LabelValue[];
+}) {
   return (
     <div className="grid gap-4 rounded-xl border border-border/70 bg-card/40 p-4 md:grid-cols-2 md:gap-8">
       <ul className="space-y-2">
@@ -321,7 +313,10 @@ export function GuildFeesOwnersSection({
           <tbody className="divide-y divide-border/70 bg-card/40">
             {owners.length > 0 ? (
               owners.map((owner, index) => (
-                <tr key={owner.id || index} className="transition-colors hover:bg-muted/30">
+                <tr
+                  key={owner.id || index}
+                  className="transition-colors hover:bg-muted/30"
+                >
                   <td className="px-3 py-2.5 text-foreground">
                     {owner.firstName}
                   </td>
