@@ -1,5 +1,12 @@
 // src/data/retreat.ts
 
+import {
+  isApiSuccess,
+  getApiErrorMessage,
+  getApiValue,
+  type ApiResponse,
+} from "../utils/apiResponseHandler";
+
 export interface RetreatAreaData {
   originalArea: number;
   reformedArea: number;
@@ -47,16 +54,18 @@ export const fetchRetreatArea = async (
       throw new Error("خطا در دریافت وضعیت عقب نشینی");
     }
 
-    const result = await response.json();
+    const result: ApiResponse = await response.json();
 
-    if (!result.success) {
-      throw new Error("پاسخ نامعتبر");
+    if (!isApiSuccess(result)) {
+      throw new Error(getApiErrorMessage(result));
     }
 
+    const data = getApiValue(result) as any;
+
     return {
-      originalArea: result.data?.masahat_s ?? 0,
-      reformedArea: result.data?.masahat_e ?? 0,
-      remainingArea: result.data?.masahat_b ?? 0,
+      originalArea: data?.masahat_s ?? 0,
+      reformedArea: data?.masahat_e ?? 0,
+      remainingArea: data?.masahat_b ?? 0,
     };
   } catch (err) {
     console.error("fetchRetreatArea error:", err);
@@ -87,13 +96,14 @@ export const fetchRetreatDirections = async (
       throw new Error("خطا در دریافت جهات");
     }
 
-    const result = await response.json();
+    const result: ApiResponse = await response.json();
 
-    if (!result.success) {
-      throw new Error("پاسخ نامعتبر");
+    if (!isApiSuccess(result)) {
+      throw new Error(getApiErrorMessage(result));
     }
 
-    const list = Array.isArray(result.data) ? result.data : [];
+    const data = getApiValue(result) as any;
+    const list = Array.isArray(data) ? data : [];
 
     return list.map((item: any) => ({
       dir: normalizeText(item.jahat_m),

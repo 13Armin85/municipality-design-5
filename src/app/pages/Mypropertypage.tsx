@@ -16,6 +16,12 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 import { persistSelectedPropertyByFullCode } from "../data/properties";
+import {
+  isApiSuccess,
+  getApiErrorMessage,
+  getApiValue,
+  type ApiResponse,
+} from "@/utils/apiResponseHandler";
 
 interface MyPropertyPageProps {
   isDark: boolean;
@@ -100,12 +106,19 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
           return;
         }
 
-        const data = await response.json();
+        const data: ApiResponse = await response.json();
 
+        if (!isApiSuccess(data)) {
+          setError(getApiErrorMessage(data));
+          setLoading(false);
+          return;
+        }
+
+        const fileValue = getApiValue(data);
         // سازگاری با ساختارهای مختلف پاسخ API
-        const rawList = Array.isArray(data)
-          ? data
-          : (data.items ?? data.data ?? data.files ?? []);
+        const rawList = Array.isArray(fileValue)
+          ? fileValue
+          : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
 
         const mapped: PropertyItem[] = rawList.map(
           (item: any, index: number) => ({

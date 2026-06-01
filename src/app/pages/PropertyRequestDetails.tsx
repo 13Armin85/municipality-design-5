@@ -17,9 +17,13 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Link } from "react-router";
+import { guildCodeFields } from "../data/properties";
 import {
-  guildCodeFields,
-} from "../data/properties";
+  isApiSuccess,
+  getApiErrorMessage,
+  getApiValue,
+  type ApiResponse,
+} from "../utils/apiResponseHandler";
 
 interface OwnerPropertyItem {
   id: string;
@@ -52,9 +56,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   // فایلی که در لیست انتخاب شده اما هنوز جستجو نشده است
   const emptySearchValues = ["", "", "", "", "", "", ""];
   // مقادیری که در اینپوت‌های جستجو نمایش داده می‌شوند
-  const [searchValues, setSearchValues] = useState<string[]>(
-    emptySearchValues,
-  );
+  const [searchValues, setSearchValues] = useState<string[]>(emptySearchValues);
 
   // فایلی که اطلاعاتش در کل صفحه (جدول و جزئیات) نمایش داده می‌شود
   const [ownerProperties, setOwnerProperties] = useState<OwnerPropertyItem[]>(
@@ -186,16 +188,17 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
         throw new Error("خطا در دریافت اطلاعات پیگیری درخواست.");
       }
 
-      const data = await response.json();
+      const data: ApiResponse = await response.json();
 
-      if (data.success) {
-        const mappedRows = mapApiResponseToRequests(data);
-        const mappedDetails = mapApiResponseToDetails(data);
+      if (isApiSuccess(data)) {
+        const dataValue = getApiValue(data);
+        const mappedRows = mapApiResponseToRequests(dataValue);
+        const mappedDetails = mapApiResponseToDetails(dataValue);
 
         setRequests(mappedRows);
         setRequestDetails(mappedDetails);
       } else {
-        throw new Error("پاسخ ناموفق از سرور");
+        throw new Error(getApiErrorMessage(data));
       }
     } catch (error) {
       setApiError(
@@ -232,10 +235,16 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           throw new Error("خطا در دریافت لیست املاک مالک.");
         }
 
-        const data = await response.json();
-        const rawList = Array.isArray(data)
-          ? data
-          : (data.items ?? data.data ?? data.files ?? []);
+        const data: ApiResponse = await response.json();
+
+        if (!isApiSuccess(data)) {
+          throw new Error(getApiErrorMessage(data));
+        }
+
+        const fileValue = getApiValue(data);
+        const rawList = Array.isArray(fileValue)
+          ? fileValue
+          : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
 
         const mappedProperties: OwnerPropertyItem[] = rawList.map(
           (item: any, index: number) => ({

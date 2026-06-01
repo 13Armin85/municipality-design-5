@@ -24,6 +24,12 @@ import {
   type RenewalCodeKey,
   type RenewalCodes,
 } from "../data/properties";
+import {
+  isApiSuccess,
+  getApiErrorMessage,
+  getApiValue,
+  type ApiResponse,
+} from "@/utils/apiResponseHandler";
 
 interface PropertyItem {
   id: string;
@@ -159,13 +165,29 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         }),
       ]);
 
-      const renovationData = renovationRes.ok ? await renovationRes.json() : {};
-      const recordsData = recordsRes.ok ? await recordsRes.json() : [];
-      const ownersData = ownersRes.ok ? await ownersRes.json() : null;
+      const renovationData: ApiResponse = renovationRes.ok
+        ? await renovationRes.json()
+        : { IsSuccess: false, IsFailure: true };
+      const recordsData: ApiResponse = recordsRes.ok
+        ? await recordsRes.json()
+        : { IsSuccess: false, IsFailure: true };
+      const ownersData: ApiResponse = ownersRes.ok
+        ? await ownersRes.json()
+        : { IsSuccess: false, IsFailure: true };
 
-      const feeList = Array.isArray(renovationData)
-        ? renovationData
-        : (renovationData.items ?? renovationData.data ?? []);
+      const renovationValue = isApiSuccess(renovationData)
+        ? getApiValue(renovationData)
+        : {};
+      const recordsValue = isApiSuccess(recordsData)
+        ? getApiValue(recordsData)
+        : [];
+      const ownersValue = isApiSuccess(ownersData)
+        ? getApiValue(ownersData)
+        : null;
+
+      const feeList = Array.isArray(renovationValue)
+        ? renovationValue
+        : (renovationValue.items ?? renovationValue.data ?? []);
       const feePairs: LabelValue[] = feeList.map((item: any) => ({
         label: item.title ?? item.label ?? item.key ?? "—",
         value: String(item.value ?? item.text ?? "—"),
@@ -173,9 +195,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
       setFeesRight(feePairs.filter((_: unknown, i: number) => i % 2 === 0));
       setFeesLeft(feePairs.filter((_: unknown, i: number) => i % 2 === 1));
 
-      const rawRecords = Array.isArray(recordsData)
-        ? recordsData
-        : (recordsData.items ?? recordsData.data ?? []);
+      const rawRecords = Array.isArray(recordsValue)
+        ? recordsValue
+        : (recordsValue.items ?? recordsValue.data ?? []);
       setHistoryItems(
         rawRecords.map((item: any, index: number) => ({
           id: String(item.id ?? index + 1),
@@ -185,16 +207,16 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         })),
       );
 
-      const rawOwners = Array.isArray(ownersData)
-        ? ownersData
-        : Array.isArray(ownersData?.items)
-          ? ownersData.items
-          : Array.isArray(ownersData?.data)
-            ? ownersData.data
-            : Array.isArray(renovationData.owners)
-              ? renovationData.owners
-              : renovationData.owner
-                ? [renovationData.owner]
+      const rawOwners = Array.isArray(ownersValue)
+        ? ownersValue
+        : Array.isArray(ownersValue?.items)
+          ? ownersValue.items
+          : Array.isArray(ownersValue?.data)
+            ? ownersValue.data
+            : Array.isArray(renovationValue.owners)
+              ? renovationValue.owners
+              : renovationValue.owner
+                ? [renovationValue.owner]
                 : [];
       setOwners(
         rawOwners.map((owner: any, index: number) => ({
@@ -238,10 +260,14 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
           },
         );
         if (!response.ok) return;
-        const data = await response.json();
-        const rawList = Array.isArray(data)
-          ? data
-          : (data.items ?? data.data ?? data.files ?? []);
+        const data: ApiResponse = await response.json();
+
+        if (!isApiSuccess(data)) return;
+
+        const fileValue = getApiValue(data);
+        const rawList = Array.isArray(fileValue)
+          ? fileValue
+          : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
         const mapped: PropertyItem[] = rawList.map(
           (item: any, index: number) => {
             const cleanedCode = normalizeCode(
