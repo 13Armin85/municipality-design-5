@@ -49,7 +49,7 @@ export function SahkarVerificationModal({
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
-  const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const hiddenInputRef = useRef<HTMLInputElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ─── Validation ──────────────────────────────────────────────────────────
@@ -289,82 +289,36 @@ export function SahkarVerificationModal({
     }
   };
 
-  // ─── Code input handlers ──────────────────────────────────────────────────
+  // ─── Hidden input handler (single source of truth for keyboard input) ────
 
-  const handleCodeInput = (index: number, value: string) => {
-    const digits = value.replace(/\D/g, "");
-
-    // اگر کاربر مقدار را پاک کرد
-    if (!digits) {
-      const newCode = [...code];
-      newCode[index] = "";
-      setCode(newCode);
-      return;
-    }
-
-    // اگر دقیقاً ۶ رقم وارد شد (تشخیص Autofill پیامک در iOS/Android)
-    if (digits.length === 6) {
-      const newCode = ["", "", "", "", "", ""];
-      for (let i = 0; i < 6; i++) {
-        newCode[i] = digits[i];
-      }
-      setCode(newCode);
-      // بعد از پر شدن کامل، برو به آخرین باکس
-      codeRefs.current[5]?.focus();
-    } else {
-      // تایپ عادی (چه جایگزین شود چه به ته عدد قبلی بچسبد)
-      const newCode = [...code];
-      // فقط جدیدترین (آخرین) عددی که کاربر تایپ کرده را برمیداریم
-      newCode[index] = digits.slice(-1);
-      setCode(newCode);
-
-      // فقط و فقط یک قدم برو جلو
-      if (index < 5) {
-        codeRefs.current[index + 1]?.focus();
-      }
-    }
+  const focusHiddenInput = () => {
+    hiddenInputRef.current?.focus();
   };
 
-  const handleCodeKeyDown = (
-    index: number,
-    event: ReactKeyboardEvent<HTMLInputElement>,
+  const handleHiddenInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    if (event.key === "Backspace") {
-      // اگر کاربر دکمه پاک کردن را زد و باکس فعلی خالی بود
-      if (!code[index] && index > 0) {
-        // مقدار باکس قبلی رو پاک کن و برگرد روی اون باکس
-        const newCode = [...code];
-        newCode[index - 1] = "";
-        setCode(newCode);
-        codeRefs.current[index - 1]?.focus();
-      }
-    } else if (event.key === "ArrowLeft" && index > 0) {
-      codeRefs.current[index - 1]?.focus();
-    } else if (event.key === "ArrowRight" && index < 5) {
-      codeRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleCodePaste = (event: ReactClipboardEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    const pasted = event.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, 6);
-
-    if (!pasted) return;
-
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 6);
     const newCode = ["", "", "", "", "", ""];
-    for (let i = 0; i < pasted.length; i++) newCode[i] = pasted[i];
+    for (let i = 0; i < digits.length; i++) newCode[i] = digits[i];
     setCode(newCode);
-
-    const focusIndex = Math.min(pasted.length, 5);
-    codeRefs.current[focusIndex]?.focus();
   };
 
-  const handleBoxFocus = (event: React.FocusEvent<HTMLInputElement>) => {
-    // به محض فوکوس شدن روی هر اینپوت (چه با کلیک چه با تایپ)، مقدار داخلش سلکت میشه
-    event.target.select();
+  const handleHiddenKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Backspace") {
+      setCode((prev) => {
+        const newCode = [...prev];
+        // آخرین سلول پر رو پاک کن
+        for (let i = 5; i >= 0; i--) {
+          if (newCode[i]) {
+            newCode[i] = "";
+            break;
+          }
+        }
+        return newCode;
+      });
+      event.preventDefault();
+    }
   };
 
   // ─── Effects ────────────────────────────────────────────────────────────
@@ -388,9 +342,8 @@ export function SahkarVerificationModal({
 
   useEffect(() => {
     if (step === "code") {
-      // فوکوس خودکار روی اولین باکس هنگام باز شدن مرحله وارد کردن کد
       setTimeout(() => {
-        codeRefs.current[0]?.focus();
+        hiddenInputRef.current?.focus();
       }, 100);
     }
   }, [step]);
@@ -491,27 +444,52 @@ export function SahkarVerificationModal({
                   </motion.div>
                 )}
 
-                {/* dir="ltr" اطمینان حاصل می‌کند که باکس‌ها از چپ به راست پر می‌شوند */}
-                <div className="flex justify-center gap-2" dir="ltr">
-                  {code.map((digit, index) => (
-                    <Input
-                      key={index}
-                      ref={(el) => {
-                        codeRefs.current[index] = el;
-                      }}
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete={index === 0 ? "one-time-code" : "off"}
-                      maxLength={6}
-                      value={digit}
-                      onChange={(e) => handleCodeInput(index, e.target.value)}
-                      onKeyDown={(e) => handleCodeKeyDown(index, e)}
-                      onPaste={handleCodePaste}
-                      onFocus={handleBoxFocus}
-                      className="h-12 w-10 text-center text-xl font-bold transition-all focus:scale-105"
-                      placeholder="•"
-                    />
-                  ))}
+                {/* hidden input که همه keyboard events رو می‌گیره */}
+                <input
+                  ref={hiddenInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={code.join("")}
+                  onChange={handleHiddenInputChange}
+                  onKeyDown={handleHiddenKeyDown}
+                  className="sr-only"
+                  maxLength={6}
+                  aria-label="کد تایید"
+                />
+
+                {/* سلول‌های نمایشی — کلیک روی هر کدوم hidden input رو focus می‌کنه */}
+                <div
+                  className="flex justify-center gap-2 cursor-text"
+                  dir="ltr"
+                  onClick={focusHiddenInput}
+                >
+                  {code.map((digit, index) => {
+                    const isCaret =
+                      index === code.filter(Boolean).length &&
+                      code.join("").length < 6;
+                    return (
+                      <div
+                        key={index}
+                        className={[
+                          "h-12 w-10 flex items-center justify-center rounded-md border text-xl font-bold transition-all select-none",
+                          digit
+                            ? "border-primary bg-primary/5 text-foreground"
+                            : "border-input bg-background text-muted-foreground",
+                          isCaret ? "ring-2 ring-primary ring-offset-1" : "",
+                        ].join(" ")}
+                      >
+                        {digit ||
+                          (isCaret ? (
+                            <span className="animate-pulse text-primary text-base">
+                              |
+                            </span>
+                          ) : (
+                            "•"
+                          ))}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <Button
