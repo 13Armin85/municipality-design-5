@@ -32,6 +32,12 @@ import {
   type RenewalCodes,
 } from "../data/properties";
 import { useRetreatData } from "../data/Useretreatdata";
+import {
+  isApiSuccess,
+  getApiErrorMessage,
+  getApiValue,
+  type ApiResponse,
+} from "../utils/apiResponseHandler";
 
 interface PropertyInquiryPageProps {
   isDark: boolean;
@@ -172,11 +178,16 @@ export function PropertyInquiryPage({
           throw new Error("خطا در دریافت پرونده‌ها");
         }
 
-        const result = await response.json();
+        const result: ApiResponse = await response.json();
 
-        const rawList = Array.isArray(result)
-          ? result
-          : (result.items ?? result.data ?? result.files ?? []);
+        if (!isApiSuccess(result)) {
+          throw new Error(getApiErrorMessage(result));
+        }
+
+        const fileValue = getApiValue(result);
+        const rawList = Array.isArray(fileValue)
+          ? fileValue
+          : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
 
         const mapped: SubProperty[] = rawList.map(
           (item: any, index: number) => ({

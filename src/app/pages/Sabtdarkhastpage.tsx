@@ -5,6 +5,12 @@ import {
   type MockProperty,
   type RenewalCodes,
 } from "../data/properties";
+import {
+  isApiSuccess,
+  getApiErrorMessage,
+  getApiValue,
+  type ApiResponse,
+} from "../utils/apiResponseHandler";
 import { SelectionModal } from "./sabtdarkhast/FormCommon";
 import { HelpModal } from "./sabtdarkhast/HelpModal";
 import {
@@ -277,21 +283,27 @@ export function SabtDarkhastPage({
         );
 
         if (requestTypeRes.ok) {
-          const requestTypeData = await requestTypeRes.json();
-          const extracted = extractOptions(requestTypeData);
-          setRequestTypeItems(extracted);
+          const requestTypeData: ApiResponse = await requestTypeRes.json();
+          if (isApiSuccess(requestTypeData)) {
+            const extracted = extractOptions(getApiValue(requestTypeData));
+            setRequestTypeItems(extracted);
+          }
         }
 
         if (applicantTypeRes.ok) {
-          const applicantTypeData = await applicantTypeRes.json();
-          const extracted = extractOptions(applicantTypeData);
-          setApplicantTypeItems(extracted);
+          const applicantTypeData: ApiResponse = await applicantTypeRes.json();
+          if (isApiSuccess(applicantTypeData)) {
+            const extracted = extractOptions(getApiValue(applicantTypeData));
+            setApplicantTypeItems(extracted);
+          }
         }
 
         if (officeRes.ok) {
-          const officeData = await officeRes.json();
-          const extracted = extractOptions(officeData);
-          setOfficeItems(extracted);
+          const officeData: ApiResponse = await officeRes.json();
+          if (isApiSuccess(officeData)) {
+            const extracted = extractOptions(getApiValue(officeData));
+            setOfficeItems(extracted);
+          }
         }
       } catch (error) {
         console.error("Error fetching select options:", error);
@@ -321,11 +333,14 @@ export function SabtDarkhastPage({
 
         if (!response.ok) return;
 
-        const data = await response.json();
+        const data: ApiResponse = await response.json();
 
-        const rawList = Array.isArray(data)
-          ? data
-          : (data.items ?? data.data ?? data.files ?? []);
+        if (!isApiSuccess(data)) return;
+
+        const fileValue = getApiValue(data);
+        const rawList = Array.isArray(fileValue)
+          ? fileValue
+          : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
 
         const base = emptyProperty;
 

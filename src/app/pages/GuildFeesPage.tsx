@@ -1,9 +1,12 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
+import { type RenewalCodeKey, type RenewalCodes } from "../data/properties";
 import {
-  type RenewalCodeKey,
-  type RenewalCodes,
-} from "../data/properties";
+  isApiSuccess,
+  getApiErrorMessage,
+  getApiValue,
+  type ApiResponse,
+} from "../utils/apiResponseHandler";
 import { GuildFeesHeader } from "./guild-fees/GuildFeesHeader";
 import { GuildFeesHelpModal } from "./guild-fees/GuildFeesHelpModal";
 import {
@@ -172,7 +175,9 @@ const getAuthHeaders = (token: string) => ({
 });
 
 const mapFileItem = (item: any, index: number): GuildPropertyItem => {
-  const fullCode = normalizeCode(item.codeN ?? item.fullCode ?? item.codeNosazi);
+  const fullCode = normalizeCode(
+    item.codeN ?? item.fullCode ?? item.codeNosazi,
+  );
   return {
     id: String(item.Id ?? item.id ?? item.shop ?? index + 1),
     fullCode: fullCode || "—",
@@ -185,7 +190,12 @@ const mapFileItem = (item: any, index: number): GuildPropertyItem => {
     type: toDisplay(item.type ?? item.fileType ?? item.noeMelk ?? "صنفی"),
     codes: splitCode(fullCode),
     shop: firstDefined(item.shop, item.Shop, item.Id, item.id)?.toString(),
-    jobCode: firstDefined(item.jobCode, item.JobCode, item.job, item.Job)?.toString(),
+    jobCode: firstDefined(
+      item.jobCode,
+      item.JobCode,
+      item.job,
+      item.Job,
+    )?.toString(),
   };
 };
 
@@ -231,7 +241,10 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
   const [isGuildLoading, setIsGuildLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const receiptColumns = useMemo(() => splitPairs(receiptPairs), [receiptPairs]);
+  const receiptColumns = useMemo(
+    () => splitPairs(receiptPairs),
+    [receiptPairs],
+  );
   const taxColumns = useMemo(() => splitPairs(taxPairs), [taxPairs]);
 
   const handleOpenHelp = (title: string, description: string) => {
@@ -269,11 +282,17 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
         throw new Error("guilds request failed");
       }
 
-      const guildData = await guildResponse.json();
-      const receiptData = unwrapList(guildData);
+      const guildData: ApiResponse = await guildResponse.json();
+
+      if (!isApiSuccess(guildData)) {
+        throw new Error(getApiErrorMessage(guildData));
+      }
+
+      const guildValue = getApiValue(guildData);
+      const receiptData = unwrapList(guildValue);
       setReceiptPairs(toPairs(receiptData));
 
-      const { shop, jobCode } = extractGuildParams(currentCase, guildData);
+      const { shop, jobCode } = extractGuildParams(currentCase, guildValue);
 
       if (shop && jobCode) {
         const taxResponse = await fetch(
@@ -285,13 +304,20 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
         );
 
         if (taxResponse.ok) {
-          const taxData = await taxResponse.json();
-          setTaxPairs(toPairs(unwrapList(taxData)));
+          const taxData: ApiResponse = await taxResponse.json();
+          if (isApiSuccess(taxData)) {
+            const taxValue = getApiValue(taxData);
+            setTaxPairs(toPairs(unwrapList(taxValue)));
+          } else {
+            setError("فیش دریافت شد، اما دریافت عوارض صنفی با خطا مواجه شد.");
+          }
         } else {
           setError("فیش دریافت شد، اما دریافت عوارض صنفی با خطا مواجه شد.");
         }
       } else {
-        setError("برای دریافت عوارض صنفی، مقدار shop و jobCode در پاسخ فیش پیدا نشد.");
+        setError(
+          "برای دریافت عوارض صنفی، مقدار shop و jobCode در پاسخ فیش پیدا نشد.",
+        );
       }
     } catch (err) {
       console.error("Failed to load guild fees", err);
@@ -323,8 +349,15 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
 
         if (!response.ok) return;
 
-        const data = await response.json();
-        const mapped = unwrapList(data).map(mapFileItem);
+        const data: ApiResponse = await response.json();
+
+        if (!isApiSuccess(data)) {
+          setError(getApiErrorMessage(data));
+          return;
+        }
+
+        const fileValue = getApiValue(data);
+        const mapped = unwrapList(fileValue).map(mapFileItem);
         setCases(mapped);
         if (mapped[0]) {
           setSelectedCase(mapped[0]);
@@ -383,7 +416,8 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
             viewport={{ once: true, margin: "-80px" }}
             className="mb-4 rounded-2xl border border-primary/25 bg-[var(--primary-soft)] px-4 py-3 text-xs text-primary md:text-sm"
           >
-            پس از انتخاب پرونده یا ورود کد نوسازی، فیش اصناف و عوارض صنفی از سرویس شهرداری دریافت می‌شود.
+            پس از انتخاب پرونده یا ورود کد نوسازی، فیش اصناف و عوارض صنفی از
+            سرویس شهرداری دریافت می‌شود.
           </motion.div>
 
           <div className="space-y-4 md:space-y-5">

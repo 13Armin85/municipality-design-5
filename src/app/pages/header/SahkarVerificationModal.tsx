@@ -17,6 +17,12 @@ import {
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+import {
+  isApiSuccess,
+  getApiErrorMessage,
+  getApiValue,
+  type ApiResponse,
+} from "../../utils/apiResponseHandler";
 
 interface SahkarVerificationModalProps {
   isOpen: boolean;
@@ -97,20 +103,19 @@ export function SahkarVerificationModal({
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData: ApiResponse = await response.json().catch(() => ({}));
         setError(
-          errorData.message ||
-            errorData.Error?.Description ||
+          getApiErrorMessage(errorData) ||
             "شماره تلفن با کد ملی مطابقت ندارد. لطفا اطلاعات خود را دوباره بررسی کنید.",
         );
         setLoading(false);
         return;
       }
 
-      const shahkarData = await response.json();
-      if (shahkarData.IsFailure || !shahkarData.IsSuccess) {
+      const shahkarData: ApiResponse = await response.json();
+      if (!isApiSuccess(shahkarData)) {
         setError(
-          shahkarData.Error?.Description ||
+          getApiErrorMessage(shahkarData) ||
             "شماره تلفن با کد ملی مطابقت ندارد. لطفا اطلاعات خود را دوباره بررسی کنید.",
         );
         setLoading(false);
@@ -136,10 +141,10 @@ export function SahkarVerificationModal({
         return;
       }
 
-      const sendData = await sendResponse.json();
-      if (sendData.IsFailure || !sendData.IsSuccess) {
+      const sendData: ApiResponse = await sendResponse.json();
+      if (!isApiSuccess(sendData)) {
         setError(
-          sendData.Error?.Description ||
+          getApiErrorMessage(sendData) ||
             "خطا در ارسال کد. لطفا دوباره تلاش کنید.",
         );
         setLoading(false);
@@ -189,20 +194,19 @@ export function SahkarVerificationModal({
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData: ApiResponse = await response.json().catch(() => ({}));
         setError(
-          errorData.message ||
-            errorData.Error?.Description ||
+          getApiErrorMessage(errorData) ||
             "کد وارد شده اشتباه است. لطفا مجددا تلاش کنید.",
         );
         setLoading(false);
         return;
       }
 
-      const verifyData = await response.json();
-      if (verifyData.IsFailure || !verifyData.IsSuccess) {
+      const verifyData: ApiResponse = await response.json();
+      if (!isApiSuccess(verifyData)) {
         setError(
-          verifyData.Error?.Description ||
+          getApiErrorMessage(verifyData) ||
             "کد وارد شده اشتباه است. لطفا مجددا تلاش کنید.",
         );
         setLoading(false);
@@ -267,10 +271,10 @@ export function SahkarVerificationModal({
         return;
       }
 
-      const resendData = await response.json();
-      if (resendData.IsFailure || !resendData.IsSuccess) {
+      const resendData: ApiResponse = await response.json();
+      if (!isApiSuccess(resendData)) {
         setError(
-          resendData.Error?.Description ||
+          getApiErrorMessage(resendData) ||
             "خطا در ارسال کد. لطفا دوباره تلاش کنید.",
         );
         setLoading(false);
