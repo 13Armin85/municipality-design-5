@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
+import { Layers, Info } from "lucide-react";
 import { type RenewalCodeKey, type RenewalCodes } from "../data/properties";
 import {
   isApiSuccess,
@@ -7,6 +8,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 import { GuildFeesHeader } from "./guild-fees/GuildFeesHeader";
 import { GuildFeesHelpModal } from "./guild-fees/GuildFeesHelpModal";
 import {
@@ -386,6 +388,43 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
     setError("");
   };
 
+  const handlePropertyTreeSelect = (property: PropertyItem, treeItem: PropertyTreeItem) => {
+    const codes: RenewalCodes = {
+      region: "",
+      neighborhood: "",
+      block: "",
+      property: "",
+      building: "",
+      apartment: "",
+      guild: "",
+    };
+    
+    // Parse the fullCode to extract codes
+    const parts = treeItem.fullCode.split("-").map(p => p.trim()).filter(Boolean);
+    if (parts.length >= 7) {
+      codes.region = parts[0];
+      codes.neighborhood = parts[1];
+      codes.block = parts[2];
+      codes.property = parts[3];
+      codes.building = parts[4];
+      codes.apartment = parts[5];
+      codes.guild = parts[6];
+    }
+    
+    const guildItem: GuildPropertyItem = {
+      id: treeItem.id,
+      fullCode: treeItem.fullCode,
+      ownerName: property.description,
+      description: treeItem.text,
+      type: "ملک",
+      codes: codes,
+      shop: treeItem.id,
+      jobCode: "",
+    };
+    
+    handleCaseClick(guildItem);
+  };
+
   const handleSearch = (event: FormEvent) => {
     event.preventDefault();
     const code = buildCodeFromInputs(searchInputs);
@@ -432,6 +471,33 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
               onSubmit={handleSearch}
               searchInputs={searchInputs}
             />
+
+            {/* Property Tree List */}
+            <motion.article
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="soft-card mesh-panel overflow-hidden"
+            >
+              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-bold">پرونده‌های زیر مجموعه</h2>
+                </div>
+                <button
+                  onClick={() => handleOpenHelp("پرونده‌ها", "لیست املاک و پرونده‌های شما در این بخش نمایش داده می‌شود.")}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 md:text-xs"
+                >
+                  <Info className="h-3.5 w-3.5" /> راهنما
+                </button>
+              </div>
+              <div className="p-4">
+                <PropertyTreeList
+                  onPropertySelect={handlePropertyTreeSelect}
+                  compact
+                />
+              </div>
+            </motion.article>
 
             <GuildFeesPropertyListSection
               items={cases}

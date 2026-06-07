@@ -30,8 +30,9 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { PropertyTreeList, type PropertyItem as TreePropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 
-interface PropertyItem {
+interface LocalPropertyItem {
   id: string;
   fullCode: string;
   ownerName: string;
@@ -66,8 +67,8 @@ interface ModernTollPageProps {
 }
 
 export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
-  const [propertyItems, setPropertyItems] = useState<PropertyItem[]>([]);
-  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(
+  const [propertyItems, setPropertyItems] = useState<LocalPropertyItem[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<LocalPropertyItem | null>(
     null,
   );
   const [owners, setOwners] = useState<OwnerItem[]>([]);
@@ -236,7 +237,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   };
 
   // هندلر کلیک روی یک ملک از لیست زیرمجموعه
-  const selectPropertyFromList = (property: PropertyItem) => {
+  const selectPropertyFromList = (property: LocalPropertyItem) => {
     setSearchInputs(property.codes);
     setSelectedProperty(property);
     setOwners([]);
@@ -244,6 +245,40 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     setFeesLeft([]);
     setHistoryItems([]);
     setError("");
+  };
+
+  const handlePropertyTreeSelect = (property: TreePropertyItem, treeItem: PropertyTreeItem) => {
+    const codes: RenewalCodes = {
+      region: "",
+      neighborhood: "",
+      block: "",
+      property: "",
+      building: "",
+      apartment: "",
+      guild: "",
+    };
+    
+    // Parse the fullCode to extract codes
+    const parts = treeItem.fullCode.split("-").map(p => p.trim()).filter(Boolean);
+    if (parts.length >= 7) {
+      codes.region = parts[0];
+      codes.neighborhood = parts[1];
+      codes.block = parts[2];
+      codes.property = parts[3];
+      codes.building = parts[4];
+      codes.apartment = parts[5];
+      codes.guild = parts[6];
+    }
+    
+    const prop: LocalPropertyItem = {
+      id: treeItem.id,
+      fullCode: treeItem.fullCode,
+      ownerName: property.description,
+      description: treeItem.text,
+      codes: codes,
+    };
+    
+    selectPropertyFromList(prop);
   };
 
   useEffect(() => {
@@ -269,7 +304,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         const rawList = Array.isArray(fileValue)
           ? fileValue
           : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
-        const mapped: PropertyItem[] = rawList.map(
+        const mapped: LocalPropertyItem[] = rawList.map(
           (item: any, index: number) => {
             const cleanedCode = normalizeCode(
               item.codeN ?? item.fullCode ?? "",
@@ -451,7 +486,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             </div>
           </motion.article>
 
-          {/* پرونده‌های زیر مجموعه */}
+          {/* Property Tree List */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -462,7 +497,34 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               <div className="flex items-center gap-2">
                 <Layers className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-bold text-foreground">
-                  پرونده های زیر مجموعه
+                  پرونده‌های زیر مجموعه
+                </h2>
+              </div>
+              <HelpButton
+                title="زیر مجموعه"
+                desc="لیست املاک شما در این بخش نمایش داده می‌شود."
+              />
+            </div>
+            <div className="p-4">
+              <PropertyTreeList
+                onPropertySelect={handlePropertyTreeSelect}
+                compact
+              />
+            </div>
+          </motion.article>
+
+          {/* پرونده‌های زیر مجموعه - kept for compatibility */}
+          <motion.article
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="soft-card mesh-panel"
+          >
+            <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-bold text-foreground">
+                  پرونده های زیر مجموعه (قدیمی)
                 </h2>
               </div>
               <HelpButton

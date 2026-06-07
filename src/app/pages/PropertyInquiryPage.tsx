@@ -38,6 +38,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 
 interface PropertyInquiryPageProps {
   isDark: boolean;
@@ -146,6 +147,40 @@ export function PropertyInquiryPage({
 
     setError("");
     resetRetreat();
+  };
+
+  const handlePropertyTreeSelect = (property: PropertyItem, treeItem: PropertyTreeItem) => {
+    const codes: RenewalCodes = {
+      region: "",
+      neighborhood: "",
+      block: "",
+      property: "",
+      building: "",
+      apartment: "",
+      guild: "",
+    };
+    
+    // Parse the fullCode to extract codes
+    const parts = treeItem.fullCode.split("-").map(p => p.trim()).filter(Boolean);
+    if (parts.length >= 7) {
+      codes.region = parts[0];
+      codes.neighborhood = parts[1];
+      codes.block = parts[2];
+      codes.property = parts[3];
+      codes.building = parts[4];
+      codes.apartment = parts[5];
+      codes.guild = parts[6];
+    }
+    
+    const subProp: SubProperty = {
+      id: treeItem.id,
+      fullCode: treeItem.fullCode,
+      ownerName: property.description,
+      description: treeItem.text,
+      codes: codes,
+    };
+    
+    selectPropertyFromList(subProp);
   };
 
   useEffect(() => {
@@ -408,12 +443,26 @@ export function PropertyInquiryPage({
             </div>
           </motion.article>
 
-          {/* files */}
+          {/* Property Tree List */}
+          <motion.article className="soft-card mesh-panel">
+            <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
+              <Layers className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-bold">پرونده‌های زیر مجموعه</h2>
+            </div>
+            <div className="p-4">
+              <PropertyTreeList
+                onPropertySelect={handlePropertyTreeSelect}
+                compact
+              />
+            </div>
+          </motion.article>
+
+          {/* files - kept for compatibility */}
           <motion.article className="soft-card mesh-panel">
             <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
               <Layers className="h-4 w-4 text-primary" />
 
-              <h2 className="text-sm font-bold">پرونده های زیر مجموعه</h2>
+              <h2 className="text-sm font-bold">پرونده های زیر مجموعه (قدیمی)</h2>
             </div>
 
             <div className="p-4 space-y-2">

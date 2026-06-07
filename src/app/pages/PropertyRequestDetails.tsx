@@ -24,6 +24,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 
 interface OwnerPropertyItem {
   id: string;
@@ -284,6 +285,15 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     void fetchRequestData(codeNosazi);
   };
 
+  const handlePropertyTreeSelect = (property: PropertyItem, treeItem: PropertyTreeItem) => {
+    const codeNosazi = treeItem.fullCode;
+    setSelectedCodeNosazi(codeNosazi);
+    setSearchValues(toSearchValuesFromCode(codeNosazi));
+    setRequests([]);
+    setRequestDetails([]);
+    setApiError("");
+  };
+
   // آپدیت لیست درخواست‌ها بر اساس فایل فعال
   const filledRequestRows = useMemo(() => requests, [requests]);
 
@@ -392,7 +402,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           </div>
         </motion.article>
 
-        {/* لیست پرونده‌ها */}
+        {/* Property Tree List */}
         <motion.article
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -402,7 +412,29 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
             <div className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">پرونده های زیر مجموعه</h2>
+              <h2 className="text-sm font-bold">پرونده‌های زیر مجموعه</h2>
+            </div>
+            <HelpButton />
+          </div>
+          <div className="p-4">
+            <PropertyTreeList
+              onPropertySelect={handlePropertyTreeSelect}
+              compact
+            />
+          </div>
+        </motion.article>
+
+        {/* لیست پرونده‌ها - kept for compatibility */}
+        <motion.article
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="soft-card mesh-panel overflow-hidden"
+        >
+          <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-bold">پرونده های زیر مجموعه (قدیمی)</h2>
             </div>
             <HelpButton />
           </div>

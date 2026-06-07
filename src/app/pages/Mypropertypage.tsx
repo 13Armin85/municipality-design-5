@@ -14,9 +14,10 @@ import {
   Home,
   Loader2,
   AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
-import { Link } from "react-router";
-import { persistSelectedPropertyByFullCode } from "../data/properties";
+import { Link, useNavigate } from "react-router";
+import { persistSelectedPropertyByFullCode, getStoredPropertyId, findPropertyByFullCode } from "../data/properties";
 import {
   isApiSuccess,
   getApiErrorMessage,
@@ -82,6 +83,7 @@ const getInitialExpandedTreeIds = (items: PropertyTreeItem[]) => {
 };
 
 export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
@@ -97,12 +99,39 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const [propertyItems, setPropertyItems] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showNoPropertyError, setShowNoPropertyError] = useState(false);
 
   const handleSelectProperty = (property: PropertyItem) => {
     setSelectedPropertyId(property.id);
     setSelectedProperty(property);
     persistSelectedPropertyByFullCode(property.fullCode);
     setIsMapOpen(true);
+  };
+
+  const handlePerformAction = () => {
+    // Check if a property is selected
+    const storedId = getStoredPropertyId();
+    const storedProperty = findPropertyByFullCode(storedId);
+    
+    if (!storedProperty && propertyItems.length === 0) {
+      // No properties exist - show error
+      setShowNoPropertyError(true);
+      return;
+    }
+    
+    if (!storedProperty && propertyItems.length > 0) {
+      // Properties exist but none selected - select first one
+      const firstProperty = propertyItems[0];
+      if (firstProperty.treeItems.length > 0) {
+        handleSelectTreeItem(firstProperty, firstProperty.treeItems[0]);
+      } else {
+        handleSelectProperty(firstProperty);
+      }
+    }
+    
+    // Navigate to services section or stay on page with property selected
+    // For now, we'll navigate to the services section on the home page
+    navigate("/#services");
   };
 
   const handleSelectTreeItem = (
@@ -361,13 +390,13 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
         <div className="container mx-auto px-0 md:px-2 lg:px-6">
           <div className="nav-shell bg-card border border-border/50 rounded-2xl shadow-sm">
             <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
-              <Link
-                to="/"
-                className="header-action-btn inline-flex items-center gap-2 px-3"
+              <button
+                onClick={handlePerformAction}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95 hover:bg-primary/90"
               >
-                <ArrowRight className="h-4 w-4" />
-                <span className="hidden text-sm md:block">بازگشت</span>
-              </Link>
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="hidden text-sm md:block">انجام عملیات</span>
+              </button>
 
               <h1 className="text-sm font-bold text-foreground md:text-base">
                 املاک من
@@ -430,6 +459,32 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               <p className="text-sm">هیچ ملکی برای این کد ملی یافت نشد.</p>
             </motion.div>
           )}
+
+          {/* Error message for no property selected */}
+          <AnimatePresence>
+            {showNoPropertyError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="rounded-2xl border border-destructive/30 bg-destructive/10 px-5 py-4 text-sm text-destructive"
+              >
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold mb-1">پرونده‌ای یافت نشد</p>
+                    <p>پرونده شما در شهروندیار یافت نشد؛ لطفا جهت ثبت اطلاعات به شهرداری منطقه موردنظر خود مراجعه کنید.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowNoPropertyError(false)}
+                    className="mr-auto shrink-0 rounded-full p-1 hover:bg-destructive/20 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* جدول املاک */}
           {!loading && !error && propertyItems.length > 0 && (

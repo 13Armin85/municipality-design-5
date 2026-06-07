@@ -521,6 +521,11 @@ export const getStoredPropertyId = () => {
 
 export const getStoredProperty = () => findPropertyById(getStoredPropertyId());
 
+export const getSelectedPropertyFullCode = (): string | null => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(selectedPropertyRenewalCodeStorageKey);
+};
+
 export const persistSelectedProperty = (propertyId: string) => {
   if (typeof window === "undefined") return;
   const matchedProperty = findPropertyById(propertyId);
