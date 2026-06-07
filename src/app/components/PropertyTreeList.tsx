@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, MapPin } from "lucide-react";
 import {
   getSelectedPropertyFullCode,
-  persistSelectedPropertyByFullCode,
   normalizeRenewalCode,
+  persistSelectedPropertyByFullCode,
 } from "../data/properties";
 import {
-  isApiSuccess,
   getApiErrorMessage,
   getApiValue,
+  isApiSuccess,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
 
@@ -29,7 +29,10 @@ export interface PropertyItem {
 
 const getTreeNodeCode = (text = "") => text.split(" - ")[0]?.trim() ?? "";
 
-const mapTreeItems = (items: any[] | undefined, fallbackCode = ""): PropertyTreeItem[] =>
+const mapTreeItems = (
+  items: any[] | undefined,
+  fallbackCode = "",
+): PropertyTreeItem[] =>
   (Array.isArray(items) ? items : []).map((item, index) => {
     const text = String(item.Text ?? item.text ?? "").trim();
     const fullCode = getTreeNodeCode(text) || fallbackCode;
@@ -128,13 +131,13 @@ export function PropertyTreeList({
         const nationalCode = localStorage.getItem("user-national-code");
 
         if (!token) {
-          setError("توکن احراز هویت یافت نشد. لطفاً دوباره وارد شوید.");
+          setError("توکن احراز هویت یافت نشد. لطفا دوباره وارد شوید.");
           setLoading(false);
           return;
         }
 
         if (!nationalCode) {
-          setError("کد ملی یافت نشد. لطفاً دوباره وارد شوید.");
+          setError("کد ملی یافت نشد. لطفا دوباره وارد شوید.");
           setLoading(false);
           return;
         }
@@ -149,13 +152,14 @@ export function PropertyTreeList({
             },
           },
         );
+
         if (!response.ok) {
           if (response.status === 401) {
-            setError("دسترسی غیرمجاز. لطفاً دوباره وارد شوید.");
+            setError("دسترسی غیرمجاز. لطفا دوباره وارد شوید.");
           } else if (response.status === 404) {
             setPropertyItems([]);
           } else {
-            setError("خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.");
+            setError("خطا در دریافت اطلاعات. لطفا دوباره تلاش کنید.");
           }
           setLoading(false);
           return;
@@ -180,7 +184,9 @@ export function PropertyTreeList({
             fullCode: item.codeN ?? "—",
             treeItems: mapTreeItems(item.tvItems, item.codeN),
             description:
-              item.tvItems?.[0]?.Text?.trim() ?? item.codeN ?? "بدون توضیحات",
+              item.tvItems?.[0]?.Text?.trim() ??
+              item.codeN ??
+              "بدون توضیحات",
           }),
         );
 
@@ -192,9 +198,8 @@ export function PropertyTreeList({
             ),
           ),
         );
-
       } catch {
-        setError("خطا در اتصال به سرور. لطفاً دوباره تلاش کنید.");
+        setError("خطا در اتصال به سرور. لطفا دوباره تلاش کنید.");
       } finally {
         setLoading(false);
       }
@@ -204,7 +209,9 @@ export function PropertyTreeList({
   }, []);
 
   useEffect(() => {
-    setSelectedTreeItemCode(selectedPropertyFullCode ?? getSelectedPropertyFullCode());
+    setSelectedTreeItemCode(
+      selectedPropertyFullCode ?? getSelectedPropertyFullCode(),
+    );
   }, [selectedPropertyFullCode]);
 
   useEffect(() => {
@@ -244,7 +251,7 @@ export function PropertyTreeList({
           <button
             type="button"
             onClick={() => handleSelectTreeItem(property, treeItem)}
-            className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-lg border px-2 py-1.5 text-right transition-all active:scale-[0.99] ${compact ? 'text-xs' : 'text-sm'} ${
+            className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-lg border px-2 py-1.5 text-right transition-all active:scale-[0.99] ${compact ? "text-xs" : "text-sm"} ${
               isSelected
                 ? "border-primary bg-primary/10 shadow-sm"
                 : "border-border/70 bg-card/60 hover:border-primary/40 hover:bg-muted/20"
@@ -270,7 +277,7 @@ export function PropertyTreeList({
                 )}
               </span>
               <span
-                className={`min-w-0 leading-5 ${compact ? 'text-xs' : 'text-sm'} ${
+                className={`min-w-0 leading-5 ${compact ? "text-xs" : "text-sm"} ${
                   isSelected
                     ? "font-semibold text-foreground"
                     : "font-medium text-foreground/80"
@@ -323,7 +330,7 @@ export function PropertyTreeList({
   if (propertyItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-        <MapPin className="h-8 w-8 mb-2 opacity-30" />
+        <MapPin className="mb-2 h-8 w-8 opacity-30" />
         <p className="text-sm">هیچ ملکی یافت نشد.</p>
       </div>
     );
@@ -331,7 +338,7 @@ export function PropertyTreeList({
 
   return (
     <div className="space-y-3">
-      {propertyItems.map((property, i) => (
+      {propertyItems.map((property) => (
         <div
           key={property.id}
           className="rounded-xl border border-border/60 bg-background/40 p-2"

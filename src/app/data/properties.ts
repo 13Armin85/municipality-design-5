@@ -1,4 +1,4 @@
-export const renewalCodeKeys = [
+﻿export const renewalCodeKeys = [
   "region",
   "neighborhood",
   "block",
@@ -20,21 +20,10 @@ export const renewalCodeLabels: Record<RenewalCodeKey, string> = {
   apartment: "آپارتمان",
   guild: "صنفی",
 };
-
 export const guildCodeFields = renewalCodeKeys.map((key) => ({
   key,
   label: renewalCodeLabels[key],
 }));
-
-const legacyGuildCodeFields = [
-  { label: "صنفی", key: "guild" },
-  { label: "آپارتمان", key: "apartment" },
-  { label: "ساختمان", key: "building" },
-  { label: "ملک", key: "property" },
-  { label: "بلوک", key: "block" },
-  { label: "محله", key: "neighborhood" },
-  { label: "منطقه", key: "region" },
-] as const;
 
 type LabelValue = {
   label: string;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -18,6 +18,7 @@ import {
 import { Link } from "react-router";
 import {
   guildCodeFields,
+  getSelectedPropertyFullCode,
   type RenewalCodeKey,
   type RenewalCodes,
 } from "../data/properties";
@@ -142,10 +143,22 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     );
   };
 
-  const mapApiResponseToRequests = (data: any): RequestRow[] => {
-    if (!data || !data.data) return [];
+  const getListFromApiValue = (value: any): any[] => {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== "object") return [];
 
-    const rawList = Array.isArray(data.data) ? data.data : [data.data];
+    const nestedValue = value.Value ?? value.value;
+    if (Array.isArray(nestedValue)) return nestedValue;
+
+    const nestedList = value.data ?? value.items ?? value.files ?? value.result;
+    if (Array.isArray(nestedList)) return nestedList;
+    if (nestedList && typeof nestedList === "object") return [nestedList];
+
+    return [value];
+  };
+
+  const mapApiResponseToRequests = (data: any): RequestRow[] => {
+    const rawList = getListFromApiValue(data);
 
     return rawList.map((item: any, index: number) => ({
       code: String(item.shodarkhast ?? item.requestId ?? item.id ?? index + 1),
@@ -163,9 +176,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   };
 
   const mapApiResponseToDetails = (data: any): RequestDetailRow[] => {
-    if (!data || !data.data) return [];
-
-    const detailObj = Array.isArray(data.data) ? data.data[0] : data.data;
+    const detailObj = getListFromApiValue(data)[0];
 
     if (!detailObj) return [];
 
@@ -282,7 +293,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
         const fileValue = getApiValue(data);
         const rawList = Array.isArray(fileValue)
           ? fileValue
-          : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
+          : (fileValue?.items ?? fileValue?.data ?? fileValue?.files ?? []);
 
         const mappedProperties: OwnerPropertyItem[] = rawList.map(
           (item: any, index: number) => ({
@@ -300,8 +311,12 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
 
         setOwnerProperties(mappedProperties);
         if (mappedProperties[0]) {
-          setSelectedCodeNosazi(mappedProperties[0].fullCode);
-          setSearchValues(toSearchValuesFromCode(mappedProperties[0].fullCode));
+          const storedFullCode = getSelectedPropertyFullCode()?.trim();
+          const codeToSelect =
+            storedFullCode || mappedProperties[0].fullCode;
+
+          setSelectedCodeNosazi(codeToSelect);
+          setSearchValues(toSearchValuesFromCode(codeToSelect));
         }
       } catch (error) {
         setApiError(
@@ -397,7 +412,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
             <div className="flex items-center gap-2">
               <Search className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">Ø¬Ø³ØªØ¬Ùˆ</h2>
+              <h2 className="text-sm font-bold">جستجو</h2>
             </div>
             <HelpButton />
           </div>
@@ -409,7 +424,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Search className="ml-1.5 h-4 w-4" />
-              {loadingRequests ? "Ø¯Ø± Ø­Ø§Ù„ Ø¯Ø±ÛŒØ§ÙØª" : "Ø¬Ø³ØªØ¬Ùˆ"}
+              {loadingRequests ? "در حال دریافت" : "جستجو"}
             </button>
 
             {guildCodeFields.map((field) => (
@@ -434,14 +449,14 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
             <div className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">Ù¾Ø±ÙˆÙ†Ø¯Ù‡â€ŒÙ‡Ø§ÛŒ Ø²ÛŒØ±Ù…Ø¬Ù…ÙˆØ¹Ù‡</h2>
+              <h2 className="text-sm font-bold">پرونده های زیرمجموعه</h2>
             </div>
             <HelpButton />
           </div>
           <div className="p-4">
             {loadingProperties ? (
               <div className="rounded-xl border border-border/70 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
-                Ø¯Ø± Ø­Ø§Ù„ Ø¯Ø±ÛŒØ§ÙØª Ù¾Ø±ÙˆÙ†Ø¯Ù‡â€ŒÙ‡Ø§...
+                در حال دریافت پرونده ها...
               </div>
             ) : (
               <PropertyTreeList
@@ -555,7 +570,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           <div className="absolute inset-0 bg-slate-800/10">
             <img
               src="/map-placeholder.jpg"
-              alt="Map"
+              alt="نقشه"
               className="h-full w-full object-cover opacity-80"
             />
           </div>
