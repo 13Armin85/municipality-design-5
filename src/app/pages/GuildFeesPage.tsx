@@ -15,7 +15,6 @@ import {
   GuildFeesCurrentFeesSection,
   GuildFeesEmptyState,
   GuildFeesMapSection,
-  GuildFeesPropertyListSection,
   GuildFeesSearchSection,
   type GuildPropertyItem,
   type LabelValue,
@@ -513,14 +512,6 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                 />
               </div>
             </motion.article>
-
-            <GuildFeesPropertyListSection
-              items={cases}
-              selectedId={selectedCase?.id}
-              isLoading={isCasesLoading}
-              onCaseClick={handleCaseClick}
-              onHelp={handleOpenHelp}
-            />
 
             {error && (
               <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">

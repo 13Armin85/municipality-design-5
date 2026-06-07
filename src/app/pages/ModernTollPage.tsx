@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
-  ChevronLeft,
   Home,
   Info,
   Minus,
@@ -114,18 +113,18 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   const splitCode = (code = ""): RenewalCodes => {
     const parts = normalizeCode(code).split("-");
     return {
-      guild: parts[0] ?? "",
-      apartment: parts[1] ?? "",
-      building: parts[2] ?? "",
+      region: parts[0] ?? "",
+      neighborhood: parts[1] ?? "",
+      block: parts[2] ?? "",
       property: parts[3] ?? "",
-      block: parts[4] ?? "",
-      neighborhood: parts[5] ?? "",
-      region: parts[6] ?? "",
+      building: parts[4] ?? "",
+      apartment: parts[5] ?? "",
+      guild: parts[6] ?? "",
     };
   };
 
   const codeNosazi = normalizeCode(
-    `${searchInputs.guild}-${searchInputs.apartment}-${searchInputs.building}-${searchInputs.property}-${searchInputs.block}-${searchInputs.neighborhood}-${searchInputs.region}`,
+    `${searchInputs.region}-${searchInputs.neighborhood}-${searchInputs.block}-${searchInputs.property}-${searchInputs.building}-${searchInputs.apartment}-${searchInputs.guild}`,
   );
 
   const handleOpenHelp = (title: string, description: string) => {
@@ -457,7 +456,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
       <main className="section-decor px-3 pb-12 pt-10 md:pb-20 md:pt-10 lg:px-6">
         <div className="container mx-auto max-w-6xl space-y-5">
           <div className="rounded-2xl border border-primary/25 bg-[var(--primary-soft)] px-4 py-3 text-xs text-primary md:text-sm">
-            کاربر گرامی، لطفاً پس از انتخاب ملک خود دکمه جستجو را بفشارید.
+            کاربر گرامی، لطفاً پس از انتخاب ملک خود دکمه جستجو را بزنید.
           </div>
 
           {/* بخش جستجو */}
@@ -474,7 +473,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               </div>
               <HelpButton
                 title="جستجو"
-                desc="کد نوسازی ۷ رقمی خود را وارد کنید."
+                desc="کد نوسازی ۷ بخشی خود را وارد کنید."
               />
             </div>
             <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-8">
@@ -514,11 +513,11 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               <div className="flex items-center gap-2">
                 <Layers className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-bold text-foreground">
-                  پرونده‌های زیر مجموعه
+                  پرونده‌های زیرمجموعه
                 </h2>
               </div>
               <HelpButton
-                title="زیر مجموعه"
+                title="زیرمجموعه"
                 desc="لیست املاک شما در این بخش نمایش داده می‌شود."
               />
             </div>
@@ -530,64 +529,6 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             </div>
           </motion.article>
 
-          {/* پرونده‌های زیر مجموعه - kept for compatibility */}
-          <motion.article
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="soft-card mesh-panel"
-          >
-            <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
-                <h2 className="text-sm font-bold text-foreground">
-                  پرونده های زیر مجموعه (قدیمی)
-                </h2>
-              </div>
-              <HelpButton
-                title="زیر مجموعه"
-                desc="لیست املاک شما در این بخش نمایش داده می‌شود."
-              />
-            </div>
-            <div className="p-4 space-y-2">
-              {propertyItems.map((prop) => {
-                const isSelected = selectedProperty?.id === prop.id;
-                return (
-                  <div
-                    key={prop.id}
-                    onClick={() => selectPropertyFromList(prop)}
-                    className={`flex items-center justify-between rounded-xl border p-3 group cursor-pointer transition-all ${
-                      isSelected
-                        ? "bg-primary/10 border-primary shadow-sm"
-                        : "border-border/70 bg-card/50 hover:border-primary/40"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`h-3 w-3 rounded-full transition-colors ${
-                          isSelected
-                            ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                            : "bg-orange-400"
-                        }`}
-                      />
-                      <span className="text-xs font-medium md:text-sm">
-                        {prop.description || prop.ownerName}
-                      </span>
-                    </div>
-                    <ChevronLeft
-                      className={`h-4 w-4 transition-transform ${
-                        isSelected
-                          ? "text-primary -translate-x-1"
-                          : "text-muted-foreground group-hover:-translate-x-1"
-                      }`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </motion.article>
-
-          {/* مالکین */}
           <motion.article
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}

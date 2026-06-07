@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, MapPin } from "lucide-react";
 import {
+  getSelectedPropertyFullCode,
   persistSelectedPropertyByFullCode,
-  getStoredPropertyId,
+  normalizeRenewalCode,
 } from "../data/properties";
 import {
   isApiSuccess,
@@ -72,14 +73,9 @@ export function PropertyTreeList({
   const [propertyItems, setPropertyItems] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedTreeItemId, setSelectedTreeItemId] = useState<string | null>(() => {
-    // First try the passed selectedPropertyFullCode, then fall back to localStorage
-    if (selectedPropertyFullCode) return selectedPropertyFullCode;
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("municipality-selected-property-renewal-code");
-    }
-    return null;
-  });
+  const [selectedTreeItemCode, setSelectedTreeItemCode] = useState<string | null>(
+    () => selectedPropertyFullCode ?? getSelectedPropertyFullCode(),
+  );
   const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -105,8 +101,9 @@ export function PropertyTreeList({
       });
     }
 
-    setSelectedTreeItemId(treeItem.id);
-    persistSelectedPropertyByFullCode(treeItem.fullCode || property.fullCode);
+    const selectedCode = treeItem.fullCode || property.fullCode;
+    setSelectedTreeItemCode(selectedCode);
+    persistSelectedPropertyByFullCode(selectedCode, treeItem.id);
 
     if (onPropertySelect) {
       onPropertySelect(
@@ -196,14 +193,6 @@ export function PropertyTreeList({
           ),
         );
 
-        // Set initial selection from storage
-        const storedCode = getStoredPropertyId();
-        if (storedCode) {
-          const storedProperty = mapped.find(p => p.id === storedCode);
-          if (storedProperty) {
-            setSelectedTreeItemId(storedProperty.id);
-          }
-        }
       } catch {
         setError("خطا در اتصال به سرور. لطفاً دوباره تلاش کنید.");
       } finally {
@@ -214,6 +203,30 @@ export function PropertyTreeList({
     fetchProperties();
   }, []);
 
+  useEffect(() => {
+    setSelectedTreeItemCode(selectedPropertyFullCode ?? getSelectedPropertyFullCode());
+  }, [selectedPropertyFullCode]);
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      setSelectedTreeItemCode(getSelectedPropertyFullCode());
+    };
+
+    window.addEventListener(
+      "municipality-selected-property-change",
+      handleSelectionChange,
+    );
+    window.addEventListener("storage", handleSelectionChange);
+
+    return () => {
+      window.removeEventListener(
+        "municipality-selected-property-change",
+        handleSelectionChange,
+      );
+      window.removeEventListener("storage", handleSelectionChange);
+    };
+  }, []);
+
   const renderTreeItems = (
     property: PropertyItem,
     items: PropertyTreeItem[],
@@ -222,8 +235,9 @@ export function PropertyTreeList({
     items.map((treeItem) => {
       const hasChildren = treeItem.items.length > 0;
       const isExpanded = expandedTreeIds.has(treeItem.id);
-      const isSelected = selectedTreeItemId === treeItem.id || 
-                         selectedPropertyFullCode === treeItem.fullCode;
+      const isSelected =
+        normalizeRenewalCode(selectedTreeItemCode) ===
+        normalizeRenewalCode(treeItem.fullCode || property.fullCode);
 
       return (
         <div key={`${property.id}-${treeItem.id}`} className="space-y-2">

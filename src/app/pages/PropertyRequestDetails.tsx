@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
   Info,
@@ -14,10 +14,13 @@ import {
   ArrowRight,
   Sun,
   Moon,
-  ChevronLeft,
 } from "lucide-react";
 import { Link } from "react-router";
-import { guildCodeFields } from "../data/properties";
+import {
+  guildCodeFields,
+  type RenewalCodeKey,
+  type RenewalCodes,
+} from "../data/properties";
 import {
   isApiSuccess,
   getApiErrorMessage,
@@ -56,9 +59,18 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // فایلی که در لیست انتخاب شده اما هنوز جستجو نشده است
-  const emptySearchValues = ["", "", "", "", "", "", ""];
+  const emptySearchValues: RenewalCodes = {
+    region: "",
+    neighborhood: "",
+    block: "",
+    property: "",
+    building: "",
+    apartment: "",
+    guild: "",
+  };
   // مقادیری که در اینپوت‌های جستجو نمایش داده می‌شوند
-  const [searchValues, setSearchValues] = useState<string[]>(emptySearchValues);
+  const [searchValues, setSearchValues] =
+    useState<RenewalCodes>(emptySearchValues);
 
   // فایلی که اطلاعاتش در کل صفحه (جدول و جزئیات) نمایش داده می‌شود
   const [ownerProperties, setOwnerProperties] = useState<OwnerPropertyItem[]>(
@@ -71,17 +83,42 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   const [apiError, setApiError] = useState("");
   const [selectedCodeNosazi, setSelectedCodeNosazi] = useState("");
 
-  const toSearchValuesFromCode = (fullCode: string): string[] => {
+  const toSearchValuesFromCode = (fullCode: string): RenewalCodes => {
     const clean = fullCode.trim();
-    if (!clean) return ["", "", "", "", "", "", ""];
+    if (!clean) return emptySearchValues;
     const parts = clean.includes("-") ? clean.split("-") : clean.split("/");
     const normalized = parts.map((part) => part.trim()).filter(Boolean);
     while (normalized.length < 7) normalized.push("");
-    return normalized.slice(0, 7);
+    return {
+      region: normalized[0] ?? "",
+      neighborhood: normalized[1] ?? "",
+      block: normalized[2] ?? "",
+      property: normalized[3] ?? "",
+      building: normalized[4] ?? "",
+      apartment: normalized[5] ?? "",
+      guild: normalized[6] ?? "",
+    };
   };
 
-  const buildCodeFromSearchValues = (values: string[]) =>
-    values.map((value) => value.trim()).join("-");
+  const buildCodeFromSearchValues = (values: RenewalCodes) =>
+    [
+      values.region,
+      values.neighborhood,
+      values.block,
+      values.property,
+      values.building,
+      values.apartment,
+      values.guild,
+    ]
+      .map((value) => value.trim())
+      .join("-");
+
+  const handleSearchInputChange = (key: RenewalCodeKey, value: string) => {
+    setSearchValues((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
 
   const getTextValue = (value: unknown): string => {
     if (typeof value === "string") return value.trim();
@@ -356,129 +393,71 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
       </motion.header>
 
       <main className="container mx-auto space-y-6 px-2 pt-10 md:px-4 md:pt-10 lg:px-6">
-        {/* بخش جستجو */}
-        <motion.article
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="soft-card mesh-panel overflow-hidden"
-        >
+        <motion.article className="soft-card mesh-panel overflow-hidden">
           <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
             <div className="flex items-center gap-2">
               <Search className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">جستجوی کد نوسازی</h2>
+              <h2 className="text-sm font-bold">Ø¬Ø³ØªØ¬Ùˆ</h2>
+            </div>
+            <HelpButton />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-8">
+            <button
+              onClick={handleSearch}
+              disabled={loadingRequests}
+              className="flex h-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Search className="ml-1.5 h-4 w-4" />
+              {loadingRequests ? "Ø¯Ø± Ø­Ø§Ù„ Ø¯Ø±ÛŒØ§ÙØª" : "Ø¬Ø³ØªØ¬Ùˆ"}
+            </button>
+
+            {guildCodeFields.map((field) => (
+              <div key={field.key} className="relative">
+                <input
+                  value={searchValues[field.key]}
+                  onChange={(event) =>
+                    handleSearchInputChange(field.key, event.target.value)
+                  }
+                  className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium outline-none transition-colors focus:border-primary"
+                  dir="ltr"
+                />
+                <span className="absolute -top-2 right-3 bg-card px-1 text-[9px] text-muted-foreground">
+                  {field.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.article>
+
+        <motion.article className="soft-card mesh-panel overflow-hidden">
+          <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-bold">Ù¾Ø±ÙˆÙ†Ø¯Ù‡â€ŒÙ‡Ø§ÛŒ Ø²ÛŒØ±Ù…Ø¬Ù…ÙˆØ¹Ù‡</h2>
             </div>
             <HelpButton />
           </div>
           <div className="p-4">
-            <div className="flex flex-wrap items-end gap-3">
-              {searchValues.map((value, index) => {
-                const label = guildCodeFields[index]?.label ?? "کد";
-                return (
-                  <div key={index} className="relative flex-1 min-w-[80px]">
-                    <input
-                      type="text"
-                      value={value}
-                      onChange={(e) => {
-                        const updated = [...searchValues];
-                        updated[index] = e.target.value;
-                        setSearchValues(updated);
-                      }}
-                      className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium focus:outline-none"
-                      dir="ltr"
-                    />
-                    <span className="absolute -top-2 right-2 bg-card px-1 text-[9px] text-muted-foreground">
-                      {label}
-                    </span>
-                  </div>
-                );
-              })}
-              <button
-                onClick={handleSearch}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 md:text-sm"
-              >
-                <Search className="h-4 w-4" />
-                جستجو
-              </button>
-            </div>
-          </div>
-        </motion.article>
-
-        {/* Property Tree List */}
-        <motion.article
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="soft-card mesh-panel overflow-hidden"
-        >
-          <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">پرونده‌های زیر مجموعه</h2>
-            </div>
-            <HelpButton />
-          </div>
-          <div className="p-4">
-            <PropertyTreeList
-              onPropertySelect={handlePropertyTreeSelect}
-              compact
-            />
-          </div>
-        </motion.article>
-
-        {/* لیست پرونده‌ها - kept for compatibility */}
-        <motion.article
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="soft-card mesh-panel overflow-hidden"
-        >
-          <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">پرونده های زیر مجموعه (قدیمی)</h2>
-            </div>
-            <HelpButton />
-          </div>
-          <div className="p-4 space-y-2">
-            {loadingProperties && (
-              <div className="text-xs text-muted-foreground">
-                در حال دریافت املاک مالک...
+            {loadingProperties ? (
+              <div className="rounded-xl border border-border/70 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
+                Ø¯Ø± Ø­Ø§Ù„ Ø¯Ø±ÛŒØ§ÙØª Ù¾Ø±ÙˆÙ†Ø¯Ù‡â€ŒÙ‡Ø§...
               </div>
-            )}
-            {ownerProperties.map((file) => {
-              const displayName =
-                getTextValue(file.description) ||
-                getTextValue(file.ownerName) ||
-                "-";
-
-              return (
-                <button
-                  key={file.id}
-                  onClick={() => {
-                    setSelectedCodeNosazi(file.fullCode);
-                    setSearchValues(toSearchValuesFromCode(file.fullCode));
-                    setRequests([]);
-                    setRequestDetails([]);
-                    setApiError("");
-                  }}
-                  className={`flex w-full items-center justify-between rounded-xl border p-3 transition-all ${
-                    selectedCodeNosazi === file.fullCode
-                      ? "border-primary bg-primary/5"
-                      : "border-border/70 bg-card/40 hover:bg-card/60"
-                  }`}
-                >
-                  <span className="text-xs md:text-sm">{displayName}</span>
-                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-                </button>
-              );
-            })}
-            {apiError && (
-              <div className="text-xs text-red-600 dark:text-red-400">
-                {apiError}
-              </div>
+            ) : (
+              <PropertyTreeList
+                onPropertySelect={handlePropertyTreeSelect}
+                selectedPropertyFullCode={selectedCodeNosazi}
+                compact
+              />
             )}
           </div>
         </motion.article>
+
+        {apiError && (
+          <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {apiError}
+          </div>
+        )}
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* جدول پیگیری - متصل به activeFile */}

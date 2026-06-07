@@ -5,10 +5,8 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import {
-  Activity,
   AlertCircle,
   ArrowRight,
-  ChevronLeft,
   Compass,
   FileText,
   Home,
@@ -104,17 +102,17 @@ export function PropertyInquiryPage({
     const parts = code.split("-");
 
     return {
-      guild: parts[0] ?? "",
-      apartment: parts[1] ?? "",
-      building: parts[2] ?? "",
+      region: parts[0] ?? "",
+      neighborhood: parts[1] ?? "",
+      block: parts[2] ?? "",
       property: parts[3] ?? "",
-      block: parts[4] ?? "",
-      neighborhood: parts[5] ?? "",
-      region: parts[6] ?? "",
+      building: parts[4] ?? "",
+      apartment: parts[5] ?? "",
+      guild: parts[6] ?? "",
     };
   };
 
-  const codeNosazi = `${searchInputs.guild}-${searchInputs.apartment}-${searchInputs.building}-${searchInputs.property}-${searchInputs.block}-${searchInputs.neighborhood}-${searchInputs.region}`;
+  const codeNosazi = `${searchInputs.region}-${searchInputs.neighborhood}-${searchInputs.block}-${searchInputs.property}-${searchInputs.building}-${searchInputs.apartment}-${searchInputs.guild}`;
 
   const handleOpenHelp = (title: string, description: string) => {
     setModalContent({
@@ -276,7 +274,7 @@ export function PropertyInquiryPage({
   }, [token]);
 
   const handleSearch = async () => {
-    if (!codeNosazi || codeNosazi === "-------") {
+    if (!codeNosazi || codeNosazi === "------") {
       setError("کد نوسازی کامل نیست");
 
       return;
@@ -472,46 +470,6 @@ export function PropertyInquiryPage({
               />
             </div>
           </motion.article>
-
-          {/* files - kept for compatibility */}
-          <motion.article className="soft-card mesh-panel">
-            <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
-              <Layers className="h-4 w-4 text-primary" />
-
-              <h2 className="text-sm font-bold">پرونده های زیر مجموعه (قدیمی)</h2>
-            </div>
-
-            <div className="p-4 space-y-2">
-              {loadingSubProperties ? (
-                <LoadingSpinner />
-              ) : subPropertiesError ? (
-                <ErrorAlert message={subPropertiesError} />
-              ) : (
-                subProperties.map((subProp) => {
-                  const isSelected = selectedSubProperty?.id === subProp.id;
-
-                  return (
-                    <div
-                      key={subProp.id}
-                      onClick={() => selectPropertyFromList(subProp)}
-                      className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-all ${
-                        isSelected
-                          ? "bg-primary/10 border-primary"
-                          : "border-border/70"
-                      }`}
-                    >
-                      <span className="text-sm font-medium">
-                        {subProp.description || subProp.ownerName}
-                      </span>
-
-                      <ChevronLeft className="h-4 w-4" />
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </motion.article>
-
           {/* area */}
           <div className="grid gap-5 md:grid-cols-2">
             <motion.article className="soft-card mesh-panel">

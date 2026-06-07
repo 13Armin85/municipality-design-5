@@ -17,7 +17,11 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { persistSelectedPropertyByFullCode, getStoredPropertyId, findPropertyByFullCode } from "../data/properties";
+import {
+  getSelectedPropertyFullCode,
+  normalizeRenewalCode,
+  persistSelectedPropertyByFullCode,
+} from "../data/properties";
 import {
   isApiSuccess,
   getApiErrorMessage,
@@ -103,33 +107,17 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const handleSelectProperty = (property: PropertyItem) => {
     setSelectedPropertyId(property.id);
     setSelectedProperty(property);
-    persistSelectedPropertyByFullCode(property.fullCode);
+    persistSelectedPropertyByFullCode(property.fullCode, property.id);
     setIsMapOpen(true);
+    setShowNoPropertyError(false);
   };
 
   const handlePerformAction = () => {
-    // Check if a property is selected
-    const storedId = getStoredPropertyId();
-    const storedProperty = findPropertyByFullCode(storedId);
-    
-    if (!storedProperty && propertyItems.length === 0) {
-      // No properties exist - show error
+    if (!selectedProperty) {
       setShowNoPropertyError(true);
       return;
     }
-    
-    if (!storedProperty && propertyItems.length > 0) {
-      // Properties exist but none selected - select first one
-      const firstProperty = propertyItems[0];
-      if (firstProperty.treeItems.length > 0) {
-        handleSelectTreeItem(firstProperty, firstProperty.treeItems[0]);
-      } else {
-        handleSelectProperty(firstProperty);
-      }
-    }
-    
-    // Navigate to services section or stay on page with property selected
-    // For now, we'll navigate to the services section on the home page
+
     navigate("/#services");
   };
 
@@ -237,38 +225,40 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
           ),
         );
 
-        // Restore selected property from localStorage after fetching properties
-        if (selectedPropertyId) {
-          // Find the property in the fetched data
-          const storedRenewalCode = localStorage.getItem("municipality-selected-property-renewal-code");
-          if (storedRenewalCode) {
-            const foundProperty = mapped.find(p => {
-              // Check if the fullCode matches
-              if (p.fullCode === storedRenewalCode) return true;
-              // Also check in treeItems
-              return p.treeItems.some(ti => ti.fullCode === storedRenewalCode);
-            });
-            
-            if (foundProperty) {
-              // Check if the selected property is a treeItem or the main property
-              const matchingTreeItem = foundProperty.treeItems.find(ti => ti.fullCode === storedRenewalCode);
-              if (matchingTreeItem) {
-                setSelectedPropertyId(matchingTreeItem.id);
-                setSelectedProperty({
-                  ...foundProperty,
-                  id: matchingTreeItem.id,
-                  fullCode: matchingTreeItem.fullCode,
-                  description: matchingTreeItem.text,
-                });
-              } else {
-                setSelectedPropertyId(foundProperty.id);
-                setSelectedProperty(foundProperty);
-              }
+        const storedRenewalCode = getSelectedPropertyFullCode();
+        if (storedRenewalCode) {
+          const normalizedStoredCode = normalizeRenewalCode(storedRenewalCode);
+          const foundProperty = mapped.find((property) => {
+            if (
+              normalizeRenewalCode(property.fullCode) === normalizedStoredCode
+            ) {
+              return true;
             }
-          } else {
-            // Fallback to finding by property ID
-            const foundProperty = mapped.find(p => p.id === selectedPropertyId);
-            if (foundProperty) {
+
+            return property.treeItems.some(
+              (treeItem) =>
+                normalizeRenewalCode(treeItem.fullCode) ===
+                normalizedStoredCode,
+            );
+          });
+
+          if (foundProperty) {
+            const matchingTreeItem = foundProperty.treeItems.find(
+              (treeItem) =>
+                normalizeRenewalCode(treeItem.fullCode) ===
+                normalizedStoredCode,
+            );
+
+            if (matchingTreeItem) {
+              setSelectedPropertyId(matchingTreeItem.id);
+              setSelectedProperty({
+                ...foundProperty,
+                id: matchingTreeItem.id,
+                fullCode: matchingTreeItem.fullCode,
+                description: matchingTreeItem.text,
+              });
+            } else {
+              setSelectedPropertyId(foundProperty.id);
               setSelectedProperty(foundProperty);
             }
           }
@@ -291,7 +281,10 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
     items.map((treeItem) => {
       const hasChildren = treeItem.items.length > 0;
       const isExpanded = expandedTreeIds.has(treeItem.id);
-      const isSelected = selectedPropertyId === treeItem.id;
+      const isSelected =
+        selectedPropertyId === treeItem.id ||
+        normalizeRenewalCode(selectedProperty?.fullCode) ===
+          normalizeRenewalCode(treeItem.fullCode || property.fullCode);
 
       return (
         <div key={`${property.id}-${treeItem.id}`} className="space-y-2">
@@ -508,8 +501,8 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                 <div className="flex items-start gap-3">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold mb-1">پرونده‌ای یافت نشد</p>
-                    <p>پرونده شما در شهروندیار یافت نشد؛ لطفا جهت ثبت اطلاعات به شهرداری منطقه موردنظر خود مراجعه کنید.</p>
+                    <p className="font-semibold mb-1">انتخاب ملک الزامی است</p>
+                    <p>برای انجام عملیات، ابتدا یک ملک از لیست املاک خود انتخاب کنید.</p>
                   </div>
                   <button
                     onClick={() => setShowNoPropertyError(false)}

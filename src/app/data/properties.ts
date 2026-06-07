@@ -1,11 +1,11 @@
 export const renewalCodeKeys = [
-  "guild",
-  "apartment",
-  "building",
-  "property",
-  "block",
-  "neighborhood",
   "region",
+  "neighborhood",
+  "block",
+  "property",
+  "building",
+  "apartment",
+  "guild",
 ] as const;
 
 export type RenewalCodeKey = (typeof renewalCodeKeys)[number];
@@ -21,7 +21,12 @@ export const renewalCodeLabels: Record<RenewalCodeKey, string> = {
   guild: "صنفی",
 };
 
-export const guildCodeFields = [
+export const guildCodeFields = renewalCodeKeys.map((key) => ({
+  key,
+  label: renewalCodeLabels[key],
+}));
+
+const legacyGuildCodeFields = [
   { label: "صنفی", key: "guild" },
   { label: "آپارتمان", key: "apartment" },
   { label: "ساختمان", key: "building" },
@@ -553,11 +558,24 @@ export const persistSelectedProperty = (propertyId: string) => {
   );
 };
 
-export const persistSelectedPropertyByFullCode = (fullCode: string) => {
+export const persistSelectedPropertyByFullCode = (
+  fullCode: string,
+  propertyId?: string,
+) => {
   if (typeof window === "undefined") return;
   localStorage.setItem(selectedPropertyRenewalCodeStorageKey, fullCode);
+  if (propertyId) {
+    localStorage.setItem(selectedPropertyStorageKey, propertyId);
+  }
   const matchedProperty = findPropertyByFullCode(fullCode);
-  if (!matchedProperty) return;
+  if (!matchedProperty) {
+    window.dispatchEvent(
+      new CustomEvent("municipality-selected-property-change", {
+        detail: propertyId ?? fullCode,
+      }),
+    );
+    return;
+  }
   persistSelectedProperty(matchedProperty.id);
 };
 

@@ -11,7 +11,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
-import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
+import { type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 import { SelectionModal } from "./sabtdarkhast/FormCommon";
 import { HelpModal } from "./sabtdarkhast/HelpModal";
 import {
@@ -462,17 +462,6 @@ export function SabtDarkhastPage({
     }
   };
 
-  const handleSelectProperty = (propertyId: string) => {
-    const selected = propertyItems.find((item) => item.id === propertyId);
-
-    if (!selected) return;
-
-    setSearchValues(selected.codes);
-    setActiveProperty(null);
-    setErrors({});
-    setShowErrors(false);
-  };
-
   const handleContinue = () => {
     const nextErrors = validateForm();
 
@@ -637,39 +626,7 @@ export function SabtDarkhastPage({
                 initial={{ opacity: 1 }}
                 exit={{ opacity: 0, x: 30 }}
               >
-                {/* Property Tree List */}
-                <motion.article
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="soft-card mesh-panel overflow-hidden"
-                >
-                  <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
-                      <h2 className="text-sm font-bold">پرونده‌های زیر مجموعه</h2>
-                    </div>
-                    <button
-                      onClick={() => handleOpenHelp("پرونده‌ها", "لیست املاک و پرونده‌های شما در this بخش نمایش داده می‌شود.")}
-                      className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 md:text-xs"
-                    >
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      راهنما
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <PropertyTreeList
-                      onPropertySelect={handlePropertyTreeSelect}
-                      compact
-                    />
-                  </div>
-                </motion.article>
-
                 <SabtdarkhastFormPrimary
-                  propertyItems={propertyItems}
                   showErrors={showErrors}
                   errors={errors}
                   searchValues={searchValues}
@@ -686,7 +643,7 @@ export function SabtDarkhastPage({
                   onOpenHelp={handleOpenHelp}
                   onSearch={handleSearch}
                   onSearchValuesChange={setSearchValues}
-                  onSelectPropertyById={handleSelectProperty}
+                  onPropertyTreeSelect={handlePropertyTreeSelect}
                   setOwnerForm={setOwnerForm}
                   setRequestForm={setRequestForm}
                   setApplicantForm={setApplicantForm}

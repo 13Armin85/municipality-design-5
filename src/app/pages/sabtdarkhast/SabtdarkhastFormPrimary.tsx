@@ -3,18 +3,17 @@ import {
   AlertCircle,
   Building2,
   ChevronDown,
-  ChevronLeft,
   ClipboardList,
-  FileText,
+  Layers,
   Search,
   User,
 } from "lucide-react";
+import { guildCodeFields, type RenewalCodes } from "../../data/properties";
 import {
-  areRenewalCodesEqual,
-  guildCodeFields,
-  type MockProperty,
-  type RenewalCodes,
-} from "../../data/properties";
+  PropertyTreeList,
+  type PropertyItem,
+  type PropertyTreeItem,
+} from "../../components/PropertyTreeList";
 import {
   DateField,
   EditableField,
@@ -31,7 +30,6 @@ import {
 } from "./types";
 
 interface SabtdarkhastFormPrimaryProps {
-  propertyItems: MockProperty[];
   showErrors: boolean;
   errors: FormErrors;
   searchValues: RenewalCodes;
@@ -47,7 +45,10 @@ interface SabtdarkhastFormPrimaryProps {
   onOpenHelp: (title: string, description: string) => void;
   onSearch: () => void;
   onSearchValuesChange: (values: RenewalCodes) => void;
-  onSelectPropertyById: (propertyId: string) => void;
+  onPropertyTreeSelect: (
+    property: PropertyItem,
+    treeItem: PropertyTreeItem,
+  ) => void;
   setOwnerForm: (value: OwnerFormState) => void;
   setRequestForm: (value: RequestFormState) => void;
   setApplicantForm: (value: ApplicantFormState) => void;
@@ -64,7 +65,6 @@ interface SabtdarkhastFormPrimaryProps {
 }
 
 export function SabtdarkhastFormPrimary({
-  propertyItems,
   showErrors,
   errors,
   searchValues,
@@ -80,7 +80,7 @@ export function SabtdarkhastFormPrimary({
   onOpenHelp,
   onSearch,
   onSearchValuesChange,
-  onSelectPropertyById,
+  onPropertyTreeSelect,
   setOwnerForm,
   setRequestForm,
   setApplicantForm,
@@ -106,8 +106,8 @@ export function SabtdarkhastFormPrimary({
       )}
 
       <div className="rounded-2xl border border-primary/25 bg-[var(--primary-soft)] px-4 py-3 text-right text-xs text-primary md:text-sm">
-        کاربر گرامی، لطفاً پس از انتخاب ملک خود از لیست "پرونده‌های زیر مجموعه"
-        دکمه جستجو را بفشارید.
+        کاربر گرامی، ابتدا ملک خود را از بخش پرونده‌های زیرمجموعه انتخاب کنید و
+        سپس دکمه جستجو را بزنید.
       </div>
 
       <motion.article
@@ -123,7 +123,7 @@ export function SabtdarkhastFormPrimary({
           </div>
           <HelpButton
             title="جستجو"
-            desc="کد نوسازی را وارد کنید یا از لیست زیر مجموعه انتخاب کنید."
+            desc="کد نوسازی را وارد کنید یا از لیست پرونده‌های زیرمجموعه انتخاب کنید."
             onOpenHelp={onOpenHelp}
           />
         </div>
@@ -173,37 +173,21 @@ export function SabtdarkhastFormPrimary({
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="soft-card mesh-panel"
+        className="soft-card mesh-panel overflow-hidden"
       >
         <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-bold">پرونده های زیر مجموعه</h2>
+            <Layers className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold">پرونده‌های زیرمجموعه</h2>
           </div>
           <HelpButton
-            title="زیر مجموعه"
-            desc="لیست املاک شما. با کلیک بر روی هر کدام، کدهای نوسازی در بخش جستجو درج می‌شود."
+            title="پرونده‌ها"
+            desc="لیست املاک و پرونده‌های شما در این بخش نمایش داده می‌شود."
             onOpenHelp={onOpenHelp}
           />
         </div>
-        <div className="space-y-2 p-3 sm:p-4">
-          {propertyItems.map((prop) => (
-            <div
-              key={prop.id}
-              onClick={() => onSelectPropertyById(prop.id)}
-              className={`group flex cursor-pointer items-center justify-between rounded-xl border p-2.5 transition-all sm:p-3 ${areRenewalCodesEqual(searchValues, prop.codes) ? "border-primary bg-primary/5" : "border-border/70 bg-card/50 hover:border-primary/40"}`}
-            >
-              <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                <div
-                  className={`h-2.5 w-2.5 flex-shrink-0 rounded-full sm:h-3 sm:w-3 ${areRenewalCodesEqual(searchValues, prop.codes) ? "bg-primary animate-pulse" : "bg-orange-400"}`}
-                />
-                <span className="truncate text-[11px] font-medium sm:text-xs md:text-sm">
-                  {prop.description || prop.owner.name}
-                </span>
-              </div>
-              <ChevronLeft className="mr-1 h-3.5 w-3.5 flex-shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-1 sm:h-4 sm:w-4" />
-            </div>
-          ))}
+        <div className="p-4">
+          <PropertyTreeList onPropertySelect={onPropertyTreeSelect} compact />
         </div>
       </motion.article>
 
@@ -387,7 +371,7 @@ export function SabtdarkhastFormPrimary({
                 >
                   <option value="">انتخاب کنید</option>
                   <option value="1">مالک</option>
-                  <option value="2">مستأجر</option>
+                  <option value="2">مستاجر</option>
                   <option value="3">وکیل</option>
                 </select>
                 <span className="absolute -top-2.5 right-3 bg-card px-1 text-[10px] text-muted-foreground">
