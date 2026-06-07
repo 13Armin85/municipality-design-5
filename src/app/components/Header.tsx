@@ -140,15 +140,15 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(AUTH_STORAGE_KEY) === "true";
-  });
-
   const notificationsRef = useRef<HTMLDivElement | null>(null);
   const notificationButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  const { isLoginModalOpen, setIsLoginModalOpen } = useAuthModal();
+  const {
+    isLoginModalOpen,
+    setIsLoginModalOpen,
+    isAuthenticated,
+    setIsAuthenticated,
+  } = useAuthModal();
 
   const unreadCount = notifications.filter(
     (item) => !readNotificationIds.includes(item.id),

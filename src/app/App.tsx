@@ -13,17 +13,20 @@ import { FaqSection } from "./components/FaqSection";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { useAuthModal } from "./components/AuthContext";
 
 function HomePageContent() {
+  const { isAuthenticated } = useAuthModal();
+
   return (
     <>
       <HeroSection />
-      <ServicesSection />
-      <RecentActivitiesSection />
+      {isAuthenticated && <ServicesSection />}
+      {isAuthenticated && <RecentActivitiesSection />}
       <StatsSection />
       <NewsSection />
       <FaqSection />
-      <SupportSection />
+      {isAuthenticated && <SupportSection />}
       <QuickAccessSection />
     </>
   );

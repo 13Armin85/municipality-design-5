@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
+  ChevronDown,
   Info,
   MapPin,
   Minus,
@@ -32,6 +33,14 @@ interface PropertyItem {
   id: string;
   fullCode: string;
   description: string;
+  treeItems: PropertyTreeItem[];
+}
+
+interface PropertyTreeItem {
+  id: string;
+  text: string;
+  fullCode: string;
+  items: PropertyTreeItem[];
 }
 
 const decodeToken = (token: string) => {
@@ -40,6 +49,36 @@ const decodeToken = (token: string) => {
   } catch {
     return null;
   }
+};
+
+const getTreeNodeCode = (text = "") => text.split(" - ")[0]?.trim() ?? "";
+
+const mapTreeItems = (items: any[] | undefined, fallbackCode = ""): PropertyTreeItem[] =>
+  (Array.isArray(items) ? items : []).map((item, index) => {
+    const text = String(item.Text ?? item.text ?? "").trim();
+    const fullCode = getTreeNodeCode(text) || fallbackCode;
+
+    return {
+      id: String(item.Id ?? item.id ?? `${fullCode || "node"}-${index}`),
+      text: text || fullCode || "-",
+      fullCode,
+      items: mapTreeItems(item.Items ?? item.items, fullCode),
+    };
+  });
+
+const getInitialExpandedTreeIds = (items: PropertyTreeItem[]) => {
+  const ids: string[] = [];
+
+  const collectExpandedParents = (node: PropertyTreeItem) => {
+    if (node.items.length > 0) {
+      ids.push(node.id);
+    }
+
+    node.items.forEach(collectExpandedParents);
+  };
+
+  items.forEach(collectExpandedParents);
+  return ids;
 };
 
 export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
@@ -51,6 +90,9 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(
     null,
   );
+  const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const [propertyItems, setPropertyItems] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +103,34 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
     setSelectedProperty(property);
     persistSelectedPropertyByFullCode(property.fullCode);
     setIsMapOpen(true);
+  };
+
+  const handleSelectTreeItem = (
+    property: PropertyItem,
+    treeItem: PropertyTreeItem,
+  ) => {
+    const hasChildren = treeItem.items.length > 0;
+
+    if (hasChildren) {
+      setExpandedTreeIds((prev) => {
+        const next = new Set(prev);
+
+        if (next.has(treeItem.id)) {
+          next.delete(treeItem.id);
+        } else {
+          next.add(treeItem.id);
+        }
+
+        return next;
+      });
+    }
+
+    handleSelectProperty({
+      ...property,
+      id: treeItem.id,
+      fullCode: treeItem.fullCode || property.fullCode,
+      description: treeItem.text || property.description,
+    });
   };
 
   useEffect(() => {
@@ -124,12 +194,20 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
           (item: any, index: number) => ({
             id: String(item.Id ?? item.shop ?? index),
             fullCode: item.codeN ?? "—",
+            treeItems: mapTreeItems(item.tvItems, item.codeN),
             description:
               item.tvItems?.[0]?.Text?.trim() ?? item.codeN ?? "بدون توضیحات",
           }),
         );
 
         setPropertyItems(mapped);
+        setExpandedTreeIds(
+          new Set(
+            mapped.flatMap((property) =>
+              getInitialExpandedTreeIds(property.treeItems).slice(0, 1),
+            ),
+          ),
+        );
       } catch {
         setError("خطا در اتصال به سرور. لطفاً دوباره تلاش کنید.");
       } finally {
@@ -139,6 +217,89 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
     fetchProperties();
   }, []);
+
+  const renderTreeItems = (
+    property: PropertyItem,
+    items: PropertyTreeItem[],
+    depth = 0,
+  ) =>
+    items.map((treeItem) => {
+      const hasChildren = treeItem.items.length > 0;
+      const isExpanded = expandedTreeIds.has(treeItem.id);
+      const isSelected = selectedPropertyId === treeItem.id;
+
+      return (
+        <div key={`${property.id}-${treeItem.id}`} className="space-y-2">
+          <button
+            type="button"
+            onClick={() => handleSelectTreeItem(property, treeItem)}
+            className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-right transition-all active:scale-[0.99] ${
+              isSelected
+                ? "border-primary bg-primary/10 shadow-sm"
+                : "border-border/70 bg-card/60 hover:border-primary/40 hover:bg-muted/20"
+            }`}
+            style={{ paddingRight: `${12 + depth * 22}px` }}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border ${
+                  hasChildren
+                    ? "border-primary/30 bg-[var(--primary-soft)] text-primary"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                }`}
+              >
+                {hasChildren ? (
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isExpanded ? "" : "rotate-90"
+                    }`}
+                  />
+                ) : (
+                  <MapPin className="h-4 w-4" />
+                )}
+              </span>
+              <span
+                className={`min-w-0 text-xs leading-6 md:text-sm ${
+                  isSelected
+                    ? "font-semibold text-foreground"
+                    : "font-medium text-foreground/80"
+                }`}
+              >
+                {treeItem.text}
+              </span>
+            </span>
+            <span
+              className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-bold ${
+                isSelected
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {isSelected ? (
+                <>&#1575;&#1606;&#1578;&#1582;&#1575;&#1576; &#1588;&#1583;&#1607;</>
+              ) : (
+                <>&#1575;&#1606;&#1578;&#1582;&#1575;&#1576;</>
+              )}
+            </span>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {hasChildren && isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden border-r border-border/70 pr-3"
+              >
+                <div className="space-y-2 py-1">
+                  {renderTreeItems(property, treeItem.items, depth + 1)}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    });
 
   return (
     <div
@@ -278,7 +439,39 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               viewport={{ once: true }}
               className="soft-card bg-card border border-border/50 rounded-2xl overflow-hidden"
             >
-              <div className="overflow-x-auto">
+              <div className="space-y-3 p-4">
+                {propertyItems.map((property, i) => (
+                  <motion.div
+                    key={property.id}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="rounded-2xl border border-border/60 bg-background/40 p-3"
+                  >
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-3">
+                      <span className="text-xs font-bold text-foreground md:text-sm">
+                        {property.fullCode}
+                      </span>
+                      <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                        {property.treeItems.length} &#1585;&#1740;&#1588;&#1607;
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {property.treeItems.length > 0
+                        ? renderTreeItems(property, property.treeItems)
+                        : renderTreeItems(property, [
+                            {
+                              id: property.id,
+                              text: property.description,
+                              fullCode: property.fullCode,
+                              items: [],
+                            },
+                          ])}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="hidden">
                 <table className="w-full text-right text-xs md:text-sm">
                   <thead>
                     <tr className="bg-muted/40 border-b border-border/60">

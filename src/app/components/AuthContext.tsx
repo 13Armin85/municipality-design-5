@@ -1,17 +1,43 @@
 import { createContext, useContext, ReactNode, useState } from "react";
 
+const AUTH_STORAGE_KEY = "municipality-user-authenticated";
+
 interface AuthContextType {
   isLoginModalOpen: boolean;
   setIsLoginModalOpen: (open: boolean) => void;
+  isAuthenticated: boolean;
+  setIsAuthenticated: (authenticated: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+  });
+
+  const handleSetIsAuthenticated = (authenticated: boolean) => {
+    setIsAuthenticated(authenticated);
+    if (typeof window !== "undefined") {
+      if (authenticated) {
+        localStorage.setItem(AUTH_STORAGE_KEY, "true");
+      } else {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+      }
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ isLoginModalOpen, setIsLoginModalOpen }}>
+    <AuthContext.Provider
+      value={{
+        isLoginModalOpen,
+        setIsLoginModalOpen,
+        isAuthenticated,
+        setIsAuthenticated: handleSetIsAuthenticated,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

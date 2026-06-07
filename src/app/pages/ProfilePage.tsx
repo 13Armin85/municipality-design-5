@@ -8,6 +8,7 @@ import {
   AUTH_STORAGE_KEY,
   PROFILE_IMAGE_STORAGE_KEY,
 } from "./profile/profileData";
+import { useAuthModal } from "../components/AuthContext";
 import {
   selectedPropertyStorageKey,
   selectedPropertyRenewalCodeStorageKey,
@@ -21,6 +22,7 @@ interface ProfilePageProps {
 export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { setIsAuthenticated } = useAuthModal();
 
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
@@ -103,6 +105,7 @@ export function ProfilePage({ isDark, toggleTheme }: ProfilePageProps) {
     localStorage.removeItem("auth-token");
     localStorage.removeItem("user-national-code");
     localStorage.removeItem("municipality-user-type");
+    setIsAuthenticated(false);
 
     setIsLogoutConfirmOpen(false);
 
