@@ -435,7 +435,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     setIsAuthenticated(true);
     setLoginType(sahkarLoginType);
     setIsSahkarOpen(false);
-    navigate(sahkarLoginType === "admin" ? "/admin" : "/profile");
+    navigate(sahkarLoginType === "admin" ? "/admin" : "/my-property");
   };
 
   // ─── Effects ─────────────────────────────────────────────────────────────

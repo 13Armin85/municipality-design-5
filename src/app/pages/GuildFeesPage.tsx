@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Layers, Info } from "lucide-react";
-import { type RenewalCodeKey, type RenewalCodes } from "../data/properties";
+import { type RenewalCodeKey, type RenewalCodes, getSelectedPropertyFullCode, normalizeRenewalCode } from "../data/properties";
 import {
   isApiSuccess,
   getApiErrorMessage,
@@ -365,9 +365,24 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
         const fileValue = getApiValue(data);
         const mapped = unwrapList(fileValue).map(mapFileItem);
         setCases(mapped);
-        if (mapped[0]) {
-          setSelectedCase(mapped[0]);
-          setSearchInputs(mapped[0].codes);
+        
+        if (mapped.length > 0) {
+          // Try to restore previously selected property from localStorage
+          const storedFullCode = getSelectedPropertyFullCode();
+          let selectedProperty: GuildPropertyItem | null = null;
+          
+          if (storedFullCode) {
+            const normalizedStoredCode = normalizeRenewalCode(storedFullCode);
+            // Find matching property by fullCode
+            selectedProperty = mapped.find(item => 
+              normalizeCode(item.fullCode) === normalizedStoredCode
+            ) ?? null;
+          }
+          
+          // If no stored property found, use the first one
+          const propertyToSelect = selectedProperty ?? mapped[0];
+          setSelectedCase(propertyToSelect);
+          setSearchInputs(propertyToSelect.codes);
         }
       } catch (err) {
         console.error("Failed to load guild cases", err);

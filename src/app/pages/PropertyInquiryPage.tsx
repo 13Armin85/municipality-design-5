@@ -30,6 +30,8 @@ import {
   guildCodeFields,
   type RenewalCodeKey,
   type RenewalCodes,
+  getSelectedPropertyFullCode,
+  normalizeRenewalCode,
 } from "../data/properties";
 import { useRetreatData } from "../data/Useretreatdata";
 import {
@@ -242,11 +244,24 @@ export function PropertyInquiryPage({
 
         setSubProperties(mapped);
 
-        // انتخاب اولیه
-        if (mapped[0]) {
-          setSelectedSubProperty(mapped[0]);
-
-          setSearchInputs(mapped[0].codes);
+        // انتخاب اولیه - تلاش برای بازیابی ملک انتخاب شده از localStorage
+        if (mapped.length > 0) {
+          // Try to restore previously selected property from localStorage
+          const storedFullCode = getSelectedPropertyFullCode();
+          let selectedProperty: SubProperty | null = null;
+          
+          if (storedFullCode) {
+            const normalizedStoredCode = normalizeRenewalCode(storedFullCode);
+            // Find matching property by fullCode
+            selectedProperty = mapped.find(item => 
+              normalizeRenewalCode(item.fullCode) === normalizedStoredCode
+            ) ?? null;
+          }
+          
+          // If no stored property found, use the first one
+          const propertyToSelect = selectedProperty ?? mapped[0];
+          setSelectedSubProperty(propertyToSelect);
+          setSearchInputs(propertyToSelect.codes);
         }
       } catch (err) {
         console.error(err);
@@ -433,6 +448,7 @@ export function PropertyInquiryPage({
                       handleInputChange(field.key, e.target.value)
                     }
                     className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm"
+                    dir="ltr"
                   />
 
                   <span className="absolute -top-2 right-3 bg-card px-1 text-[9px] text-muted-foreground">

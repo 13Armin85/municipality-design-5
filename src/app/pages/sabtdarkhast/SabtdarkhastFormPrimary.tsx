@@ -152,6 +152,7 @@ export function SabtdarkhastFormPrimary({
                     } as RenewalCodes)
                   }
                   className="h-10 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-xs font-medium outline-none transition-colors focus:border-primary sm:h-11 sm:text-sm"
+                  dir="ltr"
                 />
                 <span className="absolute -top-2 right-2 bg-card px-1 text-[8px] text-muted-foreground sm:text-[9px]">
                   {field.label}

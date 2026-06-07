@@ -498,12 +498,24 @@ export const findPropertyByFullCode = (fullCode: string | null | undefined) =>
       normalizeRenewalCode(fullCode),
   );
 
-export const normalizeRenewalCode = (code: string | null | undefined) =>
-  (code ?? "")
-    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
-    .replace(/[^\d]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+export const normalizeRenewalCode = (code: string | null | undefined) => {
+  if (!code) return "";
+  // Convert Persian/Arabic digits to English
+  let normalized = (code ?? "").replace(/[۰-۹]/g, (digit) =>
+    String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)),
+  );
+  // Also convert Arabic digits
+  normalized = normalized.replace(/[٠-٩]/g, (digit) =>
+    String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)),
+  );
+  // Replace non-digit characters with hyphen
+  normalized = normalized.replace(/[^\d]/g, "-");
+  // Replace multiple hyphens with single hyphen
+  normalized = normalized.replace(/-+/g, "-");
+  // Remove leading and trailing hyphens
+  normalized = normalized.replace(/^-|-$/g, "");
+  return normalized;
+};
 
 export const getStoredPropertyId = () => {
   if (typeof window === "undefined") return getDefaultProperty().id;

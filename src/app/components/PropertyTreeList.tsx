@@ -72,9 +72,14 @@ export function PropertyTreeList({
   const [propertyItems, setPropertyItems] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedTreeItemId, setSelectedTreeItemId] = useState<string | null>(
-    selectedPropertyFullCode || null,
-  );
+  const [selectedTreeItemId, setSelectedTreeItemId] = useState<string | null>(() => {
+    // First try the passed selectedPropertyFullCode, then fall back to localStorage
+    if (selectedPropertyFullCode) return selectedPropertyFullCode;
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("municipality-selected-property-renewal-code");
+    }
+    return null;
+  });
   const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(
     () => new Set(),
   );

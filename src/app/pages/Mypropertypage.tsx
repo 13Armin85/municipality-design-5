@@ -86,12 +86,11 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
-    null,
-  );
-  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(
-    null,
-  );
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("municipality-selected-property-id");
+  });
+  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(null);
   const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -237,6 +236,43 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
             ),
           ),
         );
+
+        // Restore selected property from localStorage after fetching properties
+        if (selectedPropertyId) {
+          // Find the property in the fetched data
+          const storedRenewalCode = localStorage.getItem("municipality-selected-property-renewal-code");
+          if (storedRenewalCode) {
+            const foundProperty = mapped.find(p => {
+              // Check if the fullCode matches
+              if (p.fullCode === storedRenewalCode) return true;
+              // Also check in treeItems
+              return p.treeItems.some(ti => ti.fullCode === storedRenewalCode);
+            });
+            
+            if (foundProperty) {
+              // Check if the selected property is a treeItem or the main property
+              const matchingTreeItem = foundProperty.treeItems.find(ti => ti.fullCode === storedRenewalCode);
+              if (matchingTreeItem) {
+                setSelectedPropertyId(matchingTreeItem.id);
+                setSelectedProperty({
+                  ...foundProperty,
+                  id: matchingTreeItem.id,
+                  fullCode: matchingTreeItem.fullCode,
+                  description: matchingTreeItem.text,
+                });
+              } else {
+                setSelectedPropertyId(foundProperty.id);
+                setSelectedProperty(foundProperty);
+              }
+            }
+          } else {
+            // Fallback to finding by property ID
+            const foundProperty = mapped.find(p => p.id === selectedPropertyId);
+            if (foundProperty) {
+              setSelectedProperty(foundProperty);
+            }
+          }
+        }
       } catch {
         setError("خطا در اتصال به سرور. لطفاً دوباره تلاش کنید.");
       } finally {

@@ -384,6 +384,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                         setSearchValues(updated);
                       }}
                       className="h-11 w-full rounded-xl border border-border/70 bg-card px-2 text-center text-sm font-medium focus:outline-none"
+                      dir="ltr"
                     />
                     <span className="absolute -top-2 right-2 bg-card px-1 text-[9px] text-muted-foreground">
                       {label}
