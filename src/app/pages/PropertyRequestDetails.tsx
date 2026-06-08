@@ -40,15 +40,23 @@ interface OwnerPropertyItem {
 }
 
 interface RequestRow {
+  id: string;
   code: string;
   title: string;
   status: string;
   date: string;
 }
 
-interface RequestDetailRow {
-  label: string;
-  value: string;
+interface RequestDetailItem {
+  id: string;
+  requestCode: string;
+  title: string;
+  stage: string;
+  receiver: string;
+  status: string;
+  defectStatus: string;
+  date: string;
+  description: string;
 }
 
 interface Props {
@@ -78,11 +86,14 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     [],
   );
   const [requests, setRequests] = useState<RequestRow[]>([]);
-  const [requestDetails, setRequestDetails] = useState<RequestDetailRow[]>([]);
+  const [requestDetails, setRequestDetails] = useState<RequestDetailItem[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(false);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [loadingRequestDetails, setLoadingRequestDetails] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [requestDetailsError, setRequestDetailsError] = useState("");
   const [selectedCodeNosazi, setSelectedCodeNosazi] = useState("");
+  const [selectedRequestId, setSelectedRequestId] = useState("");
 
   const toSearchValuesFromCode = (fullCode: string): RenewalCodes => {
     const clean = fullCode.trim();
@@ -160,39 +171,77 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   const mapApiResponseToRequests = (data: any): RequestRow[] => {
     const rawList = getListFromApiValue(data);
 
+    return rawList.map((item: any, index: number) => {
+      const requestCode = getTextValue(
+        item.shodarkhast ?? item.requestNo ?? item.requestNumber,
+      );
+      const requestId = getTextValue(item.id ?? item.requestId ?? requestCode);
+
+      return {
+        id: requestId || String(index + 1),
+        code: requestCode || requestId || String(index + 1),
+        title:
+          getTextValue(
+            item.noedarkhast ?? item.requestTitle ?? item.title ?? item.subject,
+          ) || "—",
+        status:
+          getTextValue(item.vaziatErja ?? item.statusTitle ?? item.status) ||
+          "—",
+        date: formatDate(
+          item.date_rooz ??
+            item.date ??
+            item.createDate ??
+            item.createdAt ??
+            "—",
+        ),
+      };
+    });
+  };
+
+  const mapApiResponseToDetails = (data: any): RequestDetailItem[] => {
+    const rawList = getListFromApiValue(data);
+
     return rawList.map((item: any, index: number) => ({
-      code: String(item.shodarkhast ?? item.requestId ?? item.id ?? index + 1),
+      id: getTextValue(item.id ?? item.Id ?? index + 1) || String(index + 1),
+      requestCode:
+        getTextValue(
+          item.shodarkhast ??
+            item.requestId ??
+            item.requestNo ??
+            item.requestNumber ??
+            item.shop,
+        ) || "—",
       title:
-        item.noedarkhast ??
-        item.requestTitle ??
-        item.title ??
-        item.subject ??
-        "—",
-      status: item.vaziatErja ?? item.statusTitle ?? item.status ?? "—",
+        getTextValue(
+          item.noedarkhast ?? item.requestTitle ?? item.title ?? item.subject,
+        ) || "—",
+      stage:
+        getTextValue(
+          item.marhaleh ?? item.stage ?? item.step ?? item.currentStep,
+        ) || "—",
+      receiver:
+        getTextValue(
+          item.girandeh ?? item.receiver ?? item.assignee ?? item.userName,
+        ) || "—",
+      status:
+        getTextValue(item.vaziatErja ?? item.statusTitle ?? item.status) || "—",
+      defectStatus:
+        getTextValue(
+          item.EnumDefectStatus_Name ?? item.defectStatus ?? item.defectTitle,
+        ) || "—",
       date: formatDate(
         item.date_rooz ?? item.date ?? item.createDate ?? item.createdAt ?? "—",
       ),
+      description:
+        getTextValue(
+          item.tozihat ??
+            item.description ??
+            item.desc ??
+            item.comment ??
+            item.sharh ??
+            item.text,
+        ) || "—",
     }));
-  };
-
-  const mapApiResponseToDetails = (data: any): RequestDetailRow[] => {
-    const detailObj = getListFromApiValue(data)[0];
-
-    if (!detailObj) return [];
-
-    return [
-      { label: "شماره درخواست", value: String(detailObj.shodarkhast ?? "—") },
-      { label: "نوع درخواست", value: String(detailObj.noedarkhast ?? "—") },
-      { label: "وضعیت", value: String(detailObj.vaziatErja ?? "—") },
-      { label: "تاریخ", value: formatDate(detailObj.date_rooz ?? "—") },
-      { label: "مرحله", value: String(detailObj.marhaleh ?? "—") },
-      { label: "گیرنده", value: String(detailObj.girandeh ?? "—") },
-      {
-        label: "وضعیت کسری",
-        value: String(detailObj.EnumDefectStatus_Name ?? "—"),
-      },
-      { label: "شماره پیگیری", value: String(detailObj.shop ?? "—") },
-    ];
   };
 
   const formatDate = (date: any): string => {
@@ -218,6 +267,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   const fetchRequestData = async (codeNosazi: string) => {
     setLoadingRequests(true);
     setApiError("");
+    setRequestDetailsError("");
     try {
       const token = localStorage.getItem("auth-token");
       if (!token) throw new Error("توکن احراز هویت یافت نشد.");
@@ -242,10 +292,16 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
       if (isApiSuccess(data)) {
         const dataValue = getApiValue(data);
         const mappedRows = mapApiResponseToRequests(dataValue);
-        const mappedDetails = mapApiResponseToDetails(dataValue);
 
         setRequests(mappedRows);
-        setRequestDetails(mappedDetails);
+        setRequestDetails([]);
+
+        if (mappedRows[0]) {
+          setSelectedRequestId(mappedRows[0].id);
+          void fetchRequestDetails(mappedRows[0].id);
+        } else {
+          setSelectedRequestId("");
+        }
       } else {
         throw new Error(getApiErrorMessage(data));
       }
@@ -255,8 +311,58 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
       );
       setRequests([]);
       setRequestDetails([]);
+      setSelectedRequestId("");
     } finally {
       setLoadingRequests(false);
+    }
+  };
+
+  const fetchRequestDetails = async (requestId: string) => {
+    if (!requestId.trim()) {
+      setRequestDetails([]);
+      setRequestDetailsError("");
+      return;
+    }
+
+    setLoadingRequestDetails(true);
+    setRequestDetailsError("");
+
+    try {
+      const token = localStorage.getItem("auth-token");
+      if (!token) throw new Error("توکن احراز هویت یافت نشد.");
+
+      const response = await fetch(
+        `/api/request/${encodeURIComponent(requestId)}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data: ApiResponse = await response.json().catch(() => ({
+        IsSuccess: false,
+        IsFailure: true,
+        Error: {
+          Description: "خطا در دریافت جزئیات درخواست.",
+          Type: 0,
+        },
+      }));
+
+      if (!response.ok || !isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data));
+      }
+
+      setRequestDetails(mapApiResponseToDetails(getApiValue(data)));
+    } catch (error) {
+      setRequestDetails([]);
+      setRequestDetailsError(
+        error instanceof Error ? error.message : "خطا در دریافت جزئیات درخواست",
+      );
+    } finally {
+      setLoadingRequestDetails(false);
     }
   };
 
@@ -343,7 +449,13 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     setSelectedCodeNosazi(codeNosazi);
     setSearchValues(toSearchValuesFromCode(codeNosazi));
     setApiError("");
+    setRequestDetailsError("");
     void fetchRequestData(codeNosazi);
+  };
+
+  const handleRequestSelect = (request: RequestRow) => {
+    setSelectedRequestId(request.id);
+    void fetchRequestDetails(request.id);
   };
 
   // آپدیت لیست درخواست‌ها بر اساس فایل فعال
@@ -512,7 +624,12 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                   {filledRequestRows.map((row) => (
                     <tr
                       key={row.code}
-                      className="border-b border-border/40 hover:bg-muted/20"
+                      onClick={() => handleRequestSelect(row)}
+                      className={`cursor-pointer border-b border-border/40 transition-colors hover:bg-muted/20 ${
+                        selectedRequestId === row.id
+                          ? "bg-[var(--primary-soft)]"
+                          : ""
+                      }`}
                     >
                       <td className="p-2">{row.code}</td>
                       <td className="p-2">{row.title}</td>
@@ -535,7 +652,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
             </div>
           </motion.article>
 
-          {/* جزئیات درخواست - متصل به activeFile */}
+          {/* جزئیات درخواست */}
           <motion.article className="soft-card mesh-panel overflow-hidden">
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <div className="flex items-center gap-2">
@@ -543,22 +660,67 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                 <h2 className="text-sm font-bold">جزئیات درخواست</h2>
               </div>
             </div>
-            <div className="p-4 space-y-3">
-              {requestDetails.length > 0 ? (
-                requestDetails.map((d) => (
-                  <div
-                    key={d.label}
-                    className="flex items-center justify-between border-b border-border/40 pb-2 text-sm"
-                  >
-                    <span className="text-muted-foreground">{d.label}</span>
-                    <strong className="text-foreground">{d.value}</strong>
-                  </div>
-                ))
+            <div className="overflow-x-auto p-4">
+              {requestDetailsError ? (
+                <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {requestDetailsError}
+                </div>
+              ) : loadingRequestDetails ? (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  در حال دریافت جزئیات درخواست...
+                </div>
+              ) : requestDetails.length > 0 ? (
+                <table className="w-full text-xs md:text-sm">
+                  <thead>
+                    <tr className="bg-muted/40 text-muted-foreground">
+                      <th className="p-2 text-right font-medium">شماره</th>
+                      <th className="p-2 text-right font-medium">نوع</th>
+                      <th className="p-2 text-right font-medium">مرحله</th>
+                      <th className="p-2 text-right font-medium">گیرنده</th>
+                      <th className="p-2 text-right font-medium">وضعیت</th>
+                      <th className="p-2 text-right font-medium">تاریخ</th>
+                      <th className="p-2 text-right font-medium">توضیحات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {requestDetails.map((detail) => (
+                      <tr
+                        key={detail.id}
+                        className="border-b border-border/40 hover:bg-muted/20"
+                      >
+                        <td className="p-2">{detail.requestCode}</td>
+                        <td className="p-2">{detail.title}</td>
+                        <td className="p-2">{detail.stage}</td>
+                        <td className="p-2">{detail.receiver}</td>
+                        <td className="p-2">
+                          <div className="space-y-1">
+                            <span
+                              className={
+                                detail.status.includes("ابطال")
+                                  ? "text-red-600 dark:text-red-400"
+                                  : "text-emerald-600 dark:text-emerald-400"
+                              }
+                            >
+                              {detail.status}
+                            </span>
+                            {detail.defectStatus !== "—" && (
+                              <div className="text-[11px] text-muted-foreground">
+                                {detail.defectStatus}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-2 text-left" dir="ltr">
+                          {detail.date}
+                        </td>
+                        <td className="p-2">{detail.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
                 <div className="text-sm text-muted-foreground text-center py-4">
-                  {loadingRequests
-                    ? "در حال بارگذاری..."
-                    : "اطلاعاتی برای نمایش وجود ندارد"}
+                  اطلاعاتی برای نمایش وجود ندارد
                 </div>
               )}
             </div>
