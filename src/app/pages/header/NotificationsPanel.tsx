@@ -69,7 +69,7 @@ export function NotificationsPanel({
                       onMarkAsRead(item.id);
                       onClose();
                     }}
-                    className={`w-full rounded-xl px-3 py-3 text-right transition-colors hover:bg-[var(--primary-soft)] ${
+                    className={`w-full rounded-xl px-3 py-3 text-right mb-[5px] transition-colors hover:bg-[var(--primary-soft)] ${
                       isUnread ? "bg-[var(--primary-soft)]/60" : ""
                     }`}
                   >
