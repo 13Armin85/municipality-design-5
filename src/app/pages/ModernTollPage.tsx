@@ -280,6 +280,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     };
     
     selectPropertyFromList(prop);
+    void loadRenovationData(prop.id, prop.fullCode);
   };
 
   useEffect(() => {
@@ -340,6 +341,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
           const propertyToSelect = selectedProp ?? mapped[0];
           setSelectedProperty(propertyToSelect);
           setSearchInputs(propertyToSelect.codes);
+          void loadRenovationData(propertyToSelect.id, propertyToSelect.fullCode);
         }
       } catch (err) {
         console.error("Failed to load properties", err);

@@ -1,11 +1,18 @@
 import { motion } from "motion/react";
 import { ClipboardList, Home, Minus, Plus } from "lucide-react";
 import { MockProperty } from "../../data/properties";
+import type { RegisteredRequestRow } from "../Sabtdarkhastpage";
 
 export function SabtdarkhastFormSecondary({
   activeProperty,
+  requests,
+  loading,
+  error,
 }: {
   activeProperty: MockProperty | null;
+  requests: RegisteredRequestRow[];
+  loading: boolean;
+  error: string;
 }) {
   return (
     <>
@@ -22,14 +29,23 @@ export function SabtdarkhastFormSecondary({
           </div>
         </div>
         <div className="p-3 sm:p-4">
-          {activeProperty?.registration.prevRequests.length ? (
+          {loading ? (
+            <div className="rounded-xl border border-border/70 bg-card/40 p-4 text-center text-xs text-muted-foreground">
+              در حال دریافت درخواست ها...
+            </div>
+          ) : error ? (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-center text-xs text-destructive">
+              {error}
+            </div>
+          ) : requests.length ? (
             <div className="space-y-2">
-              {activeProperty.registration.prevRequests.map((req, i) => (
+              {requests.map((req) => (
                 <div
-                  key={i}
+                  key={`${req.id}-${req.date}-${req.title}`}
                   className="flex flex-wrap justify-between gap-2 rounded-lg bg-muted/40 p-3 text-xs"
                 >
                   <span>شماره: {req.id}</span>
+                  <span>{req.title}</span>
                   <span>تاریخ: {req.date}</span>
                   <span className="text-primary">{req.status}</span>
                 </div>

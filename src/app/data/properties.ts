@@ -20,7 +20,7 @@ export const renewalCodeLabels: Record<RenewalCodeKey, string> = {
   apartment: "آپارتمان",
   guild: "صنفی",
 };
-export const guildCodeFields = renewalCodeKeys.map((key) => ({
+export const guildCodeFields = [...renewalCodeKeys].reverse().map((key) => ({
   key,
   label: renewalCodeLabels[key],
 }));

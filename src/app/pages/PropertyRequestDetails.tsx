@@ -317,6 +317,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
 
           setSelectedCodeNosazi(codeToSelect);
           setSearchValues(toSearchValuesFromCode(codeToSelect));
+          void fetchRequestData(codeToSelect);
         }
       } catch (error) {
         setApiError(
@@ -341,9 +342,8 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     const codeNosazi = treeItem.fullCode;
     setSelectedCodeNosazi(codeNosazi);
     setSearchValues(toSearchValuesFromCode(codeNosazi));
-    setRequests([]);
-    setRequestDetails([]);
     setApiError("");
+    void fetchRequestData(codeNosazi);
   };
 
   // آپدیت لیست درخواست‌ها بر اساس فایل فعال

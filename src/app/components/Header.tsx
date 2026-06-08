@@ -1,3 +1,5 @@
+
+
 // src/app/components/Header.tsx
 import {
   ClipboardEvent as ReactClipboardEvent,
@@ -527,7 +529,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                 <h1 className="truncate text-base font-bold text-foreground md:text-lg">
                   شهرداری مراغه
                 </h1>
-                <div className="hidden items-center gap-2 lg:flex">
+                <div className="hidden items-center gap-2 sm:flex">
                   <p className="text-xs text-muted-foreground">
                     پرتال جامع خدمات اداری
                   </p>
@@ -540,7 +542,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
             </div>
 
             {/* Desktop nav */}
-            <nav className="hidden items-center gap-0 lg:flex xl:gap-1">
+            <nav className="hidden items-center gap-1 lg:flex">
               {menuItems.map((item) => {
                 const isActive = item.href === activeMenuItem;
                 return (
@@ -548,7 +550,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     key={item.title}
                     href={item.href}
                     onClick={() => setActiveMenuItem(item.href)}
-                    className={`relative overflow-hidden rounded-xl px-2 py-2 text-sm font-medium transition-all lg:px-3 xl:px-4 ${
+                    className={`relative overflow-hidden rounded-xl px-4 py-2 text-sm font-medium transition-all ${
                       isActive
                         ? "text-primary-foreground"
                         : "text-foreground hover:text-primary"

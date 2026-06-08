@@ -382,6 +382,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
           const propertyToSelect = selectedProperty ?? mapped[0];
           setSelectedCase(propertyToSelect);
           setSearchInputs(propertyToSelect.codes);
+          void loadGuildData(propertyToSelect.fullCode, propertyToSelect);
         }
       } catch (err) {
         console.error("Failed to load guild cases", err);
@@ -437,6 +438,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
     };
     
     handleCaseClick(guildItem);
+    void loadGuildData(guildItem.fullCode, guildItem);
   };
 
   const handleSearch = (event: FormEvent) => {

@@ -105,11 +105,6 @@ export function SabtdarkhastFormPrimary({
         </motion.div>
       )}
 
-      <div className="rounded-2xl border border-primary/25 bg-[var(--primary-soft)] px-4 py-3 text-right text-xs text-primary md:text-sm">
-        کاربر گرامی، ابتدا ملک خود را از بخش پرونده‌های زیرمجموعه انتخاب کنید و
-        سپس دکمه جستجو را بزنید.
-      </div>
-
       <motion.article
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}

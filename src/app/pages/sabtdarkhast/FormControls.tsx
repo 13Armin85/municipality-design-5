@@ -1,7 +1,11 @@
+import { useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import { Calendar, Info, MoreHorizontal } from "lucide-react";
 import { FormErrors } from "./types";
-import { PersianDatePicker } from "./PersianDatePicker";
+import {
+  getCurrentJalaliDateString,
+  PersianDatePicker,
+} from "./PersianDatePicker";
 import { FieldError } from "./FormCommon";
 
 interface HelpButtonProps {
@@ -114,25 +118,30 @@ export function SelectionField({
   openSelection,
 }: SelectionFieldProps) {
   const hasError = !!(showErrors && errorKey && errors[errorKey]);
+  const handleOpenSelection = () =>
+    openSelection(title, items, (v) => {
+      onChange(v);
+      if (errorKey && errors[errorKey]) clearError(errorKey);
+    });
+
   return (
     <div data-has-error={hasError ? "true" : "false"}>
       <div className="relative">
         <input
           value={value}
-          onChange={(e) => {
-            onChange(e.target.value);
-            if (errorKey && errors[errorKey]) clearError(errorKey);
+          readOnly
+          onClick={handleOpenSelection}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              handleOpenSelection();
+            }
           }}
-          className={`h-10 w-full rounded-xl border bg-card px-3 pl-10 text-sm outline-none transition-colors ${hasError ? "border-destructive focus:border-destructive" : "border-border/70 focus:border-primary"}`}
+          className={`h-10 w-full cursor-pointer rounded-xl border bg-card px-3 pl-10 text-sm outline-none transition-colors ${hasError ? "border-destructive focus:border-destructive" : "border-border/70 focus:border-primary"}`}
         />
         <button
           type="button"
-          onClick={() =>
-            openSelection(title, items, (v) => {
-              onChange(v);
-              if (errorKey && errors[errorKey]) clearError(errorKey);
-            })
-          }
+          onClick={handleOpenSelection}
           className="absolute left-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
           title="انتخاب از لیست"
         >
@@ -166,14 +175,20 @@ export function DateField({
   setActiveDatePicker,
 }: DateFieldProps) {
   const isOpen = activeDatePicker === pickerId;
+  const resolvedValue = value || getCurrentJalaliDateString();
+
+  useEffect(() => {
+    if (!value) onChange(getCurrentJalaliDateString());
+  }, [onChange, value]);
+
   return (
-    <div data-datepicker-container className="col-span-1">
+    <div data-datepicker-container className="relative col-span-1">
       <div className="relative">
         <input
-          value={value}
+          value={resolvedValue}
           onChange={(e) => onChange(e.target.value)}
           className="h-10 w-full rounded-xl border border-border/70 bg-card px-3 pl-10 text-sm outline-none transition-colors focus:border-primary"
-          placeholder="۱۴۰۳/۰۱/۰۱"
+          placeholder="1403/01/01"
           readOnly
         />
         <button
@@ -189,11 +204,13 @@ export function DateField({
       </div>
       <AnimatePresence>
         {isOpen && (
-          <PersianDatePicker
-            value={value}
-            onChange={(v) => onChange(v)}
-            onClose={() => setActiveDatePicker(null)}
-          />
+          <div className="absolute right-0 top-full z-50 mt-1 w-full min-w-72">
+            <PersianDatePicker
+              value={resolvedValue}
+              onChange={(v) => onChange(v)}
+              onClose={() => setActiveDatePicker(null)}
+            />
+          </div>
         )}
       </AnimatePresence>
     </div>

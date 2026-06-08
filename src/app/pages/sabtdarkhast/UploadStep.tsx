@@ -51,9 +51,6 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
       exit={{ opacity: 0, x: 30 }}
       className="space-y-5"
     >
-      <div className="rounded-2xl border border-primary/25 bg-[var(--primary-soft)] px-4 py-3 text-right text-xs text-primary md:text-sm">
-        مرحله ۲ از ۲ — آپلود مدارک. لطفاً مدارک مورد نیاز را بارگذاری کنید.
-      </div>
 
       <motion.article className="soft-card mesh-panel">
         <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">

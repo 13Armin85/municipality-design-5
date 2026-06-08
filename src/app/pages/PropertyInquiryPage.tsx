@@ -181,6 +181,7 @@ export function PropertyInquiryPage({
     };
     
     selectPropertyFromList(subProp);
+    void loadRetreatData(subProp.fullCode);
   };
 
   useEffect(() => {
@@ -260,6 +261,7 @@ export function PropertyInquiryPage({
           const propertyToSelect = selectedProperty ?? mapped[0];
           setSelectedSubProperty(propertyToSelect);
           setSearchInputs(propertyToSelect.codes);
+          void loadRetreatData(propertyToSelect.fullCode);
         }
       } catch (err) {
         console.error(err);

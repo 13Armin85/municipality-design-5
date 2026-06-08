@@ -4,6 +4,7 @@ import {
   areRenewalCodesEqual,
   type MockProperty,
   type RenewalCodes,
+  renewalCodeKeys,
 } from "../data/properties";
 import {
   isApiSuccess,
@@ -33,6 +34,13 @@ import {
   SelectionModalState,
   StepState,
 } from "./sabtdarkhast/types";
+
+export interface RegisteredRequestRow {
+  id: string;
+  date: string;
+  status: string;
+  title: string;
+}
 
 const extractOptions = (data: any): string[] => {
   const list = Array.isArray(data)
@@ -145,6 +153,74 @@ const emptyProperty: MockProperty = {
   },
 };
 
+const getListFromApiValue = (value: any): any[] => {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+
+  const nestedValue = value.Value ?? value.value;
+  if (Array.isArray(nestedValue)) return nestedValue;
+
+  const nestedList = value.data ?? value.items ?? value.files ?? value.result;
+  if (Array.isArray(nestedList)) return nestedList;
+  if (nestedList && typeof nestedList === "object") return [nestedList];
+
+  return [value];
+};
+
+const formatRequestDate = (date: any): string => {
+  if (!date) return "—";
+
+  if (typeof date === "number" && date.toString().length === 8) {
+    const dateStr = date.toString();
+    return `${dateStr.substring(0, 4)}/${dateStr.substring(4, 6)}/${dateStr.substring(6, 8)}`;
+  }
+
+  return String(date);
+};
+
+const mapApiResponseToRegisteredRequests = (
+  data: any,
+): RegisteredRequestRow[] =>
+  getListFromApiValue(data).map((item: any, index: number) => ({
+    id: String(item.shodarkhast ?? item.requestId ?? item.id ?? index + 1),
+    date: formatRequestDate(
+      item.date_rooz ?? item.date ?? item.createDate ?? item.createdAt,
+    ),
+    status: String(item.vaziatErja ?? item.statusTitle ?? item.status ?? "—"),
+    title: String(
+      item.noedarkhast ?? item.requestTitle ?? item.title ?? item.subject ?? "—",
+    ),
+  }));
+
+const buildCodeFromValues = (values: RenewalCodes) =>
+  renewalCodeKeys.map((key) => values[key].trim()).join("-");
+
+const getTextValue = (value: unknown): string => {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+};
+
+const firstText = (...values: unknown[]) =>
+  values.map(getTextValue).find(Boolean) ?? "";
+
+const isOwnerApplicantType = (value: string) => value.trim().includes("مالک");
+
+const getRequestNumberFromApiValue = (value: any): string => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+  return String(
+    value.shodarkhast ??
+      value.requestId ??
+      value.requestNo ??
+      value.requestNumber ??
+      value.id ??
+      value.code ??
+      "",
+  );
+};
+
 export function SabtDarkhastPage({
   isDark,
   toggleTheme,
@@ -157,6 +233,12 @@ export function SabtDarkhastPage({
   const [requestTypeItems, setRequestTypeItems] = useState<string[]>([]);
   const [applicantTypeItems, setApplicantTypeItems] = useState<string[]>([]);
   const [officeItems, setOfficeItems] = useState<string[]>([]);
+  const [registeredRequests, setRegisteredRequests] = useState<
+    RegisteredRequestRow[]
+  >([]);
+  const [registeredRequestsLoading, setRegisteredRequestsLoading] =
+    useState(false);
+  const [registeredRequestsError, setRegisteredRequestsError] = useState("");
 
   const [modalContent, setModalContent] = useState<HelpModalContent>({
     title: "",
@@ -216,6 +298,96 @@ export function SabtDarkhastPage({
   const [errors, setErrors] = useState<FormErrors>({});
   const [showErrors, setShowErrors] = useState(false);
 
+  const fetchRegisteredRequests = async (codeNosazi: string) => {
+    const cleanCode = codeNosazi.trim();
+
+    if (!cleanCode || cleanCode === "------") {
+      setRegisteredRequests([]);
+      setRegisteredRequestsError("");
+      return;
+    }
+
+    setRegisteredRequestsLoading(true);
+    setRegisteredRequestsError("");
+
+    try {
+      const token = localStorage.getItem("auth-token");
+
+      const response = await fetch(
+        `/api/request?codeNosazi=${encodeURIComponent(cleanCode)}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("خطا در دریافت درخواست های ثبت شده.");
+      }
+
+      const data: ApiResponse = await response.json();
+
+      if (!isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data));
+      }
+
+      setRegisteredRequests(
+        mapApiResponseToRegisteredRequests(getApiValue(data)),
+      );
+    } catch (error) {
+      setRegisteredRequests([]);
+      setRegisteredRequestsError(
+        error instanceof Error
+          ? error.message
+          : "خطا در دریافت درخواست های ثبت شده.",
+      );
+    } finally {
+      setRegisteredRequestsLoading(false);
+    }
+  };
+
+  const fetchNewRequestNumber = async () => {
+    try {
+      const token = localStorage.getItem("auth-token");
+      const response = await fetch("/api/request/new", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("خطا در دریافت شماره درخواست جدید.");
+      }
+
+      const data: ApiResponse = await response.json();
+
+      if (!isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data));
+      }
+
+      const requestNumber = getRequestNumberFromApiValue(getApiValue(data));
+
+      if (requestNumber) {
+        setRequestForm((prev) => ({ ...prev, id: requestNumber }));
+        clearError("request.id");
+      }
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        "request.id":
+          error instanceof Error
+            ? error.message
+            : "خطا در دریافت شماره درخواست جدید.",
+      }));
+      setShowErrors(true);
+    }
+  };
+
   const applyPropertyToPage = (property: MockProperty) => {
     setActiveProperty(property);
 
@@ -227,11 +399,11 @@ export function SabtDarkhastPage({
       address: property.owner.address,
     });
 
-    setRequestForm({
-      id: property.registration.request.id,
+    setRequestForm((prev) => ({
+      id: prev.id || property.registration.request.id,
       type: property.registration.request.type,
       applicantType: property.registration.request.applicantType,
-    });
+    }));
 
     setApplicantForm({
       nationalId: property.owner.nationalId,
@@ -251,7 +423,36 @@ export function SabtDarkhastPage({
     setShowErrors(false);
   };
 
+  useEffect(() => {
+    void fetchNewRequestNumber();
+  }, []);
+
   // ✅ داده‌های سلکشن را از اول فچ کن - قبل از اینکه صفحه رندر شود
+  useEffect(() => {
+    if (isOwnerApplicantType(requestForm.applicantType)) {
+      setApplicantForm((prev) => {
+        if (
+          prev.nationalId === ownerForm.nationalId &&
+          prev.name === ownerForm.name &&
+          prev.phone === ownerForm.phone
+        ) {
+          return prev;
+        }
+
+        return {
+          nationalId: ownerForm.nationalId,
+          name: ownerForm.name,
+          phone: ownerForm.phone,
+        };
+      });
+    }
+  }, [
+    ownerForm.name,
+    ownerForm.nationalId,
+    ownerForm.phone,
+    requestForm.applicantType,
+  ]);
+
   useEffect(() => {
     const fetchSelectOptions = async () => {
       try {
@@ -348,6 +549,29 @@ export function SabtDarkhastPage({
         const mapped: MockProperty[] = rawList.map(
           (item: any, index: number) => {
             const codeParts = String(item.codeN ?? "0-0-0-0-0-0-0").split("-");
+            const ownerFirstName = firstText(
+              item.Name,
+              item.firstName,
+              item.owner?.firstName,
+              item.MelkVm?.Name,
+            );
+            const ownerLastName = firstText(
+              item.Family,
+              item.lastName,
+              item.owner?.lastName,
+              item.MelkVm?.Family,
+            );
+            const resolvedOwnerName =
+              firstText(
+                item.FullName,
+                item.fullName,
+                item.ownerName,
+                item.owner?.name,
+                item.MelkVm?.FullName,
+                item.MelkVm?.ownerName,
+              ) ||
+              [ownerFirstName, ownerLastName].filter(Boolean).join(" ") ||
+              "—";
 
             const ownerName = item.FullName ?? "—";
 
@@ -356,7 +580,7 @@ export function SabtDarkhastPage({
               id: String(item.Id ?? item.shop ?? index),
               rowNumber: String(index + 1),
               fullCode: item.codeN ?? base.fullCode,
-              ownerName,
+              ownerName: resolvedOwnerName,
               description:
                 item.tvItems?.[0]?.Text?.trim() ??
                 item.codeN ??
@@ -374,11 +598,70 @@ export function SabtDarkhastPage({
 
               owner: {
                 ...base.owner,
-                name: ownerName,
-                nationalId: nationalCode,
-                phone: item.MelkVm?.tel ?? "",
-                postalCode: item.MelkVm?.codeposti ?? "",
-                address: item.MelkVm?.address ?? "",
+                firstName: ownerFirstName,
+                lastName: ownerLastName,
+                name: resolvedOwnerName,
+                nationalId: firstText(
+                  item.NationalCode,
+                  item.nationalCode,
+                  item.CodeMeli,
+                  item.codeMeli,
+                  item.ShenaseMeli,
+                  item.shenaseMeli,
+                  item.owner?.nationalId,
+                  item.MelkVm?.nationalCode,
+                  item.MelkVm?.codeMeli,
+                  nationalCode,
+                ),
+                phone: firstText(
+                  item.Mobile,
+                  item.mobile,
+                  item.Phone,
+                  item.phone,
+                  item.tel,
+                  item.owner?.phone,
+                  item.MelkVm?.mobile,
+                  item.MelkVm?.tel,
+                  item.MelkVm?.phone,
+                ),
+                postalCode: firstText(
+                  item.PostalCode,
+                  item.postalCode,
+                  item.codeposti,
+                  item.owner?.postalCode,
+                  item.MelkVm?.codeposti,
+                  item.MelkVm?.postalCode,
+                ),
+                address: firstText(
+                  item.Address,
+                  item.address,
+                  item.owner?.address,
+                  item.MelkVm?.address,
+                ),
+                ownerType: firstText(
+                  item.NoeMalek,
+                  item.ownerType,
+                  item.owner?.ownerType,
+                  item.MelkVm?.NoeMalek,
+                ),
+                fatherName: firstText(
+                  item.Father,
+                  item.fatherName,
+                  item.owner?.fatherName,
+                  item.MelkVm?.Father,
+                ),
+                birthPlace: firstText(
+                  item.BirthPlace,
+                  item.birthPlace,
+                  item.owner?.birthPlace,
+                  item.MelkVm?.BirthPlace,
+                ),
+                issuePlace: firstText(
+                  item.Sodor,
+                  item.issuePlace,
+                  item.owner?.issuePlace,
+                  item.MelkVm?.Sodor,
+                ),
               },
             };
           },
@@ -387,7 +670,8 @@ export function SabtDarkhastPage({
         if (mapped.length > 0) {
           setPropertyItems(mapped);
           setSearchValues(mapped[0].codes);
-          setActiveProperty(null);
+          applyPropertyToPage(mapped[0]);
+          void fetchRegisteredRequests(mapped[0].fullCode);
         }
       } catch (error) {
         console.error("Error fetching properties:", error);
@@ -456,9 +740,14 @@ export function SabtDarkhastPage({
 
     if (found) {
       applyPropertyToPage(found);
+      void fetchRegisteredRequests(
+        found.fullCode || buildCodeFromValues(found.codes),
+      );
     } else {
       alert("ملکی با این مشخصات یافت نشد.");
       setActiveProperty(null);
+      setRegisteredRequests([]);
+      setRegisteredRequestsError("");
     }
   };
 
@@ -518,6 +807,13 @@ export function SabtDarkhastPage({
     if (matchedProperty) {
       applyPropertyToPage(matchedProperty);
       setSearchValues(codes);
+      void fetchRegisteredRequests(
+        treeItem.fullCode ||
+          matchedProperty.fullCode ||
+          buildCodeFromValues(codes),
+      );
+    } else {
+      void fetchRegisteredRequests(treeItem.fullCode || buildCodeFromValues(codes));
     }
   };
 
@@ -655,7 +951,12 @@ export function SabtDarkhastPage({
                   onContinue={handleContinue}
                 />
 
-                <SabtdarkhastFormSecondary activeProperty={activeProperty} />
+                <SabtdarkhastFormSecondary
+                  activeProperty={activeProperty}
+                  requests={registeredRequests}
+                  loading={registeredRequestsLoading}
+                  error={registeredRequestsError}
+                />
               </motion.div>
             )}
           </AnimatePresence>
