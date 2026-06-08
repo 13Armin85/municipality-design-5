@@ -347,9 +347,6 @@ export function PropertyTreeList({
             <span className="text-xs font-bold text-foreground">
               {property.fullCode}
             </span>
-            <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-              {property.treeItems.length} ریشه
-            </span>
           </div>
           <div className="space-y-1.5">
             {property.treeItems.length > 0

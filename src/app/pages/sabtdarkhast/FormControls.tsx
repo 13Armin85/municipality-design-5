@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence } from "motion/react";
 import { Calendar, Info, MoreHorizontal } from "lucide-react";
 import { FormErrors } from "./types";
@@ -176,13 +177,83 @@ export function DateField({
 }: DateFieldProps) {
   const isOpen = activeDatePicker === pickerId;
   const resolvedValue = value || getCurrentJalaliDateString();
+  const fieldRef = useRef<HTMLDivElement | null>(null);
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!value) onChange(getCurrentJalaliDateString());
   }, [onChange, value]);
 
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      const field = fieldRef.current;
+      if (!field) return;
+
+      const rect = field.getBoundingClientRect();
+      const pickerWidth = Math.max(rect.width, 288);
+      const pickerHeight = 372;
+      const gap = 6;
+      const viewportPadding = 8;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const left = Math.min(
+        Math.max(viewportPadding, rect.right - pickerWidth),
+        viewportWidth - pickerWidth - viewportPadding,
+      );
+      const hasRoomBelow = rect.bottom + gap + pickerHeight <= viewportHeight;
+      const top = hasRoomBelow
+        ? rect.bottom + gap
+        : Math.max(viewportPadding, rect.top - pickerHeight - gap);
+
+      setPortalStyle({
+        position: "fixed",
+        top,
+        left,
+        width: pickerWidth,
+        zIndex: 2147483647,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isOpen]);
+
+  const pickerPortal =
+    isOpen && portalStyle && typeof document !== "undefined"
+      ? createPortal(
+          <AnimatePresence>
+            <div
+              data-datepicker-container
+              style={portalStyle}
+              className="pointer-events-auto"
+            >
+              <PersianDatePicker
+                value={resolvedValue}
+                onChange={(v) => onChange(v)}
+                onClose={() => setActiveDatePicker(null)}
+              />
+            </div>
+          </AnimatePresence>,
+          document.body,
+        )
+      : null;
+
   return (
-    <div data-datepicker-container className="relative col-span-1">
+    <div
+      ref={fieldRef}
+      data-datepicker-container
+      className={`relative col-span-1 ${isOpen ? "z-[120]" : "z-0"}`}
+    >
       <div className="relative">
         <input
           value={resolvedValue}
@@ -202,17 +273,7 @@ export function DateField({
           {label}
         </span>
       </div>
-      <AnimatePresence>
-        {isOpen && (
-          <div className="absolute right-0 top-full z-50 mt-1 w-full min-w-72">
-            <PersianDatePicker
-              value={resolvedValue}
-              onChange={(v) => onChange(v)}
-              onClose={() => setActiveDatePicker(null)}
-            />
-          </div>
-        )}
-      </AnimatePresence>
+      {pickerPortal}
     </div>
   );
 }

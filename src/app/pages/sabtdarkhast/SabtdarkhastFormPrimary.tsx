@@ -109,7 +109,7 @@ export function SabtdarkhastFormPrimary({
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="soft-card mesh-panel overflow-hidden"
+        className="soft-card mesh-panel overflow-visible"
       >
         <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
           <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export function SabtdarkhastFormPrimary({
         initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="soft-card mesh-panel overflow-hidden"
+        className="soft-card mesh-panel overflow-visible"
       >
         <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
           <div className="flex items-center gap-2">
