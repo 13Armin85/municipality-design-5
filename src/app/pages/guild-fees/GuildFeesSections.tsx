@@ -104,7 +104,6 @@ export function GuildFeesSearchSection({
               type="text"
               value={searchInputs[field.key] || ""}
               onChange={(event) => onInputChange(field.key, event.target.value)}
-              placeholder={field.label}
               className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-center text-sm text-foreground outline-none transition-all focus:border-primary/45 focus:ring-2 focus:ring-primary/10"
               dir="ltr"
             />
