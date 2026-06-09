@@ -1,27 +1,67 @@
 import { useState } from "react";
-import { AlertCircle, Check, ClipboardList, FileText, ImageIcon, Trash2, Upload } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  ClipboardList,
+  FileText,
+  ImageIcon,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { motion } from "motion/react";
+import type { LackDocumentItem } from "./types";
 
 interface UploadStepProps {
   onBack: () => void;
-  onSubmit: () => void;
+  onSubmit: (files: File[]) => void;
+  lackDocuments: LackDocumentItem[];
+  lackDocumentsLoading: boolean;
+  lackDocumentsError: string;
+  uploadError: string;
+  isSubmitting: boolean;
 }
 
-export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
-  const [files, setFiles] = useState<
-    { name: string; size: string; preview?: string }[]
-  >([]);
+interface SelectedUploadFile {
+  file: File;
+  name: string;
+  size: string;
+  preview?: string;
+}
+
+const defaultDocTypes = [
+  "سند مالکیت",
+  "کارت ملی مالک",
+  "نقشه ملک",
+  "وکالت نامه (در صورت وجود)",
+  "مدارک شرکت (برای متقاضی حقوقی)",
+];
+
+const mapFilesForUpload = (fileList: FileList | File[]) =>
+  Array.from(fileList).map((file) => ({
+    file,
+    name: file.name,
+    size: `${(file.size / 1024).toFixed(0)} KB`,
+    preview: file.type.startsWith("image/")
+      ? URL.createObjectURL(file)
+      : undefined,
+  }));
+
+export function UploadStep({
+  onBack,
+  onSubmit,
+  lackDocuments,
+  lackDocumentsLoading,
+  lackDocumentsError,
+  uploadError,
+  isSubmitting,
+}: UploadStepProps) {
+  const [files, setFiles] = useState<SelectedUploadFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [submitError, setSubmitError] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const newFiles = Array.from(e.target.files).map((f) => ({
-      name: f.name,
-      size: `${(f.size / 1024).toFixed(0)} KB`,
-      preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : undefined,
-    }));
-    setFiles((prev) => [...prev, ...newFiles]);
+    setFiles((prev) => [...prev, ...mapFilesForUpload(e.target.files!)]);
     setSubmitError(false);
   };
 
@@ -33,16 +73,12 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
       setSubmitError(true);
       return;
     }
-    onSubmit();
+    onSubmit(files.map((file) => file.file));
   };
 
-  const docTypes = [
-    "سند مالکیت",
-    "کارت ملی مالک",
-    "نقشه ملک",
-    "وکالت‌نامه (در صورت وجود)",
-    "مدارک شرکت (برای متقاضی حقوقی)",
-  ];
+  const requiredDocuments = lackDocuments.length
+    ? lackDocuments.map((doc) => doc.title)
+    : defaultDocTypes;
 
   return (
     <motion.div
@@ -51,29 +87,42 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
       exit={{ opacity: 0, x: 30 }}
       className="space-y-5"
     >
-
       <motion.article className="soft-card mesh-panel">
         <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
           <ClipboardList className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-bold">مدارک مورد نیاز</h2>
         </div>
         <div className="space-y-2 p-4">
-          {docTypes.map((doc, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 text-xs text-foreground/70"
-            >
-              <div className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/50" />
-              {doc}
-            </div>
-          ))}
+          {lackDocumentsLoading && (
+            <p className="text-xs text-muted-foreground">
+              در حال دریافت کسری مدارک...
+            </p>
+          )}
+
+          {lackDocumentsError && (
+            <p className="flex items-center gap-1.5 text-xs text-destructive">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {lackDocumentsError}
+            </p>
+          )}
+
+          {!lackDocumentsLoading &&
+            requiredDocuments.map((doc, i) => (
+              <div
+                key={`${doc}-${i}`}
+                className="flex items-center gap-2 text-xs text-foreground/70"
+              >
+                <div className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/50" />
+                {doc}
+              </div>
+            ))}
         </div>
       </motion.article>
 
       <motion.article className="soft-card mesh-panel">
         <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
           <Upload className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-bold">آپلود فایل‌ها</h2>
+          <h2 className="text-sm font-bold">آپلود فایل ها</h2>
         </div>
         <div className="space-y-4 p-4">
           <label
@@ -85,17 +134,19 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
             onDrop={(e) => {
               e.preventDefault();
               setIsDragging(false);
-              const newFiles = Array.from(e.dataTransfer.files).map((f) => ({
-                name: f.name,
-                size: `${(f.size / 1024).toFixed(0)} KB`,
-                preview: f.type.startsWith("image/")
-                  ? URL.createObjectURL(f)
-                  : undefined,
-              }));
-              setFiles((prev) => [...prev, ...newFiles]);
+              setFiles((prev) => [
+                ...prev,
+                ...mapFilesForUpload(e.dataTransfer.files),
+              ]);
               setSubmitError(false);
             }}
-            className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 transition-all sm:p-8 ${isDragging ? "border-primary bg-primary/5" : submitError ? "border-destructive/50 bg-destructive/5" : "border-border/50 hover:border-primary/40 hover:bg-muted/30"}`}
+            className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 transition-all sm:p-8 ${
+              isDragging
+                ? "border-primary bg-primary/5"
+                : submitError
+                  ? "border-destructive/50 bg-destructive/5"
+                  : "border-border/50 hover:border-primary/40 hover:bg-muted/30"
+            }`}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 sm:h-12 sm:w-12">
               <ImageIcon className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
@@ -108,7 +159,7 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
                 یا کلیک کنید برای انتخاب
               </p>
               <p className="mt-0.5 text-[10px] text-muted-foreground/60">
-                PNG، JPG، PDF — حداکثر ۱۰ مگابایت
+                PNG، JPG، PDF - حداکثر ۱۰ مگابایت
               </p>
             </div>
             <input
@@ -123,7 +174,14 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
           {submitError && (
             <p className="flex items-center gap-1.5 text-xs text-destructive">
               <AlertCircle className="h-3.5 w-3.5" />
-              لطفاً حداقل یک فایل بارگذاری کنید.
+              لطفا حداقل یک فایل بارگذاری کنید.
+            </p>
+          )}
+
+          {uploadError && (
+            <p className="flex items-center gap-1.5 text-xs text-destructive">
+              <AlertCircle className="h-3.5 w-3.5" />
+              {uploadError}
             </p>
           )}
 
@@ -131,7 +189,7 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
             <div className="space-y-2">
               {files.map((file, i) => (
                 <motion.div
-                  key={i}
+                  key={`${file.name}-${i}`}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/50 p-3"
@@ -156,6 +214,7 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => removeFile(i)}
                     className="flex-shrink-0 rounded-lg p-1.5 text-destructive/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
                   >
@@ -171,15 +230,18 @@ export function UploadStep({ onBack, onSubmit }: UploadStepProps) {
       <div className="flex flex-col items-stretch justify-start gap-3 pt-2 sm:flex-row sm:items-center">
         <button
           onClick={handleSubmit}
-          className="rounded-xl bg-emerald-600 px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-95"
+          disabled={isSubmitting}
+          className="rounded-xl bg-emerald-600 px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span className="flex items-center justify-center gap-2">
-            <Check className="h-4 w-4" /> ثبت نهایی
+            <Check className="h-4 w-4" />
+            {isSubmitting ? "در حال ارسال..." : "ثبت نهایی"}
           </span>
         </button>
         <button
           onClick={onBack}
-          className="rounded-xl border border-border/60 bg-card px-6 py-2.5 text-sm font-semibold text-foreground transition-all active:scale-95"
+          disabled={isSubmitting}
+          className="rounded-xl border border-border/60 bg-card px-6 py-2.5 text-sm font-semibold text-foreground transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           بازگشت
         </button>

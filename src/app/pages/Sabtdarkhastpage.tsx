@@ -7,11 +7,13 @@ import {
   type RenewalCodes,
   normalizeRenewalCode,
   renewalCodeKeys,
+  selectedPropertyStorageKey,
 } from "../data/properties";
 import {
   isApiSuccess,
   getApiErrorMessage,
   getApiValue,
+  normalizeApiResponse,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
 import { type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
@@ -30,6 +32,8 @@ import {
   ComplementaryFormState,
   FormErrors,
   HelpModalContent,
+  LackDocumentItem,
+  LookupOption,
   OwnerFormState,
   RequestFormState,
   SabtDarkhastPageProps,
@@ -44,37 +48,177 @@ export interface RegisteredRequestRow {
   title: string;
 }
 
-const extractOptions = (data: any): string[] => {
-  const list = Array.isArray(data)
-    ? data
-    : (data?.items ?? data?.data ?? data?.result ?? data?.results ?? []);
+const normalizeDigits = (value: unknown) =>
+  String(value ?? "")
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
 
-  if (!Array.isArray(list)) return [];
+const toNumber = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+
+  const match = normalizeDigits(value).match(/-?\d+(\.\d+)?/);
+  if (!match) return null;
+
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const getLookupValue = (item: any, keys: string[]) => {
+  if (!item || typeof item !== "object") return undefined;
+
+  for (const key of keys) {
+    const value = item[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+const getRawList = (data: any): any[] => {
+  if (Array.isArray(data)) return data;
+  if (!data || typeof data !== "object") return [];
+
+  const list =
+    data.items ??
+    data.Items ??
+    data.data ??
+    data.Data ??
+    data.result ??
+    data.Result ??
+    data.results ??
+    data.Results ??
+    data.files ??
+    data.Files;
+
+  if (Array.isArray(list)) return list;
+  if (list && typeof list === "object") return [list];
+  return [];
+};
+
+const commonLabelKeys = [
+  "title",
+  "Title",
+  "name",
+  "Name",
+  "text",
+  "Text",
+  "label",
+  "Label",
+  "value",
+  "Value",
+  "sharh",
+  "Sharh",
+  "GardeshKar",
+];
+
+const commonCodeKeys = [
+  "id",
+  "Id",
+  "code",
+  "Code",
+  "key",
+  "Key",
+  "value",
+  "Value",
+  "c",
+  "C",
+];
+
+const extractLookupOptions = (
+  data: any,
+  labelKeys: string[],
+  codeKeys: string[],
+): LookupOption[] => {
+  const list = getRawList(data);
+  const seen = new Set<string>();
 
   return list
     .map((item) => {
-      if (typeof item === "string") return item;
+      if (typeof item === "string" || typeof item === "number") {
+        return {
+          label: String(item).trim(),
+          code: String(toNumber(item) ?? ""),
+        };
+      }
 
-      return (
-        item?.title ??
-        item?.name ??
-        item?.text ??
-        item?.label ??
-        item?.value ??
-        item?.TypeName ??
-        item?.typeName ??
-        item?.ApplicantType ??
-        item?.OfficeName ??
-        item?.GardeshKar ??
-        item?.sharh ??
-        null
-      );
+      const label = String(
+        getLookupValue(item, [...labelKeys, ...commonLabelKeys]) ?? "",
+      ).trim();
+      const code = getLookupValue(item, [...codeKeys, ...commonCodeKeys]);
+
+      return {
+        label,
+        code: String(code ?? toNumber(label) ?? ""),
+      };
     })
-    .filter((item): item is string => Boolean(item))
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .filter((item, index, self) => self.indexOf(item) === index);
+    .filter((item) => item.label)
+    .filter((item) => {
+      const normalized = item.label.trim();
+      if (seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
 };
+
+const getLookupCode = (options: LookupOption[], selectedLabel: string) => {
+  const selected = options.find(
+    (option) => option.label.trim() === selectedLabel.trim(),
+  );
+
+  return toNumber(selected?.code) ?? toNumber(selectedLabel);
+};
+
+const normalizeAuthToken = (token: string | null) =>
+  String(token ?? "")
+    .trim()
+    .replace(/^Bearer\s+/i, "")
+    .trim();
+
+const getAuthHeaders = (token: string | null, contentType?: string) => {
+  const authToken = normalizeAuthToken(token);
+
+  return {
+    Accept: "application/json",
+    ...(contentType ? { "Content-Type": contentType } : {}),
+    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
+};
+
+const readApiResponse = async (
+  response: Response,
+  fallbackError: string,
+): Promise<ApiResponse> => {
+  const raw = await response.json().catch(() => null);
+  const data = normalizeApiResponse(raw);
+
+  if (!response.ok) {
+    throw new Error(isApiSuccess(data) ? fallbackError : getApiErrorMessage(data));
+  }
+
+  if (!isApiSuccess(data)) {
+    throw new Error(getApiErrorMessage(data));
+  }
+
+  return data;
+};
+
+const requestTypeLabelKeys = ["noedarkhast", "NoeDarkhast", "requestTitle"];
+const requestTypeCodeKeys = ["c_noedarkhast", "C_NoeDarkhast", "requestTypeId"];
+const applicantTypeLabelKeys = ["noemot", "NoeMot", "ApplicantType"];
+const applicantTypeCodeKeys = ["c_noemot", "C_NoeMot", "applicantTypeId"];
+const officeLabelKeys = ["sahebname", "SahebName", "OfficeName"];
+const officeCodeKeys = ["C_Estelam", "c_estelam", "officeId"];
+
+const agreementTypeLabels: Record<string, string> = {
+  "1": "مالک",
+  "2": "مستاجر",
+  "3": "وکیل",
+};
+
+const getAgreementTypeLabel = (value: string) =>
+  agreementTypeLabels[value] ?? value;
 
 const emptyProperty: MockProperty = {
   id: "",
@@ -169,6 +313,39 @@ const getListFromApiValue = (value: any): any[] => {
   return [value];
 };
 
+const mapApiResponseToLackDocuments = (data: any): LackDocumentItem[] =>
+  getListFromApiValue(data).map((item: any, index: number) => {
+    const title =
+      firstText(
+        item.title,
+        item.Title,
+        item.name,
+        item.Name,
+        item.documentTitle,
+        item.DocumentTitle,
+        item.madarek,
+        item.Madarek,
+        item.sharh,
+        item.Sharh,
+        item.tozihat,
+        item.Tozihat,
+      ) || `مدرک ${index + 1}`;
+
+    return {
+      id: firstText(item.id, item.Id, item.code, item.Code, index + 1),
+      title,
+      description: firstText(
+        item.description,
+        item.Description,
+        item.tozihat,
+        item.Tozihat,
+        item.comment,
+        item.Comment,
+      ),
+      isDefense: Boolean(item.IsDefense ?? item.isDefense ?? item.defense),
+    };
+  });
+
 const formatRequestDate = (date: any): string => {
   if (!date) return "—";
 
@@ -215,8 +392,26 @@ const getTextValue = (value: unknown): string => {
   return String(value).trim();
 };
 
+const firstDefined = (...values: unknown[]) =>
+  values.find(
+    (value) =>
+      value !== null && value !== undefined && String(value).trim() !== "",
+  );
+
 const firstText = (...values: unknown[]) =>
   values.map(getTextValue).find(Boolean) ?? "";
+
+const getFileShopValue = (item: any) =>
+  firstDefined(
+    item.shop,
+    item.Shop,
+    item.shopId,
+    item.ShopId,
+    item.malekId,
+    item.MalekId,
+    item.Id,
+    item.id,
+  );
 
 const isOwnerApplicantType = (value: string) => value.trim().includes("مالک");
 
@@ -248,12 +443,28 @@ export function SabtDarkhastPage({
   const [requestTypeItems, setRequestTypeItems] = useState<string[]>([]);
   const [applicantTypeItems, setApplicantTypeItems] = useState<string[]>([]);
   const [officeItems, setOfficeItems] = useState<string[]>([]);
+  const [requestTypeOptions, setRequestTypeOptions] = useState<LookupOption[]>(
+    [],
+  );
+  const [applicantTypeOptions, setApplicantTypeOptions] = useState<
+    LookupOption[]
+  >([]);
+  const [officeOptions, setOfficeOptions] = useState<LookupOption[]>([]);
   const [registeredRequests, setRegisteredRequests] = useState<
     RegisteredRequestRow[]
   >([]);
   const [registeredRequestsLoading, setRegisteredRequestsLoading] =
     useState(false);
   const [registeredRequestsError, setRegisteredRequestsError] = useState("");
+  const [requestSubmitError, setRequestSubmitError] = useState("");
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [lackDocuments, setLackDocuments] = useState<LackDocumentItem[]>([]);
+  const [lackDocumentsLoading, setLackDocumentsLoading] = useState(false);
+  const [lackDocumentsError, setLackDocumentsError] = useState("");
+  const [registeredRequestId, setRegisteredRequestId] = useState("");
+  const [selectedTreeItemId, setSelectedTreeItemId] = useState("");
 
   const [modalContent, setModalContent] = useState<HelpModalContent>({
     title: "",
@@ -326,16 +537,13 @@ export function SabtDarkhastPage({
     setRegisteredRequestsError("");
 
     try {
-      const token = localStorage.getItem("auth-token");
+      const token = normalizeAuthToken(localStorage.getItem("auth-token"));
 
       const response = await fetch(
         `/api/request?codeNosazi=${encodeURIComponent(cleanCode)}`,
         {
           method: "GET",
-          headers: {
-            Accept: "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+          headers: getAuthHeaders(token),
         },
       );
 
@@ -366,13 +574,10 @@ export function SabtDarkhastPage({
 
   const fetchNewRequestNumber = async () => {
     try {
-      const token = localStorage.getItem("auth-token");
+      const token = normalizeAuthToken(localStorage.getItem("auth-token"));
       const response = await fetch("/api/request/new", {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: getAuthHeaders(token),
       });
 
       if (!response.ok) {
@@ -436,6 +641,8 @@ export function SabtDarkhastPage({
 
     setErrors({});
     setShowErrors(false);
+    setRequestSubmitError("");
+    setUploadError("");
   };
 
   useEffect(() => {
@@ -471,30 +678,25 @@ export function SabtDarkhastPage({
   useEffect(() => {
     const fetchSelectOptions = async () => {
       try {
-        const token = localStorage.getItem("auth-token");
-        const shop = localStorage.getItem("shop") ?? selectedProperty.id;
+        const token = normalizeAuthToken(localStorage.getItem("auth-token"));
+        const shop =
+          activeProperty?.id ||
+          selectedProperty.id ||
+          localStorage.getItem("shop") ||
+          "";
 
         const requestTypeUrl = `/api/request/type?shop=${encodeURIComponent(shop)}`;
 
         const [requestTypeRes, applicantTypeRes, officeRes] = await Promise.all(
           [
             fetch(requestTypeUrl, {
-              headers: {
-                Accept: "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
+              headers: getAuthHeaders(token),
             }),
             fetch("/api/request/applicant", {
-              headers: {
-                Accept: "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
+              headers: getAuthHeaders(token),
             }),
             fetch("/api/request/office", {
-              headers: {
-                Accept: "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
+              headers: getAuthHeaders(token),
             }),
           ],
         );
@@ -502,24 +704,39 @@ export function SabtDarkhastPage({
         if (requestTypeRes.ok) {
           const requestTypeData: ApiResponse = await requestTypeRes.json();
           if (isApiSuccess(requestTypeData)) {
-            const extracted = extractOptions(getApiValue(requestTypeData));
-            setRequestTypeItems(extracted);
+            const extracted = extractLookupOptions(
+              getApiValue(requestTypeData),
+              requestTypeLabelKeys,
+              requestTypeCodeKeys,
+            );
+            setRequestTypeOptions(extracted);
+            setRequestTypeItems(extracted.map((item) => item.label));
           }
         }
 
         if (applicantTypeRes.ok) {
           const applicantTypeData: ApiResponse = await applicantTypeRes.json();
           if (isApiSuccess(applicantTypeData)) {
-            const extracted = extractOptions(getApiValue(applicantTypeData));
-            setApplicantTypeItems(extracted);
+            const extracted = extractLookupOptions(
+              getApiValue(applicantTypeData),
+              applicantTypeLabelKeys,
+              applicantTypeCodeKeys,
+            );
+            setApplicantTypeOptions(extracted);
+            setApplicantTypeItems(extracted.map((item) => item.label));
           }
         }
 
         if (officeRes.ok) {
           const officeData: ApiResponse = await officeRes.json();
           if (isApiSuccess(officeData)) {
-            const extracted = extractOptions(getApiValue(officeData));
-            setOfficeItems(extracted);
+            const extracted = extractLookupOptions(
+              getApiValue(officeData),
+              officeLabelKeys,
+              officeCodeKeys,
+            );
+            setOfficeOptions(extracted);
+            setOfficeItems(extracted.map((item) => item.label));
           }
         }
       } catch (error) {
@@ -528,12 +745,12 @@ export function SabtDarkhastPage({
     };
 
     fetchSelectOptions();
-  }, [selectedProperty.id]);
+  }, [activeProperty?.id, selectedProperty.id]);
 
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const token = localStorage.getItem("auth-token");
+        const token = normalizeAuthToken(localStorage.getItem("auth-token"));
         const nationalCode = localStorage.getItem("user-national-code");
 
         if (!token || !nationalCode) return;
@@ -541,10 +758,7 @@ export function SabtDarkhastPage({
         const response = await fetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
           {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
+            headers: getAuthHeaders(token),
           },
         );
 
@@ -554,16 +768,22 @@ export function SabtDarkhastPage({
 
         if (!isApiSuccess(data)) return;
 
-        const fileValue = getApiValue(data);
-        const rawList = Array.isArray(fileValue)
-          ? fileValue
-          : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
+        const rawList = getListFromApiValue(getApiValue(data));
 
         const base = emptyProperty;
 
         const mapped: MockProperty[] = rawList.map(
           (item: any, index: number) => {
-            const codeParts = String(item.codeN ?? "0-0-0-0-0-0-0").split("-");
+            const fileShop = getFileShopValue(item);
+            const fullCode = firstText(
+              item.codeN,
+              item.CodeN,
+              item.fullCode,
+              item.codeNosazi,
+              item.CodeNosazi,
+              base.fullCode,
+            );
+            const codeParts = String(fullCode || "0-0-0-0-0-0-0").split("-");
             const ownerFirstName = firstText(
               item.Name,
               item.firstName,
@@ -592,13 +812,13 @@ export function SabtDarkhastPage({
 
             return {
               ...base,
-              id: String(item.Id ?? item.shop ?? index),
+              id: String(fileShop ?? ""),
               rowNumber: String(index + 1),
-              fullCode: item.codeN ?? base.fullCode,
+              fullCode,
               ownerName: resolvedOwnerName,
               description:
-                item.tvItems?.[0]?.Text?.trim() ??
-                item.codeN ??
+                item.tvItems?.[0]?.Text?.trim() ||
+                fullCode ||
                 base.description,
 
               codes: {
@@ -695,6 +915,10 @@ export function SabtDarkhastPage({
           const codeToSelect = storedFullCode || propertyToSelect.fullCode;
 
           setPropertyItems(mapped);
+          setSelectedTreeItemId(
+            localStorage.getItem(selectedPropertyStorageKey) ??
+              propertyToSelect.id,
+          );
           setSearchValues(
             matchedStoredProperty
               ? propertyToSelect.codes
@@ -770,6 +994,7 @@ export function SabtDarkhastPage({
 
     if (found) {
       applyPropertyToPage(found);
+      setSelectedTreeItemId(found.id);
       void fetchRegisteredRequests(
         found.fullCode || buildCodeFromValues(found.codes),
       );
@@ -781,12 +1006,129 @@ export function SabtDarkhastPage({
     }
   };
 
-  const handleContinue = () => {
+  const getCurrentCodeNosazi = () =>
+    activeProperty?.fullCode || buildCodeFromValues(searchValues);
+
+  const getCurrentShopValue = () =>
+    activeProperty?.id ||
+    selectedProperty.id ||
+    localStorage.getItem("shop") ||
+    selectedTreeItemId;
+
+  const getCurrentShopNumber = () => toNumber(getCurrentShopValue());
+
+  const getCurrentCodeNodeTree = () =>
+    selectedTreeItemId ||
+    localStorage.getItem(selectedPropertyStorageKey) ||
+    activeProperty?.id ||
+    selectedProperty.id ||
+    "";
+
+  const getMeliType = (nationalId: string) =>
+    normalizeDigits(nationalId).length === 10 ? "کد ملی" : "شناسه ملی";
+
+  const buildRequestPayload = () => {
+    const requestTypeCode = getLookupCode(requestTypeOptions, requestForm.type);
+    const applicantTypeCode = getLookupCode(
+      applicantTypeOptions,
+      requestForm.applicantType,
+    );
+    const officeCode = getLookupCode(officeOptions, complementaryForm.office);
+    const agreementTypeCode = toNumber(vakadari) ?? 0;
+
+    return {
+      shop: getCurrentShopNumber() ?? 0,
+      c_nosazi: getCurrentCodeNosazi(),
+      MeliType: getMeliType(ownerForm.nationalId),
+      NationalCode: ownerForm.nationalId.trim(),
+      Malek_Name: ownerForm.name.trim(),
+      mob: ownerForm.phone.trim(),
+      codeposti: ownerForm.postalCode.trim(),
+      Address_Malek: ownerForm.address.trim(),
+      shodarkhast: toNumber(requestForm.id) ?? 0,
+      noedarkhast: requestForm.type.trim(),
+      c_noedarkhast: requestTypeCode ?? 0,
+      noemot: requestForm.applicantType.trim(),
+      c_noemot: applicantTypeCode ?? 0,
+      applicantMeliType: getMeliType(applicantForm.nationalId),
+      applicantNationalCode: applicantForm.nationalId.trim(),
+      moteghazi: applicantForm.name.trim(),
+      applicantMobile: applicantForm.phone.trim(),
+      AgreementType: getAgreementTypeLabel(vakadari),
+      C_AgreementType: agreementTypeCode,
+      applicantPostalcode: ownerForm.postalCode.trim(),
+      applicantAddress: ownerForm.address.trim(),
+      shonaame: complementaryForm.letterNo.trim(),
+      strtarikhnaame: complementaryForm.letterDate.trim(),
+      showdabir: complementaryForm.secretNo.trim(),
+      strtarikhdabir: complementaryForm.secretDate.trim(),
+      sahebname: complementaryForm.office.trim(),
+      C_Estelam: officeCode ?? 0,
+      tozihat: "",
+      BuyerMeliType: "",
+      BuyerNationalCode: "",
+      kharidar: "",
+      BuyerMobile: "",
+      SahmeMoredeEnteghal: 0,
+      SahmeKolleMoredeEnteghal: 0,
+    };
+  };
+
+  const fetchLackDocuments = async (requestId: string) => {
+    const shod = toNumber(requestId);
+
+    if (!shod) {
+      setLackDocuments([]);
+      setLackDocumentsError("شماره درخواست برای دریافت کسری مدارک معتبر نیست.");
+      return;
+    }
+
+    setLackDocumentsLoading(true);
+    setLackDocumentsError("");
+
+    try {
+      const token = normalizeAuthToken(localStorage.getItem("auth-token"));
+      const response = await fetch(
+        `/api/request/Lack?shod=${encodeURIComponent(String(shod))}`,
+        {
+          method: "GET",
+          headers: getAuthHeaders(token),
+        },
+      );
+      const data = await readApiResponse(
+        response,
+        "خطا در دریافت کسری مدارک.",
+      );
+
+      setLackDocuments(mapApiResponseToLackDocuments(getApiValue(data)));
+    } catch (error) {
+      setLackDocuments([]);
+      setLackDocumentsError(
+        error instanceof Error ? error.message : "خطا در دریافت کسری مدارک.",
+      );
+    } finally {
+      setLackDocumentsLoading(false);
+    }
+  };
+
+  const handleContinue = async () => {
     const nextErrors = validateForm();
+    const payload = buildRequestPayload();
+
+    if (!payload.shop) {
+      setRequestSubmitError("شناسه پرونده برای ثبت درخواست معتبر نیست.");
+      setShowErrors(true);
+      return;
+    }
+
+    if (!payload.shodarkhast) {
+      nextErrors["request.id"] = "شماره درخواست معتبر نیست";
+    }
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       setShowErrors(true);
+      setRequestSubmitError("");
 
       document.querySelector("[data-has-error='true']")?.scrollIntoView({
         behavior: "smooth",
@@ -798,7 +1140,89 @@ export function SabtDarkhastPage({
 
     setErrors({});
     setShowErrors(false);
-    setStep("upload");
+    setRequestSubmitError("");
+    setIsSubmittingRequest(true);
+
+    try {
+      const token = normalizeAuthToken(localStorage.getItem("auth-token"));
+      if (!token) throw new Error("توکن احراز هویت یافت نشد.");
+
+      const response = await fetch("/api/request", {
+        method: "POST",
+        headers: getAuthHeaders(token, "application/json"),
+        body: JSON.stringify(payload),
+      });
+      const data = await readApiResponse(response, "خطا در ثبت درخواست.");
+      const createdRequestId =
+        getRequestNumberFromApiValue(getApiValue(data)) ||
+        String(payload.shodarkhast);
+
+      setRegisteredRequestId(createdRequestId);
+      setRequestForm((prev) => ({ ...prev, id: createdRequestId }));
+      setLackDocuments([]);
+      setLackDocumentsError("");
+      setUploadError("");
+      setStep("upload");
+      void fetchLackDocuments(createdRequestId);
+      void fetchRegisteredRequests(getCurrentCodeNosazi());
+    } catch (error) {
+      setRequestSubmitError(
+        error instanceof Error ? error.message : "خطا در ثبت درخواست.",
+      );
+    } finally {
+      setIsSubmittingRequest(false);
+    }
+  };
+
+  const handleUploadSubmit = async (files: File[]) => {
+    const token = normalizeAuthToken(localStorage.getItem("auth-token"));
+    const shod = toNumber(registeredRequestId || requestForm.id);
+    const shop = getCurrentShopNumber();
+    const codeN = getCurrentCodeNosazi();
+    const codeNodeTree = getCurrentCodeNodeTree();
+
+    if (!token) {
+      setUploadError("توکن احراز هویت یافت نشد.");
+      return;
+    }
+
+    if (!shod || !shop || !codeN || !codeNodeTree) {
+      setUploadError("اطلاعات پرونده برای آپلود مدارک کامل نیست.");
+      return;
+    }
+
+    setUploadError("");
+    setIsUploadingFiles(true);
+
+    try {
+      const isDefense = lackDocuments.some((doc) => doc.isDefense);
+
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("Shop", String(shop));
+        formData.append("Shod", String(shod));
+        formData.append("CodeN", codeN);
+        formData.append("CodeNodeTree", codeNodeTree);
+        formData.append("IsDefense", String(isDefense));
+
+        const response = await fetch("/api/archive/upload", {
+          method: "POST",
+          headers: getAuthHeaders(token),
+          body: formData,
+        });
+
+        await readApiResponse(response, "خطا در آپلود مدارک.");
+      }
+
+      setStep("success");
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "خطا در آپلود مدارک.",
+      );
+    } finally {
+      setIsUploadingFiles(false);
+    }
   };
 
   const handleOpenHelp = (title: string, description: string) => {
@@ -807,6 +1231,12 @@ export function SabtDarkhastPage({
   };
 
   const handlePropertyTreeSelect = (property: PropertyItem, treeItem: PropertyTreeItem) => {
+    setSelectedTreeItemId(treeItem.id);
+    setRegisteredRequestId("");
+    setLackDocuments([]);
+    setLackDocumentsError("");
+    setUploadError("");
+
     const codes: RenewalCodes = {
       region: "",
       neighborhood: "",
@@ -818,7 +1248,8 @@ export function SabtDarkhastPage({
     };
     
     // Parse the fullCode to extract codes
-    const parts = treeItem.fullCode.split("-").map(p => p.trim()).filter(Boolean);
+    const selectedFullCode = treeItem.fullCode || property.fullCode;
+    const parts = selectedFullCode.split("-").map(p => p.trim()).filter(Boolean);
     if (parts.length >= 7) {
       codes.region = parts[0];
       codes.neighborhood = parts[1];
@@ -830,20 +1261,31 @@ export function SabtDarkhastPage({
     }
     
     // Find matching property in propertyItems
-    const matchedProperty = propertyItems.find(p => 
-      p.fullCode === treeItem.fullCode || p.id === treeItem.id
+    const matchedProperty = propertyItems.find(p =>
+      normalizeRenewalCode(p.fullCode) === normalizeRenewalCode(selectedFullCode) ||
+      p.id === property.id ||
+      p.id === treeItem.id
     );
     
     if (matchedProperty) {
       applyPropertyToPage(matchedProperty);
       setSearchValues(codes);
       void fetchRegisteredRequests(
-        treeItem.fullCode ||
+        selectedFullCode ||
           matchedProperty.fullCode ||
           buildCodeFromValues(codes),
       );
     } else {
-      void fetchRegisteredRequests(treeItem.fullCode || buildCodeFromValues(codes));
+      const fallbackBase = activeProperty ?? selectedProperty;
+
+      setActiveProperty({
+        ...fallbackBase,
+        id: property.id || fallbackBase.id,
+        fullCode: selectedFullCode || fallbackBase.fullCode,
+        description: property.description || fallbackBase.description,
+      });
+      setSearchValues(codes);
+      void fetchRegisteredRequests(selectedFullCode || buildCodeFromValues(codes));
     }
   };
 
@@ -943,7 +1385,12 @@ export function SabtDarkhastPage({
               <UploadStep
                 key="upload"
                 onBack={() => setStep("form")}
-                onSubmit={() => setStep("success")}
+                onSubmit={handleUploadSubmit}
+                lackDocuments={lackDocuments}
+                lackDocumentsLoading={lackDocumentsLoading}
+                lackDocumentsError={lackDocumentsError}
+                uploadError={uploadError}
+                isSubmitting={isUploadingFiles}
               />
             ) : (
               <motion.div
@@ -979,6 +1426,8 @@ export function SabtDarkhastPage({
                   clearError={clearError}
                   openSelection={openSelection}
                   onContinue={handleContinue}
+                  submitError={requestSubmitError}
+                  isSubmitting={isSubmittingRequest}
                 />
 
                 <SabtdarkhastFormSecondary

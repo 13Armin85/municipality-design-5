@@ -62,6 +62,8 @@ interface SabtdarkhastFormPrimaryProps {
     onSelect: (value: string) => void,
   ) => void;
   onContinue: () => void;
+  submitError: string;
+  isSubmitting: boolean;
 }
 
 export function SabtdarkhastFormPrimary({
@@ -90,6 +92,8 @@ export function SabtdarkhastFormPrimary({
   clearError,
   openSelection,
   onContinue,
+  submitError,
+  isSubmitting,
 }: SabtdarkhastFormPrimaryProps) {
   return (
     <>
@@ -283,6 +287,7 @@ export function SabtdarkhastFormPrimary({
                 required
                 value={requestForm.id}
                 onChange={(v) => setRequestForm({ ...requestForm, id: v })}
+                readOnly
                 errorKey="request.id"
                 showErrors={showErrors}
                 errors={errors}
@@ -447,13 +452,23 @@ export function SabtdarkhastFormPrimary({
           </div>
 
           <div className="flex flex-col items-stretch justify-start gap-3 border-t border-border/50 pt-2 sm:flex-row sm:items-center">
+            {submitError && (
+              <p className="flex items-center gap-1.5 text-xs text-destructive sm:ml-auto">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {submitError}
+              </p>
+            )}
             <button
               onClick={onContinue}
-              className="rounded-xl bg-primary px-8 py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all active:scale-95"
+              disabled={isSubmitting}
+              className="rounded-xl bg-primary px-8 py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              ادامه
+              {isSubmitting ? "در حال ثبت..." : "ثبت درخواست"}
             </button>
-            <button className="rounded-xl border border-destructive/40 bg-destructive/5 px-6 py-2.5 text-sm font-semibold text-destructive transition-all active:scale-95">
+            <button
+              disabled={isSubmitting}
+              className="rounded-xl border border-destructive/40 bg-destructive/5 px-6 py-2.5 text-sm font-semibold text-destructive transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
               انصراف
             </button>
           </div>

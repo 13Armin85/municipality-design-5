@@ -142,7 +142,6 @@ export function PropertyTreeList({
       onPropertySelect(
         {
           ...property,
-          id: treeItem.id,
           fullCode: treeItem.fullCode || property.fullCode,
           description: treeItem.text || property.description,
         },
@@ -217,12 +216,27 @@ export function PropertyTreeList({
 
         const mapped: PropertyItem[] = rawList.map(
           (item: any, index: number) => ({
-            id: String(item.Id ?? item.shop ?? index),
-            fullCode: item.codeN ?? "—",
-            treeItems: mapTreeItems(item.tvItems, item.codeN),
+            id: String(
+              item.shop ??
+                item.Shop ??
+                item.shopId ??
+                item.ShopId ??
+                item.Id ??
+                item.id ??
+                index,
+            ),
+            fullCode:
+              item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi ?? "—",
+            treeItems: mapTreeItems(
+              item.tvItems ?? item.TvItems ?? item.treeItems,
+              item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi,
+            ),
             description:
               item.tvItems?.[0]?.Text?.trim() ??
+              item.CodeN ??
               item.codeN ??
+              item.fullCode ??
+              item.codeNosazi ??
               "بدون توضیحات",
           }),
         );

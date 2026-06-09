@@ -21,6 +21,18 @@ export interface RequestFormState {
   applicantType: string;
 }
 
+export interface LookupOption {
+  label: string;
+  code: string;
+}
+
+export interface LackDocumentItem {
+  id: string;
+  title: string;
+  description: string;
+  isDefense: boolean;
+}
+
 export interface ApplicantFormState {
   nationalId: string;
   name: string;

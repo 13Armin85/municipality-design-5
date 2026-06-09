@@ -47,6 +47,7 @@ interface EditableFieldProps {
   value: string;
   onChange: (value: string) => void;
   type?: string;
+  readOnly?: boolean;
   errorKey?: string;
   showErrors: boolean;
   errors: FormErrors;
@@ -59,6 +60,7 @@ export function EditableField({
   value,
   onChange,
   type = "text",
+  readOnly = false,
   errorKey,
   showErrors,
   errors,
@@ -71,11 +73,17 @@ export function EditableField({
         <input
           type={type}
           value={value}
+          readOnly={readOnly}
           onChange={(e) => {
+            if (readOnly) return;
             onChange(e.target.value);
             if (errorKey && errors[errorKey]) clearError(errorKey);
           }}
-          className={`h-10 w-full rounded-xl border bg-card px-3 text-sm outline-none transition-colors ${hasError ? "border-destructive focus:border-destructive" : "border-border/70 focus:border-primary"}`}
+          className={`h-10 w-full rounded-xl border bg-card px-3 text-sm outline-none transition-colors ${
+            readOnly
+              ? "cursor-not-allowed text-muted-foreground"
+              : ""
+          } ${hasError ? "border-destructive focus:border-destructive" : "border-border/70 focus:border-primary"}`}
         />
         <span className="absolute -top-2.5 right-3 bg-card px-1 text-[10px] text-muted-foreground">
           {label}
