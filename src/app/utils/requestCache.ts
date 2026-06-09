@@ -67,6 +67,8 @@ type CachedFetchResponse = {
 };
 
 const shouldCacheFetch = (input: RequestInfo | URL, init?: RequestInit) => {
+  if (init?.cache !== "force-cache") return false;
+
   const method =
     init?.method ?? (input instanceof Request ? input.method : "GET");
   if (method.toUpperCase() !== "GET") return false;

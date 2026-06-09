@@ -8,6 +8,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { apiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 import { GuildFeesHeader } from "./guild-fees/GuildFeesHeader";
 import { GuildFeesHelpModal } from "./guild-fees/GuildFeesHelpModal";
@@ -38,41 +39,106 @@ const emptyCodes: RenewalCodes = {
 const keyLabels: Record<string, string> = {
   Id: "شناسه",
   id: "شناسه",
+  ID: "شناسه",
   shop: "شماره پرونده",
   Shop: "شماره پرونده",
+  Shofish: "شماره فیش",
+  FishNo: "شماره فیش",
+  fishNo: "شماره فیش",
   jobCode: "کد شغل",
   JobCode: "کد شغل",
+  Jobcode: "کد شغل",
+  jobcode: "کد شغل",
   codeN: "کد نوسازی",
+  CodeN: "کد نوسازی",
   codeNosazi: "کد نوسازی",
+  CodeNosazi: "کد نوسازی",
   fullCode: "کد نوسازی",
   ownerName: "مالک",
+  owner: "مالک",
+  Owner: "مالک",
+  Nam_malek: "نام مالک",
+  MalekName: "نام مالک",
+  malekName: "نام مالک",
   Name: "نام",
+  name: "نام",
   Family: "نام خانوادگی",
+  family: "نام خانوادگی",
+  lastName: "نام خانوادگی",
+  firstName: "نام",
   Father: "نام پدر",
+  fatherName: "نام پدر",
   Sodor: "محل صدور",
+  issuePlace: "محل صدور",
   NoeMalek: "نوع مالک",
+  ownerType: "نوع مالک",
   address: "آدرس",
   Address: "آدرس",
+  Nam_address: "آدرس",
   amount: "مبلغ",
   Amount: "مبلغ",
+  Mablagh: "مبلغ",
   price: "مبلغ",
   Price: "مبلغ",
   total: "جمع کل",
   Total: "جمع کل",
+  Avarez: "عوارض",
+  Moavaghe: "معوقه",
+  Tax: "مالیات",
+  Mafiyat: "معافیت",
+  Khoshhesabi: "خوش حسابی",
+  BadHesabi: "بدحسابی",
+  Education: "آموزش و پرورش",
+  FireStation: "آتش نشانی",
+  Khadamat: "خدمات",
+  M_khadamat: "مبلغ خدمات",
+  SahmMalek: "سهم مالک",
   date: "تاریخ",
   Date: "تاریخ",
+  tarikh: "تاریخ",
+  Tarikh: "تاریخ",
   status: "وضعیت",
   Status: "وضعیت",
   Motesadi: "متصدی",
+  motesadi: "متصدی",
+  Nam_motesadi: "نام متصدی",
   ShoghlType: "نوع شغل",
-  CurrentPrice: "مبلغ جاری",
-  DelayedPrice: "مبلغ معوقه",
+  shoghlType: "نوع شغل",
+  JobName: "عنوان شغل",
+  jobName: "عنوان شغل",
+  JobTitle: "عنوان شغل",
+  jobTitle: "عنوان شغل",
+  CurrentPrice: "مبلغ عوارض جاری",
+  currentPrice: "مبلغ عوارض جاری",
+  current_price: "مبلغ عوارض جاری",
+  DelayedPrice: "مبلغ عوارض معوقه",
+  delayedPrice: "مبلغ عوارض معوقه",
+  delayed_price: "مبلغ عوارض معوقه",
+  Azsal: "از سال",
   EndDate: "تا سال",
-  Jobcode: "کد شغل",
-  jobcode: "کد شغل",
+  endDate: "تا سال",
+  end_date: "تا سال",
+  Tasal: "تا سال",
   StartDate: "از سال",
+  startDate: "از سال",
+  start_date: "از سال",
   TotalPrice: "مبلغ کل",
+  totalPrice: "مبلغ کل",
+  total_price: "مبلغ کل",
   TotalPriceFarsi: "مبلغ به حروف",
+  totalPriceFarsi: "مبلغ به حروف",
+  total_price_farsi: "مبلغ به حروف",
+  FinePrice: "مبلغ جریمه",
+  finePrice: "مبلغ جریمه",
+  DiscountPrice: "مبلغ تخفیف",
+  discountPrice: "مبلغ تخفیف",
+  PayablePrice: "مبلغ قابل پرداخت",
+  payablePrice: "مبلغ قابل پرداخت",
+  PaymentDate: "تاریخ پرداخت",
+  paymentDate: "تاریخ پرداخت",
+  payment_date: "تاریخ پرداخت",
+  Year: "سال",
+  year: "سال",
 };
 
 const normalizeDigits = (value: unknown = "") =>
@@ -129,8 +195,175 @@ const unwrapList = (data: any): any[] => {
 const firstDefined = (...values: unknown[]) =>
   values.find((value) => value !== undefined && value !== null && value !== "");
 
-const toDisplay = (value: unknown): string => {
+const moneyKeyPattern =
+  /(amount|price|total|mablagh|avarez|tax|fine|discount|payable|current|delayed|fee)/i;
+const dateKeyPattern = /(date|tarikh|paymentdate|startdate|enddate)/i;
+
+const persianNumberFormatter = new Intl.NumberFormat("fa-IR", {
+  useGrouping: false,
+});
+
+const persianDateFormatter = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+const toPersianDigits = (value: string) =>
+  value.replace(/\d/g, (digit) => persianNumberFormatter.format(Number(digit)));
+
+const orderedKeyIndexes: Record<string, number> = {
+  Shofish: 1,
+  FishNo: 1,
+  Nam_malek: 2,
+  ownerName: 2,
+  Address: 3,
+  address: 3,
+  StartDate: 4,
+  startDate: 4,
+  Azsal: 4,
+  EndDate: 5,
+  endDate: 5,
+  Tasal: 5,
+  JobCode: 6,
+  jobCode: 6,
+  Jobcode: 6,
+  JobName: 7,
+  jobName: 7,
+  ShoghlType: 8,
+  shoghlType: 8,
+  CurrentPrice: 20,
+  currentPrice: 20,
+  DelayedPrice: 21,
+  delayedPrice: 21,
+  FinePrice: 22,
+  finePrice: 22,
+  DiscountPrice: 23,
+  discountPrice: 23,
+  TotalPrice: 24,
+  totalPrice: 24,
+  PayablePrice: 25,
+  payablePrice: 25,
+  TotalPriceFarsi: 26,
+  totalPriceFarsi: 26,
+};
+
+const isMoneyKey = (key?: string) => Boolean(key && moneyKeyPattern.test(key));
+const isDateKey = (key?: string) => Boolean(key && dateKeyPattern.test(key));
+
+const formatDateValue = (value: unknown): string | null => {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue) return null;
+  const normalized = normalizeDigits(rawValue);
+
+  if (/^1[34]\d{2}([/-]\d{1,2}([/-]\d{1,2})?)?$/.test(normalized)) {
+    return toPersianDigits(rawValue.replace(/-/g, "/"));
+  }
+
+  if (/^1[34]\d{6}$/.test(normalized)) {
+    return toPersianDigits(
+      `${normalized.slice(0, 4)}/${normalized.slice(4, 6)}/${normalized.slice(6, 8)}`,
+    );
+  }
+
+  if (/^(19|20)\d{6}$/.test(normalized)) {
+    const date = new Date(
+      Number(normalized.slice(0, 4)),
+      Number(normalized.slice(4, 6)) - 1,
+      Number(normalized.slice(6, 8)),
+    );
+    if (!Number.isNaN(date.getTime())) return persianDateFormatter.format(date);
+  }
+
+  if (/^\d{4}$/.test(normalized)) {
+    return toPersianDigits(normalized);
+  }
+
+  const isoMatch = normalized.match(
+    /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s].*)?$/,
+  );
+
+  if (!isoMatch) return null;
+
+  const [, year, month, day] = isoMatch;
+  const numericYear = Number(year);
+  if (numericYear < 1700) return toPersianDigits(`${year}/${month}/${day}`);
+
+  const date = new Date(
+    numericYear,
+    Number(month) - 1,
+    Number(day),
+  );
+  if (Number.isNaN(date.getTime())) return null;
+
+  return persianDateFormatter.format(date);
+};
+
+const labelTokenMap: Record<string, string> = {
+  id: "شناسه",
+  no: "شماره",
+  number: "شماره",
+  code: "کد",
+  fish: "فیش",
+  shop: "پرونده",
+  job: "شغل",
+  title: "عنوان",
+  name: "نام",
+  owner: "مالک",
+  malek: "مالک",
+  address: "آدرس",
+  type: "نوع",
+  date: "تاریخ",
+  start: "شروع",
+  end: "پایان",
+  year: "سال",
+  price: "مبلغ",
+  amount: "مبلغ",
+  total: "کل",
+  current: "جاری",
+  delayed: "معوقه",
+  fine: "جریمه",
+  discount: "تخفیف",
+  payable: "قابل پرداخت",
+  payment: "پرداخت",
+  status: "وضعیت",
+  farsi: "به حروف",
+  text: "متن",
+  description: "توضیحات",
+};
+
+const toReadableLabel = (label: string) => {
+  const trimmed = label.trim();
+  if (!trimmed) return "عنوان";
+  if (/^[\d۰-۹٠-٩]+$/.test(trimmed)) return `عنوان ${toPersianDigits(normalizeDigits(trimmed))}`;
+  if (/[\u0600-\u06FF]/.test(trimmed)) return trimmed;
+
+  const tokens = trimmed
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .split(/[\s._-]+/)
+    .map((token) => token.toLowerCase())
+    .filter(Boolean);
+
+  const translated = tokens.map((token) => labelTokenMap[token] ?? "");
+  const knownTokens = translated.filter(Boolean);
+  if (knownTokens.length > 0) {
+    return knownTokens.join(" ");
+  }
+
+  return "عنوان";
+};
+
+const toDisplay = (value: unknown, key?: string): string => {
   if (value === undefined || value === null || value === "") return "—";
+  if (isDateKey(key)) {
+    const dateValue = formatDateValue(value);
+    if (dateValue) return dateValue;
+  }
+  if (typeof value === "boolean") return value ? "بله" : "خیر";
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const formatted = value.toLocaleString("fa-IR");
+    return isMoneyKey(key) ? `${formatted} ریال` : formatted;
+  }
   if (typeof value === "object") {
     try {
       return JSON.stringify(value);
@@ -138,32 +371,96 @@ const toDisplay = (value: unknown): string => {
       return "—";
     }
   }
-  return String(value);
+  return toPersianDigits(String(value));
+};
+
+const toLabel = (label: unknown): string => {
+  const normalizedLabel = toDisplay(label);
+  return keyLabels[normalizedLabel] ?? toReadableLabel(normalizedLabel);
 };
 
 const toPairs = (data: any): LabelValue[] => {
-  const source = Array.isArray(data) ? data[0] : data;
-  if (!source || typeof source !== "object") return [];
+  const rows = unwrapList(data);
+  const objectRows = rows.filter(
+    (row) => row && typeof row === "object" && !Array.isArray(row),
+  );
+  const source = objectRows[0];
+  if (!source) return [];
 
   if (Array.isArray(source.items)) {
-    return source.items.map((item: any, index: number) => ({
-      label: toDisplay(item.title ?? item.label ?? item.key ?? index + 1),
-      value: toDisplay(item.value ?? item.text ?? item.amount ?? item),
-    }));
+    return source.items.map((item: any, index: number) => {
+      const labelSource = item.title ?? item.label ?? item.key ?? index + 1;
+      const valueKey = String(item.key ?? item.title ?? item.label ?? "");
+      return {
+        label: toLabel(labelSource),
+        value: toDisplay(item.value ?? item.text ?? item.amount ?? item, valueKey),
+      };
+    });
   }
 
-  return Object.entries(source)
-    .filter(([, value]) => typeof value !== "object" || value === null)
-    .map(([key, value]) => ({
-      label: keyLabels[key] ?? key,
-      value: toDisplay(value),
+  return objectRows.flatMap((row) => {
+    const entries = Object.entries(row)
+      .filter(([, value]) => typeof value !== "object" || value === null)
+      .sort(([keyA], [keyB]) => {
+        const indexA = orderedKeyIndexes[keyA] ?? 1000;
+        const indexB = orderedKeyIndexes[keyB] ?? 1000;
+        return indexA === indexB ? keyA.localeCompare(keyB) : indexA - indexB;
+      });
+
+    return entries.map(([key, value]) => ({
+      label: toLabel(key),
+      value: toDisplay(value, key),
     }));
+  });
 };
 
 const splitPairs = (pairs: LabelValue[]) => ({
   right: pairs.filter((_, index) => index % 2 === 0),
   left: pairs.filter((_, index) => index % 2 === 1),
 });
+
+const escapeExcelCell = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const exportPairsToExcel = (rows: LabelValue[], title: string) => {
+  if (rows.length === 0 || typeof window === "undefined") return;
+
+  const tableRows = rows
+    .map(
+      (row) =>
+        `<tr><td>${escapeExcelCell(row.label)}</td><td>${escapeExcelCell(
+          row.value,
+        )}</td></tr>`,
+    )
+    .join("");
+  const html = `
+    <html dir="rtl">
+      <head><meta charset="utf-8" /></head>
+      <body>
+        <table border="1">
+          <caption>${escapeExcelCell(title)}</caption>
+          <thead><tr><th>عنوان</th><th>مقدار</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+  const blob = new Blob([`\uFEFF${html}`], {
+    type: "application/vnd.ms-excel;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${title.replace(/\s+/g, "-")}.xls`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 const getAuthToken = () => {
   if (typeof window === "undefined") return null;
@@ -275,7 +572,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
 
     try {
       const normalizedCode = normalizeCode(codeNosazi);
-      const guildResponse = await fetch(
+      const guildResponse = await apiFetch(
         `/api/guilds?codeNosazi=${encodeURIComponent(normalizedCode)}`,
         {
           method: "GET",
@@ -300,7 +597,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
       const { shop, jobCode } = extractGuildParams(currentCase, guildValue);
 
       if (shop && jobCode) {
-        const taxResponse = await fetch(
+        const taxResponse = await apiFetch(
           `/api/guilds/tax?shop=${encodeURIComponent(shop)}&jobCode=${encodeURIComponent(jobCode)}`,
           {
             method: "GET",
@@ -344,10 +641,11 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
 
       setIsCasesLoading(true);
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
           {
             method: "GET",
+            cache: "no-store",
             headers: getAuthHeaders(token),
           },
         );
@@ -541,12 +839,17 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                   title="فیش اصناف"
                   right={receiptColumns.right}
                   left={receiptColumns.left}
+                  items={receiptPairs}
                   isLoading={isGuildLoading}
+                  onExportExcel={() =>
+                    exportPairsToExcel(receiptPairs, "فیش اصناف")
+                  }
                 />
                 <GuildFeesCurrentFeesSection
                   title="عوارض صنفی جاری"
                   right={taxColumns.right}
                   left={taxColumns.left}
+                  items={taxPairs}
                   isLoading={isGuildLoading}
                 />
               </>

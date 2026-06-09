@@ -16,6 +16,7 @@ import {
   fetchJsonWithCache,
   propertyFileCacheKey,
 } from "../utils/requestCache";
+import { apiFetch } from "../data/api";
 
 export interface PropertyTreeItem {
   id: string;
@@ -68,10 +69,11 @@ const fetchPropertyFile = async (
   nationalCode: string,
   token: string,
 ): Promise<ApiResponse> => {
-  const response = await fetch(
+  const response = await apiFetch(
     `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
     {
       method: "GET",
+      cache: "no-store",
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -201,6 +203,7 @@ export function PropertyTreeList({
             return response.json();
           },
           */
+          { force: true },
         );
 
         if (!isApiSuccess(data)) {

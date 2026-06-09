@@ -23,6 +23,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../../utils/apiResponseHandler";
+import { apiFetch } from "../../data/api";
 
 interface SahkarVerificationModalProps {
   isOpen: boolean;
@@ -89,7 +90,7 @@ export function SahkarVerificationModal({
       const formattedNationalCode = formatNationalCode(nationalCode);
       const formattedMobile = formatMobile(mobile);
 
-      const response = await fetch("/api/auth/shahkar", {
+      const response = await apiFetch("/api/auth/shahkar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -122,7 +123,7 @@ export function SahkarVerificationModal({
         return;
       }
 
-      const sendResponse = await fetch("/api/auth/send-code", {
+      const sendResponse = await apiFetch("/api/auth/send-code", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -179,7 +180,7 @@ export function SahkarVerificationModal({
       const formattedNationalCode = formatNationalCode(nationalCode);
       const formattedMobile = formatMobile(mobile);
 
-      const response = await fetch("/api/auth/verify-code", {
+      const response = await apiFetch("/api/auth/verify-code", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -252,7 +253,7 @@ export function SahkarVerificationModal({
       const formattedNationalCode = formatNationalCode(nationalCode);
       const formattedMobile = formatMobile(mobile);
 
-      const response = await fetch("/api/auth/send-code", {
+      const response = await apiFetch("/api/auth/send-code", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -27,10 +27,10 @@ import {
 } from "../data/properties";
 import {
   isApiSuccess,
-  getApiErrorMessage,
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { apiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem as TreePropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 
 interface LocalPropertyItem {
@@ -66,6 +66,156 @@ interface ModernTollPageProps {
   isDark: boolean;
   toggleTheme: () => void;
 }
+
+const emptyDisplay = "\u2014";
+
+const asArray = (value: any): any[] => {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+  if (Array.isArray(value.items)) return value.items;
+  if (Array.isArray(value.data)) return value.data;
+  if (Array.isArray(value.Value)) return value.Value;
+  return [value];
+};
+
+const firstFilledText = (...values: unknown[]) => {
+  const value = values.find(
+    (item) => item !== undefined && item !== null && String(item).trim() !== "",
+  );
+  return value === undefined ? emptyDisplay : String(value);
+};
+
+const modernTollLabels: Record<string, string> = {
+  Shofish: "شماره فیش",
+  Nam_malek: "نام مالک",
+  Address: "نشانی",
+  Azsal: "از سال",
+  Tasal: "تا سال",
+  Avarez: "عوارض",
+  Moavaghe: "معوقه",
+  SahmMalek: "سهم مالک",
+  Education: "آموزش و پرورش",
+  FireStation: "آتش نشانی",
+  Khadamat: "خدمات",
+  M_khadamat: "مبلغ خدمات",
+  Tax: "مالیات",
+  Mafiyat: "معافیت",
+  Khoshhesabi: "خوش حسابی",
+  BadHesabi: "بدحسابی",
+  Mablagh: "مبلغ قابل پرداخت",
+  Mablagh_farsi: "مبلغ به حروف",
+};
+
+const modernTollOrder = [
+  "Shofish",
+  "Nam_malek",
+  "Address",
+  "Azsal",
+  "Tasal",
+  "Avarez",
+  "Moavaghe",
+  "SahmMalek",
+  "Education",
+  "FireStation",
+  "Khadamat",
+  "M_khadamat",
+  "Tax",
+  "Mafiyat",
+  "Khoshhesabi",
+  "BadHesabi",
+  "Mablagh",
+  "Mablagh_farsi",
+];
+
+const modernTollMoneyKeys = new Set([
+  "Avarez",
+  "Moavaghe",
+  "SahmMalek",
+  "Education",
+  "FireStation",
+  "Khadamat",
+  "M_khadamat",
+  "Tax",
+  "Mafiyat",
+  "Khoshhesabi",
+  "BadHesabi",
+  "Mablagh",
+]);
+
+const formatDisplayValue = (value: unknown, key?: string) => {
+  if (value === undefined || value === null || value === "") return emptyDisplay;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const formatted = value.toLocaleString("fa-IR");
+    return key && modernTollMoneyKeys.has(key) ? `${formatted} ریال` : formatted;
+  }
+  if (typeof value === "boolean") return value ? "بله" : "خیر";
+  return String(value);
+};
+
+const getPrimitiveKeys = (source: Record<string, unknown>) =>
+  Object.keys(source).filter((key) => {
+    const value = source[key];
+    return typeof value !== "object" || value === null;
+  });
+
+const toModernTollPairs = (value: any): LabelValue[] => {
+  const rows = asArray(value);
+  const source = rows[0];
+
+  if (!source || typeof source !== "object") return [];
+
+  if (Array.isArray(source.items)) {
+    return source.items.map((item: any, index: number) => ({
+      label: item.title ?? item.label ?? item.key ?? String(index + 1),
+      value: formatDisplayValue(item.value ?? item.text ?? item.amount ?? item),
+    }));
+  }
+
+  const keys = getPrimitiveKeys(source);
+  const orderedKeys = [
+    ...modernTollOrder.filter((key) => keys.includes(key)),
+    ...keys.filter((key) => !modernTollOrder.includes(key)),
+  ];
+
+  return orderedKeys.map((key) => ({
+    label: modernTollLabels[key] ?? key,
+    value: formatDisplayValue(source[key], key),
+  }));
+};
+
+const getOwnerId = (owner: any) => {
+  if (typeof owner === "number" || typeof owner === "string") {
+    return String(owner).trim();
+  }
+
+  if (!owner || typeof owner !== "object") return "";
+
+  return firstFilledText(
+    owner.Id,
+    owner.id,
+    owner.MalekId,
+    owner.malekId,
+    owner.OwnerId,
+    owner.ownerId,
+    owner.C_Malek,
+    owner.c_Malek,
+    owner.malek_id,
+    owner.owner_id,
+  ).replace(emptyDisplay, "");
+};
+
+const mapOwner = (owner: any, index: number): OwnerItem => {
+  const source = owner && typeof owner === "object" ? owner : {};
+
+  return {
+    id: getOwnerId(owner) || String(index + 1),
+    firstName: firstFilledText(source.Name, source.firstName, source.name),
+    lastName: firstFilledText(source.Family, source.lastName),
+    ownerType: firstFilledText(source.NoeMalek, source.ownerType),
+    fatherName: firstFilledText(source.Father, source.fatherName),
+    birthPlace: firstFilledText(source.Sodor, source.birthPlace, source.issuePlace),
+  };
+};
 
 export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   const [propertyItems, setPropertyItems] = useState<LocalPropertyItem[]>([]);
@@ -141,31 +291,35 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     if (!token) return;
     try {
       const normalizedCode = normalizeCode(code);
-      const [renovationRes, recordsRes, ownersRes] = await Promise.all([
-        fetch(
-          `/api/renovation?malekId=${encodeURIComponent(propertyId)}&codeNosazi=${encodeURIComponent(normalizedCode)}`,
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          },
+      const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+      const ownersRes = await apiFetch(
+        `/api/owners?codeNosazi=${encodeURIComponent(normalizedCode)}`,
+        { headers },
+      );
+      const ownersData: ApiResponse = ownersRes.ok
+        ? await ownersRes.json()
+        : { IsSuccess: false, IsFailure: true };
+      const ownersValue = isApiSuccess(ownersData)
+        ? getApiValue(ownersData)
+        : null;
+      let rawOwners = asArray(ownersValue);
+      setOwners(rawOwners.map(mapOwner));
+
+      const ownerId =
+        rawOwners.map(getOwnerId).find(Boolean) || String(propertyId).trim();
+
+      const [renovationRes, recordsRes] = await Promise.all([
+        apiFetch(
+          `/api/renovation?malekId=${encodeURIComponent(ownerId)}&codeNosazi=${encodeURIComponent(normalizedCode)}`,
+          { headers },
         ),
-        fetch(
-          `/api/renovation/records?malekId=${encodeURIComponent(propertyId)}&codeNosazi=${encodeURIComponent(normalizedCode)}`,
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          },
+        apiFetch(
+          `/api/renovation/records?malekId=${encodeURIComponent(ownerId)}&codeNosazi=${encodeURIComponent(normalizedCode)}`,
+          { headers },
         ),
-        fetch(`/api/owners?codeNosazi=${encodeURIComponent(normalizedCode)}`, {
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }),
       ]);
 
       const renovationData: ApiResponse = renovationRes.ok
@@ -174,27 +328,14 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
       const recordsData: ApiResponse = recordsRes.ok
         ? await recordsRes.json()
         : { IsSuccess: false, IsFailure: true };
-      const ownersData: ApiResponse = ownersRes.ok
-        ? await ownersRes.json()
-        : { IsSuccess: false, IsFailure: true };
-
       const renovationValue = isApiSuccess(renovationData)
         ? getApiValue(renovationData)
         : {};
       const recordsValue = isApiSuccess(recordsData)
         ? getApiValue(recordsData)
         : [];
-      const ownersValue = isApiSuccess(ownersData)
-        ? getApiValue(ownersData)
-        : null;
 
-      const feeList = Array.isArray(renovationValue)
-        ? renovationValue
-        : (renovationValue.items ?? renovationValue.data ?? []);
-      const feePairs: LabelValue[] = feeList.map((item: any) => ({
-        label: item.title ?? item.label ?? item.key ?? "—",
-        value: String(item.value ?? item.text ?? "—"),
-      }));
+      const feePairs = toModernTollPairs(renovationValue);
       setFeesRight(feePairs.filter((_: unknown, i: number) => i % 2 === 0));
       setFeesLeft(feePairs.filter((_: unknown, i: number) => i % 2 === 1));
 
@@ -210,28 +351,14 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         })),
       );
 
-      const rawOwners = Array.isArray(ownersValue)
-        ? ownersValue
-        : Array.isArray(ownersValue?.items)
-          ? ownersValue.items
-          : Array.isArray(ownersValue?.data)
-            ? ownersValue.data
-            : Array.isArray(renovationValue.owners)
-              ? renovationValue.owners
-              : renovationValue.owner
-                ? [renovationValue.owner]
-                : [];
-      setOwners(
-        rawOwners.map((owner: any, index: number) => ({
-          id: String(owner.Id ?? owner.id ?? index + 1),
-          firstName: owner.Name ?? owner.firstName ?? owner.name ?? "—",
-          lastName: owner.Family ?? owner.lastName ?? "—",
-          ownerType: owner.NoeMalek ?? owner.ownerType ?? "—",
-          fatherName: owner.Father ?? owner.fatherName ?? "—",
-          birthPlace:
-            owner.Sodor ?? owner.birthPlace ?? owner.issuePlace ?? "—",
-        })),
-      );
+      if (rawOwners.length === 0) {
+        rawOwners = Array.isArray(renovationValue?.owners)
+          ? renovationValue.owners
+          : renovationValue?.owner
+            ? [renovationValue.owner]
+            : [];
+      }
+      setOwners(rawOwners.map(mapOwner));
     } catch (error) {
       console.error("خطا در دریافت اطلاعات نوسازی:", error);
     }
@@ -288,9 +415,10 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
       const nationalCode = localStorage.getItem("user-national-code");
       if (!token || !nationalCode) return;
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
           {
+            cache: "no-store",
             headers: {
               Accept: "application/json",
               Authorization: `Bearer ${token}`,

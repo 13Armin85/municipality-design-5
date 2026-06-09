@@ -27,6 +27,7 @@ import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
 import { useAuthModal } from "./AuthContext";
+import { apiFetch } from "../data/api";
 
 import { type ForgotStep } from "../pages/header/Forgotpasswordmodal";
 
@@ -204,7 +205,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     setLoginError("");
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -542,7 +543,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
             </div>
 
             {/* Desktop nav */}
-            <nav className="hidden items-center gap-1 lg:flex">
+            <nav className="hidden items-center gap-1 min-[1281px]:flex">
               {menuItems.map((item) => {
                 const isActive = item.href === activeMenuItem;
                 return (
@@ -550,7 +551,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     key={item.title}
                     href={item.href}
                     onClick={() => setActiveMenuItem(item.href)}
-                    className={`relative overflow-hidden rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                    className={`relative overflow-hidden rounded-xl px-3 py-2 text-sm font-medium transition-all min-[1360px]:px-4 ${
                       isActive
                         ? "text-primary-foreground"
                         : "text-foreground hover:text-primary"
@@ -637,7 +638,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                   setIsMenuOpen((prev) => !prev);
                   setIsNotificationsOpen(false);
                 }}
-                className="header-action-btn lg:hidden"
+                className="header-action-btn min-[1281px]:hidden"
                 aria-label="منو"
               >
                 {isMenuOpen ? (

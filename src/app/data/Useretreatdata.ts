@@ -2,17 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import {
-  fetchRetreatArea,
-  fetchRetreatDirections,
-  type RetreatAreaData,
-  type RetreatDimension,
-} from "./retreat";
-
-export interface RetreatData {
-  area: RetreatAreaData | null;
-  directions: RetreatDimension[];
-}
+import { fetchRetreatData, type RetreatData } from "./retreat";
 
 interface UseRetreatDataResult {
   data: RetreatData | null;
@@ -24,9 +14,7 @@ interface UseRetreatDataResult {
 
 export const useRetreatData = (): UseRetreatDataResult => {
   const [data, setData] = useState<RetreatData | null>(null);
-
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async (codeNosazi: string, token: string) => {
@@ -39,21 +27,10 @@ export const useRetreatData = (): UseRetreatDataResult => {
     setError(null);
 
     try {
-      // فقط این دو endpoint
-      const [area, directions] = await Promise.all([
-        fetchRetreatArea(codeNosazi, token),
-
-        fetchRetreatDirections(codeNosazi, token),
-      ]);
-
-      setData({
-        area,
-        directions,
-      });
+      setData(await fetchRetreatData(codeNosazi, token));
     } catch (err) {
       console.error(err);
-
-      setError("خطا در دریافت اطلاعات عقب نشینی");
+      setError("خطا در دریافت اطلاعات عقب‌نشینی");
     } finally {
       setLoading(false);
     }

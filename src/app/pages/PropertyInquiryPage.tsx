@@ -32,6 +32,12 @@ import {
   normalizeRenewalCode,
 } from "../data/properties";
 import { useRetreatData } from "../data/Useretreatdata";
+import type {
+  LabelValueRow,
+  RetreatDirectionTableRow,
+  RetreatSetbackTableRow,
+} from "../data/retreat";
+import { apiFetch } from "../data/api";
 import {
   isApiSuccess,
   getApiErrorMessage,
@@ -52,6 +58,118 @@ interface SubProperty {
   description: string;
   codes: RenewalCodes;
 }
+
+function ResponsiveInfoTable({
+  rows,
+  title,
+}: {
+  rows: LabelValueRow[];
+  title?: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/70 bg-card/40">
+      <table className="w-full table-fixed text-right text-[11px] sm:text-xs md:text-sm">
+        {title && (
+          <caption className="border-b border-border/70 bg-[var(--primary-soft)]/60 px-3 py-2 text-right font-bold text-foreground">
+            {title}
+          </caption>
+        )}
+        <tbody className="divide-y divide-border/60">
+          {rows.map((row, index) => (
+            <tr key={`${row.label}-${index}`} className="align-top">
+              <th className="w-[42%] bg-muted/25 px-2.5 py-2 text-right font-semibold leading-6 text-muted-foreground sm:px-3">
+                <span className="block whitespace-normal break-words">
+                  {row.label}
+                </span>
+              </th>
+              <td className="px-2.5 py-2 font-medium leading-6 text-foreground sm:px-3">
+                <span className="block whitespace-normal break-words [overflow-wrap:anywhere]">
+                  {row.value}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+type CompactColumn<T> = {
+  key: keyof T;
+  label: string;
+  optional?: boolean;
+};
+
+function CompactRetreatTable<T extends object>({
+  columns,
+  rows,
+}: {
+  columns: CompactColumn<T>[];
+  rows: T[];
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/70 bg-card/40">
+      <table className="w-full table-fixed border-collapse text-right text-[10px] leading-5 sm:text-[11px] md:text-xs">
+        <thead className="bg-[var(--primary-soft)]/70 text-foreground">
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={String(column.key)}
+                className={`border border-border/60 px-1.5 py-2 font-bold sm:px-2 ${
+                  column.optional ? "hidden min-[560px]:table-cell" : ""
+                }`}
+              >
+                <span className="block whitespace-normal break-words">
+                  {column.label}
+                </span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex} className="align-middle hover:bg-muted/25">
+              {columns.map((column) => (
+                <td
+                  key={String(column.key)}
+                  className={`border border-border/60 px-1.5 py-2 font-semibold text-foreground sm:px-2 ${
+                    column.optional ? "hidden min-[560px]:table-cell" : ""
+                  }`}
+                >
+                  <span className="block whitespace-normal break-words [overflow-wrap:anywhere]">
+                    {String(row[column.key] ?? "")}
+                  </span>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const setbackColumns: CompactColumn<RetreatSetbackTableRow>[] = [
+  { key: "direction", label: "جهت" },
+  { key: "wideningWidth", label: "عرض تعریض" },
+  { key: "retreat", label: "عقب‌نشینی" },
+  { key: "expansionDepth", label: "عمق توسعه", optional: true },
+  { key: "originalFrontDepth", label: "عمق نمای اصلی", optional: true },
+  { key: "boundaryType", label: "نوع حریم", optional: true },
+  { key: "boundaryDistance", label: "فاصله حریم", optional: true },
+  { key: "adjacencyType", label: "نوع مجاورت", optional: true },
+];
+
+const directionColumns: CompactColumn<RetreatDirectionTableRow>[] = [
+  { key: "direction", label: "جهت" },
+  { key: "passageType", label: "نوع معبر" },
+  { key: "passageName", label: "نام معبر" },
+  { key: "documentSideLength", label: "طول ضلع طبق سند" },
+  { key: "documentFrontLength", label: "طول بر طبق سند" },
+  { key: "currentSideLength", label: "طول ضلع موجود", optional: true },
+  { key: "currentFrontLength", label: "طول بر موجود", optional: true },
+];
 
 export function PropertyInquiryPage({
   isDark,
@@ -198,10 +316,11 @@ export function PropertyInquiryPage({
       setSubPropertiesError(null);
 
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
           {
             method: "GET",
+            cache: "no-store",
 
             headers: {
               Accept: "application/json",
@@ -485,7 +604,7 @@ export function PropertyInquiryPage({
             </div>
           </motion.article>
           {/* area */}
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="space-y-5">
             <motion.article className="soft-card mesh-panel">
               <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
                 <FileText className="h-4 w-4 text-primary" />
@@ -499,29 +618,7 @@ export function PropertyInquiryPage({
                 ) : retreatError ? (
                   <ErrorAlert message={retreatError} />
                 ) : retreatData?.area ? (
-                  [
-                    {
-                      label: "مساحت طبق سند",
-                      value: retreatData.area.originalArea,
-                    },
-                    {
-                      label: "مساحت اصلاحی",
-                      value: retreatData.area.reformedArea,
-                    },
-                    {
-                      label: "مساحت باقیمانده",
-                      value: retreatData.area.remainingArea,
-                    },
-                  ].map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex justify-between border-b border-border/40 pb-2 text-sm"
-                    >
-                      <span>{item.label}</span>
-
-                      <span className="font-bold">{item.value}</span>
-                    </div>
-                  ))
+                  <ResponsiveInfoTable rows={retreatData.area.rows} />
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     ابتدا جستجو کنید
@@ -530,51 +627,49 @@ export function PropertyInquiryPage({
               </div>
             </motion.article>
 
+            <motion.article className="soft-card mesh-panel overflow-hidden">
+              <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
+                <FileText className="h-4 w-4 text-primary" />
+
+                <span className="text-sm font-bold">عقب‌نشینی</span>
+              </div>
+
+              <div className="space-y-4 p-4">
+                {loadingRetreat ? (
+                  <LoadingSpinner />
+                ) : retreatError ? (
+                  <ErrorAlert message={retreatError} />
+                ) : retreatData?.setbackRows?.length ? (
+                  <CompactRetreatTable
+                    columns={setbackColumns}
+                    rows={retreatData.setbackRows}
+                  />
+                ) : (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    اطلاعاتی موجود نیست
+                  </div>
+                )}
+              </div>
+            </motion.article>
+
             {/* directions */}
-            <motion.article className="soft-card mesh-panel">
+            <motion.article className="soft-card mesh-panel overflow-hidden">
               <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
                 <Compass className="h-4 w-4 text-primary" />
 
                 <span className="text-sm font-bold">جهات چهارگانه</span>
               </div>
 
-              <div className="overflow-x-auto p-4">
+              <div className="space-y-4 p-4">
                 {loadingRetreat ? (
                   <LoadingSpinner />
                 ) : retreatError ? (
                   <ErrorAlert message={retreatError} />
-                ) : retreatData?.directions?.length ? (
-                  <table className="w-full text-right text-xs">
-                    <thead>
-                      <tr>
-                        <th className="border p-2">جهت</th>
-
-                        <th className="border p-2">نوع</th>
-
-                        <th className="border p-2">نام</th>
-
-                        <th className="border p-2">طول ضلع</th>
-
-                        <th className="border p-2">طول بر</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {retreatData.directions.map((d, i) => (
-                        <tr key={i}>
-                          <td className="border p-2">{d.dir}</td>
-
-                          <td className="border p-2">{d.type}</td>
-
-                          <td className="border p-2">{d.name}</td>
-
-                          <td className="border p-2">{d.sideExist}</td>
-
-                          <td className="border p-2">{d.edgeExist}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                ) : retreatData?.directionRows?.length ? (
+                  <CompactRetreatTable
+                    columns={directionColumns}
+                    rows={retreatData.directionRows}
+                  />
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     اطلاعاتی موجود نیست

@@ -16,6 +16,7 @@ import {
   normalizeApiResponse,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { apiFetch } from "../data/api";
 import { type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 import { SelectionModal } from "./sabtdarkhast/FormCommon";
 import { HelpModal } from "./sabtdarkhast/HelpModal";
@@ -539,7 +540,7 @@ export function SabtDarkhastPage({
     try {
       const token = normalizeAuthToken(localStorage.getItem("auth-token"));
 
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/request?codeNosazi=${encodeURIComponent(cleanCode)}`,
         {
           method: "GET",
@@ -575,7 +576,7 @@ export function SabtDarkhastPage({
   const fetchNewRequestNumber = async () => {
     try {
       const token = normalizeAuthToken(localStorage.getItem("auth-token"));
-      const response = await fetch("/api/request/new", {
+      const response = await apiFetch("/api/request/new", {
         method: "GET",
         headers: getAuthHeaders(token),
       });
@@ -689,13 +690,13 @@ export function SabtDarkhastPage({
 
         const [requestTypeRes, applicantTypeRes, officeRes] = await Promise.all(
           [
-            fetch(requestTypeUrl, {
+            apiFetch(requestTypeUrl, {
               headers: getAuthHeaders(token),
             }),
-            fetch("/api/request/applicant", {
+            apiFetch("/api/request/applicant", {
               headers: getAuthHeaders(token),
             }),
-            fetch("/api/request/office", {
+            apiFetch("/api/request/office", {
               headers: getAuthHeaders(token),
             }),
           ],
@@ -755,9 +756,10 @@ export function SabtDarkhastPage({
 
         if (!token || !nationalCode) return;
 
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
           {
+            cache: "no-store",
             headers: getAuthHeaders(token),
           },
         );
@@ -1088,7 +1090,7 @@ export function SabtDarkhastPage({
 
     try {
       const token = normalizeAuthToken(localStorage.getItem("auth-token"));
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/request/Lack?shod=${encodeURIComponent(String(shod))}`,
         {
           method: "GET",
@@ -1147,7 +1149,7 @@ export function SabtDarkhastPage({
       const token = normalizeAuthToken(localStorage.getItem("auth-token"));
       if (!token) throw new Error("توکن احراز هویت یافت نشد.");
 
-      const response = await fetch("/api/request", {
+      const response = await apiFetch("/api/request", {
         method: "POST",
         headers: getAuthHeaders(token, "application/json"),
         body: JSON.stringify(payload),
@@ -1206,7 +1208,7 @@ export function SabtDarkhastPage({
         formData.append("CodeNodeTree", codeNodeTree);
         formData.append("IsDefense", String(isDefense));
 
-        const response = await fetch("/api/archive/upload", {
+        const response = await apiFetch("/api/archive/upload", {
           method: "POST",
           headers: getAuthHeaders(token),
           body: formData,

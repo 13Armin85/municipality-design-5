@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { KeyRound, RefreshCw, UserCircle2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { apiFetch } from "../../data/api";
 
 const REGISTER_ENDPOINT = "/api/auth/register";
 const DEFAULT_REGISTER_ROLE = "User";
@@ -235,7 +236,7 @@ export function LoginModal({
                   try {
                     const registerUsername = regUsername.trim();
                     const registerPassword = regPassword;
-                    const response = await fetch(REGISTER_ENDPOINT, {
+                    const response = await apiFetch(REGISTER_ENDPOINT, {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",

@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import {
   Building2,
   ChevronLeft,
+  Download,
   FileText,
   Home,
   Info,
@@ -205,37 +206,45 @@ export function GuildFeesPropertyListSection({
   );
 }
 
-function DataGrid({
-  right,
-  left,
+const mergeColumns = (right: LabelValue[], left: LabelValue[]) => {
+  const rows: LabelValue[] = [];
+  const maxLength = Math.max(right.length, left.length);
+
+  for (let index = 0; index < maxLength; index += 1) {
+    if (right[index]) rows.push(right[index]);
+    if (left[index]) rows.push(left[index]);
+  }
+
+  return rows;
+};
+
+function DataTable({
+  rows,
 }: {
-  right: LabelValue[];
-  left: LabelValue[];
+  rows: LabelValue[];
 }) {
   return (
-    <div className="grid gap-4 rounded-xl border border-border/70 bg-card/40 p-4 md:grid-cols-2 md:gap-8">
-      <ul className="space-y-2">
-        {right.map((item, index) => (
-          <li
-            key={`${item.label}-${index}`}
-            className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
-          >
-            <span className="text-muted-foreground">{item.label}</span>
-            <strong className="text-left text-foreground">{item.value}</strong>
-          </li>
-        ))}
-      </ul>
-      <ul className="space-y-2">
-        {left.map((item, index) => (
-          <li
-            key={`${item.label}-${index}`}
-            className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 text-sm"
-          >
-            <span className="text-muted-foreground">{item.label}</span>
-            <strong className="text-left text-foreground">{item.value}</strong>
-          </li>
-        ))}
-      </ul>
+    <div className="overflow-x-auto rounded-xl border border-border/70 bg-card/40">
+      <table className="min-w-[34rem] table-fixed text-right text-sm md:min-w-full">
+        <thead className="bg-[var(--primary-soft)]/70 text-foreground">
+          <tr>
+            <th className="w-[38%] px-3 py-2.5 font-semibold">عنوان</th>
+            <th className="px-3 py-2.5 font-semibold">مقدار</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/70">
+          {rows.map((item, index) => (
+            <tr key={`${item.label}-${index}`} className="hover:bg-muted/30">
+              <td className="break-words px-3 py-2.5 leading-7 text-muted-foreground">
+                {item.label}
+              </td>
+              <td className="break-words px-3 py-2.5 leading-7 font-medium text-foreground">
+                {item.value}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -244,14 +253,19 @@ export function GuildFeesCurrentFeesSection({
   title = "عوارض صنفی جاری",
   right,
   left,
+  items,
   isLoading = false,
+  onExportExcel,
 }: {
   title?: string;
   right: LabelValue[];
   left: LabelValue[];
+  items?: LabelValue[];
   isLoading?: boolean;
+  onExportExcel?: () => void;
 }) {
-  const hasData = right.length > 0 || left.length > 0;
+  const rows = items ?? mergeColumns(right, left);
+  const hasData = rows.length > 0;
 
   return (
     <motion.article
@@ -259,10 +273,20 @@ export function GuildFeesCurrentFeesSection({
       animate={{ opacity: 1, y: 0 }}
       className="soft-card mesh-panel overflow-hidden"
     >
-      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
+      <div className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3 md:px-5">
         <h2 className="text-sm font-bold text-foreground md:text-base">
           {title}
         </h2>
+        {onExportExcel && hasData && !isLoading && (
+          <button
+            type="button"
+            onClick={onExportExcel}
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-3 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:text-emerald-300"
+          >
+            <Download className="h-4 w-4" />
+            خروجی اکسل
+          </button>
+        )}
       </div>
       <div className="p-4 md:p-5">
         {isLoading ? (
@@ -270,7 +294,7 @@ export function GuildFeesCurrentFeesSection({
             در حال دریافت اطلاعات...
           </div>
         ) : hasData ? (
-          <DataGrid right={right} left={left} />
+          <DataTable rows={rows} />
         ) : (
           <div className="rounded-xl border border-border/70 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
             داده‌ای برای نمایش وجود ندارد.

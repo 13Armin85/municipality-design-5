@@ -28,6 +28,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { apiFetch } from "../data/api";
 
 interface MyPropertyPageProps {
   isDark: boolean;
@@ -188,10 +189,11 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
           return;
         }
 
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
           {
             method: "GET",
+            cache: "no-store",
             headers: {
               Accept: "application/json",
               Authorization: `Bearer ${token}`,
@@ -226,11 +228,29 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
         const mapped: PropertyItem[] = rawList.map(
           (item: any, index: number) => ({
-            id: String(item.Id ?? item.shop ?? index),
-            fullCode: item.codeN ?? "—",
-            treeItems: mapTreeItems(item.tvItems, item.codeN),
+            id: String(
+              item.shop ??
+                item.Shop ??
+                item.shopId ??
+                item.ShopId ??
+                item.Id ??
+                item.id ??
+                index,
+            ),
+            fullCode:
+              item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi ?? "—",
+            treeItems: mapTreeItems(
+              item.tvItems ?? item.TvItems ?? item.treeItems,
+              item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi,
+            ),
             description:
-              item.tvItems?.[0]?.Text?.trim() ?? item.codeN ?? "بدون توضیحات",
+              item.tvItems?.[0]?.Text?.trim() ??
+              item.TvItems?.[0]?.Text?.trim() ??
+              item.CodeN ??
+              item.codeN ??
+              item.fullCode ??
+              item.codeNosazi ??
+              "بدون توضیحات",
           }),
         );
 

@@ -28,6 +28,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import { apiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 
 interface OwnerPropertyItem {
@@ -272,7 +273,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
       const token = localStorage.getItem("auth-token");
       if (!token) throw new Error("توکن احراز هویت یافت نشد.");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/request?codeNosazi=${encodeURIComponent(codeNosazi)}`,
         {
           method: "GET",
@@ -331,7 +332,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
       const token = localStorage.getItem("auth-token");
       if (!token) throw new Error("توکن احراز هویت یافت نشد.");
 
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/request/${encodeURIComponent(requestId)}`,
         {
           method: "GET",
@@ -375,10 +376,11 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
         const nationalCode = localStorage.getItem("user-national-code");
         if (!token || !nationalCode) return;
 
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
           {
             method: "GET",
+            cache: "no-store",
             headers: {
               Accept: "application/json",
               Authorization: `Bearer ${token}`,
@@ -586,7 +588,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-6">
           {/* جدول پیگیری - متصل به activeFile */}
           <motion.article className="soft-card mesh-panel overflow-hidden">
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
@@ -597,13 +599,13 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               <HelpButton />
             </div>
             <div className="overflow-x-auto p-4">
-              <table className="w-full text-xs md:text-sm">
+              <table className="w-full min-w-[560px] border-separate border-spacing-0 text-xs md:text-sm">
                 <thead>
                   <tr className="bg-muted/40 text-muted-foreground">
-                    <th className="p-2 text-right font-medium">کد</th>
-                    <th className="p-2 text-right font-medium">عنوان</th>
-                    <th className="p-2 text-right font-medium">وضعیت</th>
-                    <th className="p-2 text-right font-medium">تاریخ</th>
+                    <th className="rounded-r-xl p-2.5 text-right font-medium">کد</th>
+                    <th className="p-2.5 text-right font-medium">عنوان</th>
+                    <th className="p-2.5 text-right font-medium">وضعیت</th>
+                    <th className="rounded-l-xl p-2.5 text-right font-medium">تاریخ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -631,10 +633,14 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                           : ""
                       }`}
                     >
-                      <td className="p-2">{row.code}</td>
-                      <td className="p-2">{row.title}</td>
+                      <td className="whitespace-nowrap p-2.5 font-medium" dir="ltr">
+                        {row.code}
+                      </td>
+                      <td className="max-w-[180px] whitespace-normal break-words p-2.5 leading-6">
+                        {row.title}
+                      </td>
                       <td
-                        className={`p-2 ${
+                        className={`p-2.5 ${
                           row.status.includes("ابطال")
                             ? "text-red-600 dark:text-red-400"
                             : "text-emerald-600 dark:text-emerald-400"
@@ -642,7 +648,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                       >
                         {row.status}
                       </td>
-                      <td className="p-2 text-left" dir="ltr">
+                      <td className="whitespace-nowrap p-2.5 text-left" dir="ltr">
                         {row.date}
                       </td>
                     </tr>
@@ -653,14 +659,14 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           </motion.article>
 
           {/* جزئیات درخواست */}
-          <motion.article className="soft-card mesh-panel overflow-hidden">
+          <motion.article className="soft-card mesh-panel min-w-0 overflow-hidden">
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <div className="flex items-center gap-2">
                 <FileSearch className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-bold">جزئیات درخواست</h2>
               </div>
             </div>
-            <div className="overflow-x-auto p-4">
+            <div className="overflow-x-auto p-3 sm:p-4">
               {requestDetailsError ? (
                 <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                   {requestDetailsError}
@@ -670,50 +676,60 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                   در حال دریافت جزئیات درخواست...
                 </div>
               ) : requestDetails.length > 0 ? (
-                <table className="w-full text-xs md:text-sm">
+                <table className="w-full min-w-[980px] border-separate border-spacing-0 text-xs">
                   <thead>
                     <tr className="bg-muted/40 text-muted-foreground">
-                      <th className="p-2 text-right font-medium">شماره</th>
-                      <th className="p-2 text-right font-medium">نوع</th>
-                      <th className="p-2 text-right font-medium">مرحله</th>
-                      <th className="p-2 text-right font-medium">گیرنده</th>
-                      <th className="p-2 text-right font-medium">وضعیت</th>
-                      <th className="p-2 text-right font-medium">تاریخ</th>
-                      <th className="p-2 text-right font-medium">توضیحات</th>
+                      <th className="w-28 rounded-r-xl p-3 text-right font-medium">شماره</th>
+                      <th className="w-40 p-3 text-right font-medium">نوع</th>
+                      <th className="w-36 p-3 text-right font-medium">مرحله</th>
+                      <th className="w-36 p-3 text-right font-medium">گیرنده</th>
+                      <th className="w-40 p-3 text-right font-medium">وضعیت</th>
+                      <th className="w-28 p-3 text-right font-medium">تاریخ</th>
+                      <th className="min-w-[260px] rounded-l-xl p-3 text-right font-medium">توضیحات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {requestDetails.map((detail) => (
                       <tr
                         key={detail.id}
-                        className="border-b border-border/40 hover:bg-muted/20"
+                        className="border-b border-border/40 align-top transition-colors hover:bg-muted/20"
                       >
-                        <td className="p-2">{detail.requestCode}</td>
-                        <td className="p-2">{detail.title}</td>
-                        <td className="p-2">{detail.stage}</td>
-                        <td className="p-2">{detail.receiver}</td>
-                        <td className="p-2">
+                        <td className="whitespace-nowrap p-3 font-medium" dir="ltr">
+                          {detail.requestCode}
+                        </td>
+                        <td className="whitespace-normal break-words p-3 leading-6">
+                          {detail.title}
+                        </td>
+                        <td className="whitespace-normal break-words p-3 leading-6">
+                          {detail.stage}
+                        </td>
+                        <td className="whitespace-normal break-words p-3 leading-6">
+                          {detail.receiver}
+                        </td>
+                        <td className="p-3">
                           <div className="space-y-1">
                             <span
-                              className={
+                              className={`inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-5 ${
                                 detail.status.includes("ابطال")
-                                  ? "text-red-600 dark:text-red-400"
-                                  : "text-emerald-600 dark:text-emerald-400"
-                              }
+                                  ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              }`}
                             >
                               {detail.status}
                             </span>
                             {detail.defectStatus !== "—" && (
-                              <div className="text-[11px] text-muted-foreground">
+                              <div className="whitespace-normal break-words text-[11px] leading-5 text-muted-foreground">
                                 {detail.defectStatus}
                               </div>
                             )}
                           </div>
                         </td>
-                        <td className="p-2 text-left" dir="ltr">
+                        <td className="whitespace-nowrap p-3 text-left" dir="ltr">
                           {detail.date}
                         </td>
-                        <td className="p-2">{detail.description}</td>
+                        <td className="whitespace-normal break-words p-3 leading-6 text-foreground/80">
+                          {detail.description}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
