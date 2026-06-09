@@ -86,6 +86,24 @@ const getInitialExpandedTreeIds = (items: PropertyTreeItem[]) => {
   return ids;
 };
 
+const findTreeItemByFullCode = (
+  items: PropertyTreeItem[],
+  fullCode: string,
+): PropertyTreeItem | null => {
+  const normalizedCode = normalizeRenewalCode(fullCode);
+
+  for (const item of items) {
+    if (normalizeRenewalCode(item.fullCode) === normalizedCode) {
+      return item;
+    }
+
+    const childMatch = findTreeItemByFullCode(item.items, fullCode);
+    if (childMatch) return childMatch;
+  }
+
+  return null;
+};
+
 export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -235,18 +253,13 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               return true;
             }
 
-            return property.treeItems.some(
-              (treeItem) =>
-                normalizeRenewalCode(treeItem.fullCode) ===
-                normalizedStoredCode,
-            );
+            return Boolean(findTreeItemByFullCode(property.treeItems, storedRenewalCode));
           });
 
           if (foundProperty) {
-            const matchingTreeItem = foundProperty.treeItems.find(
-              (treeItem) =>
-                normalizeRenewalCode(treeItem.fullCode) ===
-                normalizedStoredCode,
+            const matchingTreeItem = findTreeItemByFullCode(
+              foundProperty.treeItems,
+              storedRenewalCode,
             );
 
             if (matchingTreeItem) {

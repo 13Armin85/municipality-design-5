@@ -335,6 +335,19 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             selectedProp = mapped.find(item => 
               normalizeRenewalCode(item.fullCode) === normalizedStoredCode
             ) ?? null;
+
+            if (!selectedProp) {
+              const cleanedStoredCode = normalizeCode(storedFullCode);
+              selectedProp = {
+                id:
+                  localStorage.getItem("municipality-selected-property-id") ??
+                  cleanedStoredCode,
+                fullCode: cleanedStoredCode,
+                ownerName: "—",
+                description: storedFullCode,
+                codes: splitCode(cleanedStoredCode),
+              };
+            }
           }
           
           // If no stored property found, use the first one

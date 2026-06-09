@@ -255,6 +255,18 @@ export function PropertyInquiryPage({
             selectedProperty = mapped.find(item => 
               normalizeRenewalCode(item.fullCode) === normalizedStoredCode
             ) ?? null;
+
+            if (!selectedProperty) {
+              selectedProperty = {
+                id:
+                  localStorage.getItem("municipality-selected-property-id") ??
+                  normalizedStoredCode,
+                fullCode: storedFullCode,
+                ownerName: "—",
+                description: storedFullCode,
+                codes: splitCode(storedFullCode),
+              };
+            }
           }
           
           // If no stored property found, use the first one

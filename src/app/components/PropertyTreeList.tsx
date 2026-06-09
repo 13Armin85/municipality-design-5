@@ -12,6 +12,10 @@ import {
   isApiSuccess,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import {
+  fetchJsonWithCache,
+  propertyFileCacheKey,
+} from "../utils/requestCache";
 
 export interface PropertyTreeItem {
   id: string;
@@ -58,6 +62,32 @@ const getInitialExpandedTreeIds = (items: PropertyTreeItem[]) => {
 
   items.forEach(collectExpandedParents);
   return ids;
+};
+
+const fetchPropertyFile = async (
+  nationalCode: string,
+  token: string,
+): Promise<ApiResponse> => {
+  const response = await fetch(
+    `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (response.status === 404) {
+    return { IsSuccess: true, IsFailure: false, Value: [] };
+  }
+
+  if (!response.ok) {
+    throw new Error("خطا در دریافت اطلاعات املاک.");
+  }
+
+  return response.json();
 };
 
 interface PropertyTreeListProps {
@@ -142,7 +172,11 @@ export function PropertyTreeList({
           return;
         }
 
-        const response = await fetch(
+        const data = await fetchJsonWithCache<ApiResponse>(
+          propertyFileCacheKey(nationalCode),
+          () => fetchPropertyFile(nationalCode, token),
+          /*
+            const response = await fetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
           {
             method: "GET",
@@ -165,7 +199,10 @@ export function PropertyTreeList({
           return;
         }
 
-        const data: ApiResponse = await response.json();
+            return response.json();
+          },
+          */
+        );
 
         if (!isApiSuccess(data)) {
           setError(getApiErrorMessage(data));

@@ -376,6 +376,20 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
             selectedProperty = mapped.find(item => 
               normalizeCode(item.fullCode) === normalizedStoredCode
             ) ?? null;
+
+            if (!selectedProperty) {
+              const cleanedStoredCode = normalizeCode(storedFullCode);
+              selectedProperty = {
+                id:
+                  localStorage.getItem("municipality-selected-property-id") ??
+                  cleanedStoredCode,
+                fullCode: cleanedStoredCode,
+                ownerName: "—",
+                description: storedFullCode,
+                type: "ملک",
+                codes: splitCode(cleanedStoredCode),
+              };
+            }
           }
           
           // If no stored property found, use the first one

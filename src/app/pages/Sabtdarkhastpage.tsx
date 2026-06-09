@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   areRenewalCodesEqual,
+  getSelectedPropertyFullCode,
   type MockProperty,
   type RenewalCodes,
+  normalizeRenewalCode,
   renewalCodeKeys,
 } from "../data/properties";
 import {
@@ -194,6 +196,19 @@ const mapApiResponseToRegisteredRequests = (
 
 const buildCodeFromValues = (values: RenewalCodes) =>
   renewalCodeKeys.map((key) => values[key].trim()).join("-");
+
+const buildValuesFromCode = (code: string): RenewalCodes => {
+  const parts = code.split("-").map((part) => part.trim());
+  return {
+    region: parts[0] ?? "",
+    neighborhood: parts[1] ?? "",
+    block: parts[2] ?? "",
+    property: parts[3] ?? "",
+    building: parts[4] ?? "",
+    apartment: parts[5] ?? "",
+    guild: parts[6] ?? "",
+  };
+};
 
 const getTextValue = (value: unknown): string => {
   if (value === null || value === undefined) return "";
@@ -668,10 +683,25 @@ export function SabtDarkhastPage({
         );
 
         if (mapped.length > 0) {
+          const storedFullCode = getSelectedPropertyFullCode();
+          const matchedStoredProperty = storedFullCode
+            ? mapped.find(
+                (property) =>
+                  normalizeRenewalCode(property.fullCode) ===
+                  normalizeRenewalCode(storedFullCode),
+              )
+            : null;
+          const propertyToSelect = matchedStoredProperty ?? mapped[0];
+          const codeToSelect = storedFullCode || propertyToSelect.fullCode;
+
           setPropertyItems(mapped);
-          setSearchValues(mapped[0].codes);
-          applyPropertyToPage(mapped[0]);
-          void fetchRegisteredRequests(mapped[0].fullCode);
+          setSearchValues(
+            matchedStoredProperty
+              ? propertyToSelect.codes
+              : buildValuesFromCode(codeToSelect),
+          );
+          applyPropertyToPage(propertyToSelect);
+          void fetchRegisteredRequests(codeToSelect);
         }
       } catch (error) {
         console.error("Error fetching properties:", error);
