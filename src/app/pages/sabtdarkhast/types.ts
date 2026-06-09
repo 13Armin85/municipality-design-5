@@ -1,4 +1,4 @@
-import type { MockProperty, RenewalCodes } from "../../data/properties";
+import type { PropertyRecord, RenewalCodes } from "../../data/properties";
 
 export interface SabtDarkhastPageProps {
   isDark: boolean;
@@ -63,5 +63,5 @@ export type FormErrors = Record<string, string>;
 
 export interface SearchSectionState {
   searchValues: RenewalCodes;
-  activeProperty: MockProperty | null;
+  activeProperty: PropertyRecord | null;
 }

@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { ClipboardList, Home, Minus, Plus } from "lucide-react";
-import { MockProperty } from "../../data/properties";
+import type { PropertyRecord } from "../../data/properties";
 import type { RegisteredRequestRow } from "../Sabtdarkhastpage";
 
 export function SabtdarkhastFormSecondary({
@@ -9,7 +9,7 @@ export function SabtdarkhastFormSecondary({
   loading,
   error,
 }: {
-  activeProperty: MockProperty | null;
+  activeProperty: PropertyRecord | null;
   requests: RegisteredRequestRow[];
   loading: boolean;
   error: string;

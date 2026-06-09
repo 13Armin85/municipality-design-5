@@ -1,9 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  findPropertyById,
-  getStoredPropertyId,
-  persistSelectedProperty,
-} from "../data/properties";
+import { useEffect, useState } from "react";
+import { getStoredPropertyId, persistSelectedProperty } from "../data/properties";
 
 export function useSelectedProperty() {
   const [selectedPropertyId, setSelectedPropertyId] = useState(getStoredPropertyId);
@@ -28,15 +24,10 @@ export function useSelectedProperty() {
     };
   }, []);
 
-  const selectedProperty = useMemo(
-    () => findPropertyById(selectedPropertyId),
-    [selectedPropertyId],
-  );
-
   const selectProperty = (propertyId: string) => {
     persistSelectedProperty(propertyId);
     setSelectedPropertyId(propertyId);
   };
 
-  return { selectedProperty, selectedPropertyId, selectProperty };
+  return { selectedProperty: null, selectedPropertyId, selectProperty };
 }

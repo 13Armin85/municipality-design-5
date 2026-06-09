@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   areRenewalCodesEqual,
   getSelectedPropertyFullCode,
-  type MockProperty,
+  type PropertyRecord,
   type RenewalCodes,
   normalizeRenewalCode,
   renewalCodeKeys,
@@ -221,7 +221,7 @@ const agreementTypeLabels: Record<string, string> = {
 const getAgreementTypeLabel = (value: string) =>
   agreementTypeLabels[value] ?? value;
 
-const emptyProperty: MockProperty = {
+const emptyProperty: PropertyRecord = {
   id: "",
   rowNumber: "",
   fullCode: "",
@@ -436,7 +436,7 @@ export function SabtDarkhastPage({
   isDark,
   toggleTheme,
 }: SabtDarkhastPageProps) {
-  const [propertyItems, setPropertyItems] = useState<MockProperty[]>([]);
+  const [propertyItems, setPropertyItems] = useState<PropertyRecord[]>([]);
   const selectedProperty = propertyItems[0] ?? emptyProperty;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -487,7 +487,7 @@ export function SabtDarkhastPage({
     selectedProperty.codes,
   );
 
-  const [activeProperty, setActiveProperty] = useState<MockProperty | null>(
+  const [activeProperty, setActiveProperty] = useState<PropertyRecord | null>(
     selectedProperty,
   );
 
@@ -609,7 +609,7 @@ export function SabtDarkhastPage({
     }
   };
 
-  const applyPropertyToPage = (property: MockProperty) => {
+  const applyPropertyToPage = (property: PropertyRecord) => {
     setActiveProperty(property);
 
     setOwnerForm({
@@ -774,7 +774,7 @@ export function SabtDarkhastPage({
 
         const base = emptyProperty;
 
-        const mapped: MockProperty[] = rawList.map(
+        const mapped: PropertyRecord[] = rawList.map(
           (item: any, index: number) => {
             const fileShop = getFileShopValue(item);
             const fullCode = firstText(

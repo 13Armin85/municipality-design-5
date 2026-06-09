@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import {
   guildCodeFields,
-  type MockProperty,
+  type PropertyRecord,
   type RenewalCodeKey,
   type RenewalCodes,
 } from "../../data/properties";
@@ -396,7 +396,7 @@ export function GuildFeesEmptyState({ message }: { message?: string }) {
 export function GuildFeesMapSection({
   activeData,
 }: {
-  activeData: MockProperty | GuildPropertyItem | null;
+  activeData: PropertyRecord | GuildPropertyItem | null;
 }) {
   return (
     <motion.article className="soft-card mesh-panel overflow-hidden">
