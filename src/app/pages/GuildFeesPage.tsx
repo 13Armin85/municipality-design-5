@@ -462,6 +462,69 @@ const exportPairsToExcel = (rows: LabelValue[], title: string) => {
   URL.revokeObjectURL(url);
 };
 
+const exportPairsToPdf = (rows: LabelValue[], title: string) => {
+  if (rows.length === 0 || typeof window === "undefined") return;
+
+  const tableRows = rows
+    .map(
+      (row) =>
+        `<tr><td>${escapeExcelCell(row.label)}</td><td>${escapeExcelCell(
+          row.value,
+        )}</td></tr>`,
+    )
+    .join("");
+  const html = `
+    <!doctype html>
+    <html dir="rtl" lang="fa">
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeExcelCell(title)}</title>
+        <style>
+          @page { size: A4; margin: 16mm; }
+          body {
+            font-family: Tahoma, Arial, sans-serif;
+            color: #111827;
+            direction: rtl;
+          }
+          h1 {
+            margin: 0 0 18px;
+            font-size: 18px;
+            text-align: center;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+          }
+          th, td {
+            border: 1px solid #d1d5db;
+            padding: 8px 10px;
+            text-align: right;
+            vertical-align: top;
+          }
+          th {
+            background: #f3f4f6;
+            font-weight: 700;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>${escapeExcelCell(title)}</h1>
+        <table>
+          <thead><tr><th>عنوان</th><th>مقدار</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+  const printWindow = window.open("", "_blank", "width=900,height=700");
+  if (!printWindow) return;
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  window.setTimeout(() => printWindow.print(), 250);
+};
+
 const getAuthToken = () => {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("auth-token");
@@ -843,6 +906,9 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                   isLoading={isGuildLoading}
                   onExportExcel={() =>
                     exportPairsToExcel(receiptPairs, "فیش اصناف")
+                  }
+                  onExportPdf={() =>
+                    exportPairsToPdf(receiptPairs, "فیش اصناف")
                   }
                 />
                 <GuildFeesCurrentFeesSection

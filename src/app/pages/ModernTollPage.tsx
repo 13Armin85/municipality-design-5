@@ -11,6 +11,7 @@ import {
   Sun,
   Trash2,
   X,
+  Download,
   Layers,
   FileText,
   Users,
@@ -181,6 +182,124 @@ const toModernTollPairs = (value: any): LabelValue[] => {
     label: modernTollLabels[key] ?? key,
     value: formatDisplayValue(source[key], key),
   }));
+};
+
+const mergePairs = (right: LabelValue[], left: LabelValue[]) => {
+  const rows: LabelValue[] = [];
+  const maxLength = Math.max(right.length, left.length);
+
+  for (let index = 0; index < maxLength; index += 1) {
+    if (right[index]) rows.push(right[index]);
+    if (left[index]) rows.push(left[index]);
+  }
+
+  return rows;
+};
+
+const escapeExportCell = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const exportPairsToExcel = (rows: LabelValue[], title: string) => {
+  if (rows.length === 0 || typeof window === "undefined") return;
+
+  const tableRows = rows
+    .map(
+      (row) =>
+        `<tr><td>${escapeExportCell(row.label)}</td><td>${escapeExportCell(
+          row.value,
+        )}</td></tr>`,
+    )
+    .join("");
+  const html = `
+    <html dir="rtl">
+      <head><meta charset="utf-8" /></head>
+      <body>
+        <table border="1">
+          <caption>${escapeExportCell(title)}</caption>
+          <thead><tr><th>عنوان</th><th>مقدار</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+  const blob = new Blob([`\uFEFF${html}`], {
+    type: "application/vnd.ms-excel;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${title.replace(/\s+/g, "-")}.xls`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+const exportPairsToPdf = (rows: LabelValue[], title: string) => {
+  if (rows.length === 0 || typeof window === "undefined") return;
+
+  const tableRows = rows
+    .map(
+      (row) =>
+        `<tr><td>${escapeExportCell(row.label)}</td><td>${escapeExportCell(
+          row.value,
+        )}</td></tr>`,
+    )
+    .join("");
+  const html = `
+    <!doctype html>
+    <html dir="rtl" lang="fa">
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeExportCell(title)}</title>
+        <style>
+          @page { size: A4; margin: 16mm; }
+          body {
+            font-family: Tahoma, Arial, sans-serif;
+            color: #111827;
+            direction: rtl;
+          }
+          h1 {
+            margin: 0 0 18px;
+            font-size: 18px;
+            text-align: center;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+          }
+          th, td {
+            border: 1px solid #d1d5db;
+            padding: 8px 10px;
+            text-align: right;
+            vertical-align: top;
+          }
+          th {
+            background: #f3f4f6;
+            font-weight: 700;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>${escapeExportCell(title)}</h1>
+        <table>
+          <thead><tr><th>عنوان</th><th>مقدار</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+  const printWindow = window.open("", "_blank", "width=900,height=700");
+  if (!printWindow) return;
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  window.setTimeout(() => printWindow.print(), 250);
 };
 
 const getOwnerId = (owner: any) => {
@@ -515,6 +634,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
     </button>
   );
 
+  const currentFeeRows = mergePairs(feesRight, feesLeft);
+  const hasCurrentFees = currentFeeRows.length > 0;
+
   return (
     <div
       dir="rtl"
@@ -751,6 +873,30 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   عوارض نوسازی جاری
                 </h2>
               </div>
+              {hasCurrentFees && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      exportPairsToExcel(currentFeeRows, "عوارض نوسازی جاری")
+                    }
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-3 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:text-emerald-300"
+                  >
+                    <Download className="h-4 w-4" />
+                    خروجی اکسل
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      exportPairsToPdf(currentFeeRows, "عوارض نوسازی جاری")
+                    }
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-sky-500/35 bg-sky-500/10 px-3 text-xs font-bold text-sky-700 transition-colors hover:bg-sky-500/15 dark:text-sky-300"
+                  >
+                    <FileText className="h-4 w-4" />
+                    خروجی پی دی اف
+                  </button>
+                </div>
+              )}
             </div>
             <div className="p-4">
               <div className="grid grid-cols-1 gap-x-8 gap-y-0 md:grid-cols-2">
@@ -791,13 +937,6 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   ))}
                 </div>
               </div>
-              {selectedProperty && (
-                <div className="mt-5 flex justify-start">
-                  <button className="flex items-center gap-2 rounded-xl bg-destructive px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-destructive/20 transition-all hover:bg-destructive/90 active:scale-95">
-                    <FileText className="h-4 w-4" /> دریافت فیش
-                  </button>
-                </div>
-              )}
             </div>
           </motion.article>
 

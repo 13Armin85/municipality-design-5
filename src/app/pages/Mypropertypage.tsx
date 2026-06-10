@@ -584,11 +584,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                     transition={{ delay: i * 0.05 }}
                     className="rounded-2xl border border-border/60 bg-background/40 p-3"
                   >
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-3">
-                      <span className="text-xs font-bold text-foreground md:text-sm">
-                        {property.fullCode}
-                      </span>
-                    </div>
                     <div className="space-y-2">
                       {property.treeItems.length > 0
                         ? renderTreeItems(property, property.treeItems)

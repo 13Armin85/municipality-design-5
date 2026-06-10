@@ -256,6 +256,7 @@ export function GuildFeesCurrentFeesSection({
   items,
   isLoading = false,
   onExportExcel,
+  onExportPdf,
 }: {
   title?: string;
   right: LabelValue[];
@@ -263,6 +264,7 @@ export function GuildFeesCurrentFeesSection({
   items?: LabelValue[];
   isLoading?: boolean;
   onExportExcel?: () => void;
+  onExportPdf?: () => void;
 }) {
   const rows = items ?? mergeColumns(right, left);
   const hasData = rows.length > 0;
@@ -277,15 +279,29 @@ export function GuildFeesCurrentFeesSection({
         <h2 className="text-sm font-bold text-foreground md:text-base">
           {title}
         </h2>
-        {onExportExcel && hasData && !isLoading && (
-          <button
-            type="button"
-            onClick={onExportExcel}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-3 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:text-emerald-300"
-          >
-            <Download className="h-4 w-4" />
-            خروجی اکسل
-          </button>
+        {hasData && !isLoading && (onExportExcel || onExportPdf) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {onExportExcel && (
+              <button
+                type="button"
+                onClick={onExportExcel}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-emerald-500/35 bg-emerald-500/10 px-3 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:text-emerald-300"
+              >
+                <Download className="h-4 w-4" />
+                خروجی اکسل
+              </button>
+            )}
+            {onExportPdf && (
+              <button
+                type="button"
+                onClick={onExportPdf}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-sky-500/35 bg-sky-500/10 px-3 text-xs font-bold text-sky-700 transition-colors hover:bg-sky-500/15 dark:text-sky-300"
+              >
+                <FileText className="h-4 w-4" />
+                خروجی پی دی اف
+              </button>
+            )}
+          </div>
         )}
       </div>
       <div className="p-4 md:p-5">

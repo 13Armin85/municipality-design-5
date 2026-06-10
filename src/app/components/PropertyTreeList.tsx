@@ -93,7 +93,10 @@ const fetchPropertyFile = async (
 };
 
 interface PropertyTreeListProps {
-  onPropertySelect?: (property: PropertyItem, treeItem: PropertyTreeItem) => void;
+  onPropertySelect?: (
+    property: PropertyItem,
+    treeItem: PropertyTreeItem,
+  ) => void;
   selectedPropertyFullCode?: string | null;
   showMap?: boolean;
   compact?: boolean;
@@ -108,9 +111,9 @@ export function PropertyTreeList({
   const [propertyItems, setPropertyItems] = useState<PropertyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedTreeItemCode, setSelectedTreeItemCode] = useState<string | null>(
-    () => selectedPropertyFullCode ?? getSelectedPropertyFullCode(),
-  );
+  const [selectedTreeItemCode, setSelectedTreeItemCode] = useState<
+    string | null
+  >(() => selectedPropertyFullCode ?? getSelectedPropertyFullCode());
   const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -229,7 +232,11 @@ export function PropertyTreeList({
                 index,
             ),
             fullCode:
-              item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi ?? "—",
+              item.codeN ??
+              item.CodeN ??
+              item.fullCode ??
+              item.codeNosazi ??
+              "—",
             treeItems: mapTreeItems(
               item.tvItems ?? item.TvItems ?? item.treeItems,
               item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi,
@@ -397,11 +404,6 @@ export function PropertyTreeList({
           key={property.id}
           className="rounded-xl border border-border/60 bg-background/40 p-2"
         >
-          <div className="mb-2 flex items-center justify-between border-b border-border/50 pb-2">
-            <span className="text-xs font-bold text-foreground">
-              {property.fullCode}
-            </span>
-          </div>
           <div className="space-y-1.5">
             {property.treeItems.length > 0
               ? renderTreeItems(property, property.treeItems)
