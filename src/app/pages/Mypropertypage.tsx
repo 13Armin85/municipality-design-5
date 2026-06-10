@@ -59,7 +59,10 @@ const decodeToken = (token: string) => {
 
 const getTreeNodeCode = (text = "") => text.split(" - ")[0]?.trim() ?? "";
 
-const mapTreeItems = (items: any[] | undefined, fallbackCode = ""): PropertyTreeItem[] =>
+const mapTreeItems = (
+  items: any[] | undefined,
+  fallbackCode = "",
+): PropertyTreeItem[] =>
   (Array.isArray(items) ? items : []).map((item, index) => {
     const text = String(item.Text ?? item.text ?? "").trim();
     const fullCode = getTreeNodeCode(text) || fallbackCode;
@@ -109,11 +112,15 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("municipality-selected-property-id");
-  });
-  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
+    () => {
+      if (typeof window === "undefined") return null;
+      return localStorage.getItem("municipality-selected-property-id");
+    },
+  );
+  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(
+    null,
+  );
   const [expandedTreeIds, setExpandedTreeIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -238,7 +245,11 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                 index,
             ),
             fullCode:
-              item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi ?? "—",
+              item.codeN ??
+              item.CodeN ??
+              item.fullCode ??
+              item.codeNosazi ??
+              "—",
             treeItems: mapTreeItems(
               item.tvItems ?? item.TvItems ?? item.treeItems,
               item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi,
@@ -273,7 +284,9 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               return true;
             }
 
-            return Boolean(findTreeItemByFullCode(property.treeItems, storedRenewalCode));
+            return Boolean(
+              findTreeItemByFullCode(property.treeItems, storedRenewalCode),
+            );
           });
 
           if (foundProperty) {
@@ -367,7 +380,10 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               }`}
             >
               {isSelected ? (
-                <>&#1575;&#1606;&#1578;&#1582;&#1575;&#1576; &#1588;&#1583;&#1607;</>
+                <>
+                  &#1575;&#1606;&#1578;&#1582;&#1575;&#1576;
+                  &#1588;&#1583;&#1607;
+                </>
               ) : (
                 <>&#1575;&#1606;&#1578;&#1582;&#1575;&#1576;</>
               )}
@@ -535,7 +551,10 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold mb-1">انتخاب ملک الزامی است</p>
-                    <p>برای انجام عملیات، ابتدا یک ملک از لیست املاک خود انتخاب کنید.</p>
+                    <p>
+                      برای انجام عملیات، ابتدا یک ملک از لیست املاک خود انتخاب
+                      کنید.
+                    </p>
                   </div>
                   <button
                     onClick={() => setShowNoPropertyError(false)}
@@ -568,9 +587,6 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-3">
                       <span className="text-xs font-bold text-foreground md:text-sm">
                         {property.fullCode}
-                      </span>
-                      <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                        {property.treeItems.length} &#1585;&#1740;&#1588;&#1607;
                       </span>
                     </div>
                     <div className="space-y-2">
