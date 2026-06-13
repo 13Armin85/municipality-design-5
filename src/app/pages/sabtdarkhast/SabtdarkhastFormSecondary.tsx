@@ -1,18 +1,21 @@
 import { motion } from "motion/react";
-import { ClipboardList, Home, Minus, Plus } from "lucide-react";
+import { ClipboardList, Home, Info, Minus, Plus } from "lucide-react";
 import type { PropertyRecord } from "../../data/properties";
 import type { RegisteredRequestRow } from "../Sabtdarkhastpage";
+import { HelpButton } from "./FormControls";
 
 export function SabtdarkhastFormSecondary({
   activeProperty,
   requests,
   loading,
   error,
+  onOpenHelp,
 }: {
   activeProperty: PropertyRecord | null;
   requests: RegisteredRequestRow[];
   loading: boolean;
   error: string;
+  onOpenHelp?: (title: string, description: string) => void;
 }) {
   return (
     <>
@@ -27,6 +30,13 @@ export function SabtdarkhastFormSecondary({
             <ClipboardList className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold">درخواست های ثبت شده</h2>
           </div>
+          {onOpenHelp && (
+            <HelpButton
+              title="درخواست های ثبت شده"
+              desc="در این بخش درخواست‌هایی که برای پرونده انتخاب‌شده ثبت شده‌اند نمایش داده می‌شود. شماره، عنوان، تاریخ و وضعیت هر درخواست را بررسی کنید و در صورت خالی بودن لیست، ابتدا پرونده را انتخاب یا جستجو کنید."
+              onOpenHelp={onOpenHelp}
+            />
+          )}
         </div>
         <div className="p-3 sm:p-4">
           {loading ? (
@@ -65,7 +75,21 @@ export function SabtdarkhastFormSecondary({
         viewport={{ once: true }}
         className="soft-card mesh-panel group relative h-64 overflow-hidden sm:h-80 md:h-[400px]"
       >
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+        {onOpenHelp && (
+          <button
+            type="button"
+            onClick={() =>
+              onOpenHelp(
+                "نقشه ملک",
+                "این قسمت موقعیت نمایشی ملک انتخاب‌شده را نشان می‌دهد. پس از انتخاب پرونده، اطلاعات اصلی ملک روی نقشه نمایش داده می‌شود و دکمه‌های بزرگنمایی و بازگشت برای کنترل نما قرار دارند.",
+              )
+            }
+            className="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-lg border bor                                                                                                                                                                                                                                                                                                         der-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
+          >
+            <Info className="h-3.5 w-3.5" /> راهنما
+          </button>
+        )}
+=        <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
           <img
             src="/map-placeholder.jpg"
             alt="Map"

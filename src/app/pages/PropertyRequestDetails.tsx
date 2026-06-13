@@ -67,6 +67,11 @@ interface Props {
 
 export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    title: "راهنما",
+    description:
+      "برای جستجوی کد نوسازی، مقادیر را وارد کرده و دکمه جستجو را بزنید. با کلیک روی هر پرونده در لیست، اطلاعات آن نمایش داده می‌شود و جدول‌ها به‌روزرسانی می‌شوند.",
+  });
 
   // فایلی که در لیست انتخاب شده اما هنوز جستجو نشده است
   const emptySearchValues: RenewalCodes = {
@@ -460,12 +465,18 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
     void fetchRequestDetails(request.id);
   };
 
+  const handleOpenHelp = (title: string, description: string) => {
+    setModalContent({ title, description });
+    setIsModalOpen(true);
+  };
+
   // آپدیت لیست درخواست‌ها بر اساس فایل فعال
   const filledRequestRows = useMemo(() => requests, [requests]);
 
-  const HelpButton = () => (
+  const HelpButton = ({ title, desc }: { title: string; desc: string }) => (
     <button
-      onClick={() => setIsModalOpen(true)}
+      type="button"
+      onClick={() => handleOpenHelp(title, desc)}
       className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 md:text-xs"
     >
       <Info className="h-3.5 w-3.5" /> راهنما
@@ -509,7 +520,12 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                   )}
                 </button>
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() =>
+                    handleOpenHelp(
+                      "راهنمای پیگیری درخواست ها",
+                      "برای پیگیری درخواست‌ها ابتدا یک پرونده را انتخاب کنید یا کد نوسازی را وارد کرده و جستجو را بزنید. سپس از جدول پیگیری، درخواست موردنظر را انتخاب کنید تا جزئیات آن نمایش داده شود.",
+                    )
+                  }
                   className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 md:py-2 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95"
                 >
                   <Info className="h-3.5 w-3.5" />
@@ -524,11 +540,14 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
       <main className="container mx-auto space-y-6 px-2 pt-10 md:px-4 md:pt-10 lg:px-6">
         <motion.article className="soft-card mesh-panel overflow-hidden">
           <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">جستجو</h2>
-            </div>
-            <HelpButton />
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-bold">جستجو</h2>
+              </div>
+            <HelpButton
+              title="جستجو"
+              desc="کد نوسازی را کامل وارد کنید و دکمه جستجو را بزنید تا درخواست‌های همان پرونده دریافت شود. اگر از لیست پرونده‌ها موردی را انتخاب کنید، کد آن به‌صورت خودکار در فرم قرار می‌گیرد."
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-8">
@@ -561,11 +580,14 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
 
         <motion.article className="soft-card mesh-panel overflow-hidden">
           <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">پرونده های زیرمجموعه</h2>
-            </div>
-            <HelpButton />
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-bold">پرونده های زیرمجموعه</h2>
+              </div>
+            <HelpButton
+              title="پرونده های زیرمجموعه"
+              desc="پرونده‌های مرتبط با حساب شما در این بخش نمایش داده می‌شود. با انتخاب هر پرونده، کد نوسازی همان پرونده برای جستجو آماده می‌شود و اطلاعات درخواست‌های آن قابل دریافت است."
+            />
           </div>
           <div className="p-4">
             {loadingProperties ? (
@@ -596,7 +618,10 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                 <ClipboardList className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-bold">پیگیری درخواست ها</h2>
               </div>
-              <HelpButton />
+              <HelpButton
+                title="جدول پیگیری درخواست ها"
+                desc="این جدول درخواست‌های ثبت‌شده پرونده فعال را نمایش می‌دهد. روی هر ردیف کلیک کنید تا جزئیات همان درخواست در جدول بعدی نمایش داده شود؛ ستون وضعیت نشان می‌دهد درخواست در چه حالتی قرار دارد."
+              />
             </div>
             <div className="overflow-x-auto p-4">
               <table className="w-full min-w-[560px] border-separate border-spacing-0 text-xs md:text-sm">
@@ -665,6 +690,10 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                 <FileSearch className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-bold">جزئیات درخواست</h2>
               </div>
+              <HelpButton
+                title="جدول جزئیات درخواست"
+                desc="بعد از انتخاب یک درخواست از جدول پیگیری، مراحل گردش کار، گیرنده، وضعیت، تاریخ و توضیحات آن در این جدول نمایش داده می‌شود. برای دیدن همه ستون‌ها در صفحه‌های کوچک از اسکرول افقی استفاده کنید."
+              />
             </div>
             <div className="overflow-x-auto p-3 sm:p-4">
               {requestDetailsError ? (
@@ -745,6 +774,18 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
 
         {/* بخش نقشه */}
         <motion.article className="soft-card mesh-panel relative h-[360px] overflow-hidden">
+          <button
+            type="button"
+            onClick={() =>
+              handleOpenHelp(
+                "نقشه پرونده",
+                "این نقشه موقعیت نمایشی پرونده انتخاب‌شده را نشان می‌دهد. با دکمه‌های + و - می‌توانید نما را کنترل کنید و پس از انتخاب پرونده، همین بخش برای بررسی موقعیت استفاده می‌شود.",
+              )
+            }
+            className="absolute right-4 top-4 z-20 inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
+          >
+            <Info className="h-3.5 w-3.5" /> راهنما
+          </button>
           <div className="absolute inset-0 bg-slate-800/10">
             <img
               src="/map-placeholder.jpg"
@@ -786,20 +827,17 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
               >
                 <X className="h-5 w-5" />
               </button>
-              <h2 className="text-lg font-bold mb-4">راهنما</h2>
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <p>
-                  • برای جستجوی کد نوسازی، مقادیر را وارد کرده و دکمه جستجو را
-                  بزنید.
-                </p>
-                <p>
-                  • با کلیک روی هر پرونده در لیست، اطلاعات آن نمایش داده می‌شود.
-                </p>
-                <p>
-                  • جدول پیگیری درخواست‌ها و جزئیات به‌صورت خودکار بروزرسانی
-                  می‌شوند.
-                </p>
-                <p>• برای بزرگنمایی نقشه از دکمه‌های + و - استفاده کنید.</p>
+              <h2 className="mb-4 text-lg font-bold">{modalContent.title}</h2>
+              <div className="text-sm leading-7 text-muted-foreground">
+                {modalContent.description}
+              </div>
+              <div className="mt-5 text-left">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-xl bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground shadow-lg transition-transform active:scale-95"
+                >
+                  فهمیدم
+                </button>
               </div>
             </motion.div>
           </motion.div>

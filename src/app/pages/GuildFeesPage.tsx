@@ -904,6 +904,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                   left={receiptColumns.left}
                   items={receiptPairs}
                   isLoading={isGuildLoading}
+                  onHelp={handleOpenHelp}
                   onExportExcel={() =>
                     exportPairsToExcel(receiptPairs, "فیش اصناف")
                   }
@@ -917,13 +918,14 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
                   left={taxColumns.left}
                   items={taxPairs}
                   isLoading={isGuildLoading}
+                  onHelp={handleOpenHelp}
                 />
               </>
             ) : (
-              <GuildFeesEmptyState />
+              <GuildFeesEmptyState onHelp={handleOpenHelp} />
             )}
 
-            <GuildFeesMapSection activeData={selectedCase} />
+            <GuildFeesMapSection activeData={selectedCase} onHelp={handleOpenHelp} />
           </div>
         </div>
       </section>

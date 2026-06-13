@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, Calendar, Clock, Moon, Sun } from "lucide-react";
 import { Link, useParams } from "react-router";
-import { newsItems } from "../data/news";
+import { getAllNewsItems, isNewsPublished } from "../data/news";
 
 interface NewsDetailPageProps {
   isDark: boolean;
@@ -10,7 +10,9 @@ interface NewsDetailPageProps {
 
 export function NewsDetailPage({ isDark, toggleTheme }: NewsDetailPageProps) {
   const { slug } = useParams();
-  const news = newsItems.find((item) => item.slug === slug);
+  const news = getAllNewsItems().find(
+    (item) => item.slug === slug && isNewsPublished(item),
+  );
 
   return (
     <>
@@ -78,6 +80,16 @@ export function NewsDetailPage({ isDark, toggleTheme }: NewsDetailPageProps) {
                   {news.category}
                 </span>
               </div>
+
+              {news.imageUrl && (
+                <div className="mb-6 overflow-hidden rounded-2xl border border-border/70">
+                  <img
+                    src={news.imageUrl}
+                    alt={news.title}
+                    className="h-64 w-full object-cover md:h-80"
+                  />
+                </div>
+              )}
 
               <h2 className="text-xl font-black leading-9 text-foreground md:text-3xl md:leading-[1.9]">
                 {news.title}

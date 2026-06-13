@@ -18,6 +18,7 @@ interface HelpButtonProps {
 export function HelpButton({ title, desc, onOpenHelp }: HelpButtonProps) {
   return (
     <button
+      type="button"
       onClick={() => onOpenHelp(title, desc)}
       className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 md:text-xs"
     >

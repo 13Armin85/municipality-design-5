@@ -28,6 +28,7 @@ import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
 import { useAuthModal } from "./AuthContext";
 import { apiFetch } from "../data/api";
+import { serviceItems } from "../data/services";
 
 import { type ForgotStep } from "../pages/header/Forgotpasswordmodal";
 
@@ -67,14 +68,30 @@ interface HeaderProps {
   toggleTheme: () => void;
 }
 
+export interface HeaderMenuItem {
+  title: string;
+  href: string;
+  children?: Array<{
+    title: string;
+    href: string;
+  }>;
+}
+
 const menuItems = [
   { title: "صفحه اصلی", href: "#home" },
-  { title: "خدمات", href: "#services" },
+  {
+    title: "خدمات",
+    href: "#services",
+    children: serviceItems.map((item) => ({
+      title: item.title,
+      href: item.href,
+    })),
+  },
   { title: "فعالیت‌ها", href: "#activities" },
   { title: "اخبار", href: "#news" },
   { title: "سوالات متداول", href: "#faq" },
   { title: "پشتیبانی", href: "#support" },
-];
+] satisfies HeaderMenuItem[];
 
 const notifications = [
   {
@@ -105,6 +122,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
+  const [isHeaderCompact, setIsHeaderCompact] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
@@ -456,6 +474,15 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   }, []);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1280px)");
+    const syncHeaderMode = () => setIsHeaderCompact(mediaQuery.matches);
+
+    syncHeaderMode();
+    mediaQuery.addEventListener("change", syncHeaderMode);
+    return () => mediaQuery.removeEventListener("change", syncHeaderMode);
+  }, []);
+
+  useEffect(() => {
     const syncActiveMenuItem = () => {
       const currentHash = window.location.hash;
       if (menuItems.some((item) => item.href === currentHash)) {
@@ -468,14 +495,35 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   }, []);
 
   useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const mediaQuery = window.matchMedia("(min-width: 1281px)");
+    const closeMenuOnDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setIsMenuOpen(false);
+    };
+
+    if (mediaQuery.matches) {
+      setIsMenuOpen(false);
+      return;
+    }
+
+    mediaQuery.addEventListener("change", closeMenuOnDesktop);
+    return () => mediaQuery.removeEventListener("change", closeMenuOnDesktop);
+  }, [isMenuOpen]);
+
+  useEffect(() => {
     document.body.style.overflow =
-      isAllNotificationsOpen || isLoginOpen || isForgotOpen || isSahkarOpen
+      isMenuOpen ||
+      isAllNotificationsOpen ||
+      isLoginOpen ||
+      isForgotOpen ||
+      isSahkarOpen
         ? "hidden"
         : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isAllNotificationsOpen, isLoginOpen, isForgotOpen, isSahkarOpen]);
+  }, [isMenuOpen, isAllNotificationsOpen, isLoginOpen, isForgotOpen, isSahkarOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -586,7 +634,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                       setIsAllNotificationsOpen(false);
                       setIsNotificationsOpen((prev) => !prev);
                     }}
-                    className="header-action-btn relative hidden sm:flex"
+                    className="header-action-btn relative hidden min-[1281px]:flex"
                     aria-label="اعلان‌ها"
                     aria-expanded={isNotificationsOpen}
                     aria-controls="notifications-panel"
@@ -601,7 +649,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     <motion.div whileTap={{ scale: 0.95 }}>
                       <Link
                         to="/admin"
-                        className="header-action-btn inline-flex items-center justify-center"
+                        className="header-action-btn hidden items-center justify-center sm:inline-flex"
                       >
                         <ShieldCheck className="h-5 w-5" />
                       </Link>
@@ -654,7 +702,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                   notifications={notifications}
                   readNotificationIds={readNotificationIds}
                   notificationsRef={notificationsRef}
-                  isMobile={isMobile}
+                  isMobile={isMobile || isHeaderCompact}
                   onClose={() => setIsNotificationsOpen(false)}
                   onMarkAsRead={markNotificationAsRead}
                   onOpenAll={() => setIsAllNotificationsOpen(true)}

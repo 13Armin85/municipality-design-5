@@ -627,6 +627,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
 
   const HelpButton = ({ title, desc }: { title: string; desc: string }) => (
     <button
+      type="button"
       onClick={() => handleOpenHelp(title, desc)}
       className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 md:text-xs"
     >
@@ -805,6 +806,10 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 <Users className="h-4 w-4 text-primary" />
                 <h2 className="text-sm font-bold text-foreground">مالکین</h2>
               </div>
+              <HelpButton
+                title="مالکین"
+                desc="در این جدول اطلاعات مالک یا مالکین پرونده انتخاب‌شده نمایش داده می‌شود. برای به‌روزرسانی جدول، پرونده را انتخاب کنید و جستجو را بزنید."
+              />
             </div>
             <div className="overflow-x-auto p-4">
               <table className="w-full text-right text-[11px] md:text-xs">
@@ -873,8 +878,13 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   عوارض نوسازی جاری
                 </h2>
               </div>
-              {hasCurrentFees && (
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <HelpButton
+                  title="عوارض نوسازی جاری"
+                  desc="پس از جستجو، ریز مبالغ عوارض نوسازی، بدهی، معافیت، تخفیف و مبلغ قابل پرداخت در این بخش نمایش داده می‌شود. خروجی اکسل و PDF فقط وقتی داده دریافت شده باشد فعال است."
+                />
+                {hasCurrentFees && (
+                  <>
                   <button
                     type="button"
                     onClick={() =>
@@ -895,8 +905,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                     <FileText className="h-4 w-4" />
                     خروجی پی دی اف
                   </button>
-                </div>
-              )}
+                  </>
+                )}
+              </div>
             </div>
             <div className="p-4">
               <div className="grid grid-cols-1 gap-x-8 gap-y-0 md:grid-cols-2">
@@ -954,6 +965,10 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                   سوابق نوسازی جاری
                 </h2>
               </div>
+              <HelpButton
+                title="سوابق نوسازی"
+                desc="در این قسمت سوابق پرداخت یا رکوردهای قبلی مرتبط با پرونده انتخاب‌شده نمایش داده می‌شود. اگر موردی وجود نداشته باشد پیام خالی بودن داده نشان داده می‌شود."
+              />
             </div>
             <div className="p-4">
               {historyItems.length > 0 ? (
@@ -987,6 +1002,18 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             viewport={{ once: true }}
             className="soft-card mesh-panel relative h-[400px] overflow-hidden group"
           >
+            <button
+              type="button"
+              onClick={() =>
+                handleOpenHelp(
+                  "نقشه پرونده",
+                  "این بخش موقعیت نمادین پرونده انتخاب‌شده را نشان می‌دهد. دکمه‌های بزرگنمایی و بازگشت به نمای اولیه برای کنترل نقشه قرار داده شده‌اند.",
+                )
+              }
+              className="absolute right-4 top-4 z-30 inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
+            >
+              <Info className="h-3.5 w-3.5" /> راهنما
+            </button>
             <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
               <div className="absolute inset-0 bg-blue-900/20 z-10" />
               <img
@@ -1006,7 +1033,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 <Home className="h-4 w-4" />
               </button>
             </div>
-            <button className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg hover:bg-destructive transition-colors">
+            <button className="absolute right-4 top-14 z-20 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg hover:bg-destructive transition-colors">
               <Trash2 className="h-4 w-4" />
             </button>
           </motion.article>

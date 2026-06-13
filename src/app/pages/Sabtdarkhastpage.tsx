@@ -1437,6 +1437,7 @@ export function SabtDarkhastPage({
                   requests={registeredRequests}
                   loading={registeredRequestsLoading}
                   error={registeredRequestsError}
+                  onOpenHelp={handleOpenHelp}
                 />
               </motion.div>
             )}

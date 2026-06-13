@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Dashboard } from "./adminpanel/AdminDashboard";
+import { AdminNewsPage } from "./adminpanel/AdminNewsPage";
 import { SettingsPage } from "./adminpanel/AdminSettingsPage";
 import { UserManagement } from "./adminpanel/UserManagement";
 import { navItems } from "./adminpanel/adminData";
@@ -21,6 +22,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
 
   const pageComponents = {
     dashboard: <Dashboard />,
+    news: <AdminNewsPage />,
     users: <UserManagement />,
     settings: <SettingsPage />,
   };

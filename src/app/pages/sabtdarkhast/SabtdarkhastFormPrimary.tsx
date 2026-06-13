@@ -122,7 +122,7 @@ export function SabtdarkhastFormPrimary({
           </div>
           <HelpButton
             title="جستجو"
-            desc="کد نوسازی را وارد کنید یا از لیست پرونده‌های زیرمجموعه انتخاب کنید."
+            desc="کد نوسازی را در بخش‌های مشخص‌شده وارد کنید و جستجو را بزنید، یا از لیست پرونده‌های زیرمجموعه یک پرونده انتخاب کنید تا اطلاعات مالک و فرم درخواست برای همان ملک آماده شود."
             onOpenHelp={onOpenHelp}
           />
         </div>
@@ -181,7 +181,7 @@ export function SabtdarkhastFormPrimary({
           </div>
           <HelpButton
             title="پرونده‌ها"
-            desc="لیست املاک و پرونده‌های شما در این بخش نمایش داده می‌شود."
+            desc="لیست املاک و پرونده‌های زیرمجموعه شما در این بخش نمایش داده می‌شود. با انتخاب هر پرونده، کد نوسازی و اطلاعات مرتبط آن برای ثبت درخواست در فرم استفاده می‌شود."
             onOpenHelp={onOpenHelp}
           />
         </div>
@@ -201,6 +201,11 @@ export function SabtdarkhastFormPrimary({
             <ClipboardList className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold">ثبت درخواست</h2>
           </div>
+          <HelpButton
+            title="ثبت درخواست "
+            desc="اطلاعات مالک، نوع درخواست، مشخصات متقاضی و اطلاعات تکمیلی را تکمیل کنید. فیلدهای ستاره‌دار اجباری هستند و پس از تکمیل، با ادامه دادن وارد مرحله بارگذاری مدارک می‌شوید."
+            onOpenHelp={onOpenHelp}
+          />
         </div>
 
         <div className="space-y-6 p-3 sm:space-y-8 sm:p-4">

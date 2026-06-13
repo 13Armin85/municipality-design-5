@@ -1,7 +1,8 @@
 import { motion } from "motion/react";
 import { ArrowLeft, Calendar, Clock, Newspaper } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
-import { newsItems } from "../data/news";
+import { getVisibleNewsItems } from "../data/news";
 import {
   Carousel,
   CarouselContent,
@@ -10,9 +11,24 @@ import {
   CarouselPrevious,
 } from "./ui/carousel";
 
-const latestNews = newsItems.slice(0, 5);
-
 export function NewsSection() {
+  const visibleNews = useMemo(() => getVisibleNewsItems(), []);
+  const categories = useMemo(
+    () => ["همه", ...Array.from(new Set(visibleNews.map((item) => item.category)))],
+    [visibleNews],
+  );
+  const [selectedCategory, setSelectedCategory] = useState("همه");
+  const latestNews = useMemo(
+    () =>
+      visibleNews
+        .filter(
+          (item) =>
+            selectedCategory === "همه" || item.category === selectedCategory,
+        )
+        .slice(0, 5),
+    [selectedCategory, visibleNews],
+  );
+
   return (
     <section id="news" className="relative overflow-hidden py-16 md:py-24">
       {/* Ambient blobs */}
@@ -38,15 +54,37 @@ export function NewsSection() {
           </p>
         </motion.div>
 
+        <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
+          {categories.map((category) => {
+            const isActive = selectedCategory === category;
+
+            return (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setSelectedCategory(category)}
+                className={`h-9 rounded-xl border px-4 text-xs font-bold transition-colors md:text-sm ${
+                  isActive
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border/70 bg-card/80 text-muted-foreground hover:border-primary/40 hover:text-primary"
+                }`}
+              >
+                {category}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Carousel */}
-        <Carousel
-          opts={{
-            align: "start",
-            direction: "rtl",
-            loop: latestNews.length > 3,
-          }}
-          className="relative mx-auto w-full max-w-6xl"
-        >
+        {latestNews.length > 0 ? (
+          <Carousel
+            opts={{
+              align: "start",
+              direction: "rtl",
+              loop: latestNews.length > 3,
+            }}
+            className="relative mx-auto w-full max-w-6xl"
+          >
           <CarouselContent className="-ml-4">
             {latestNews.map((item, index) => (
               <CarouselItem
@@ -66,14 +104,25 @@ export function NewsSection() {
                   >
                     {/* Banner */}
                     <div className="relative h-36 shrink-0 overflow-hidden bg-gradient-to-l from-primary via-secondary to-accent">
-                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_20%,rgba(255,255,255,0.25),transparent_55%)]" />
-                      <div
-                        className="absolute inset-0 opacity-[0.07]"
-                        style={{
-                          backgroundImage:
-                            "repeating-linear-gradient(0deg,transparent,transparent 24px,white 24px,white 25px),repeating-linear-gradient(90deg,transparent,transparent 24px,white 24px,white 25px)",
-                        }}
-                      />
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <>
+                          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_20%,rgba(255,255,255,0.25),transparent_55%)]" />
+                          <div
+                            className="absolute inset-0 opacity-[0.07]"
+                            style={{
+                              backgroundImage:
+                                "repeating-linear-gradient(0deg,transparent,transparent 24px,white 24px,white 25px),repeating-linear-gradient(90deg,transparent,transparent 24px,white 24px,white 25px)",
+                            }}
+                          />
+                        </>
+                      )}
+                      <div className="absolute inset-0 bg-black/15" />
 
                       <div className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl border border-white/25 bg-white/15 backdrop-blur-sm">
                         <Newspaper className="h-4 w-4 text-white" />
@@ -118,7 +167,12 @@ export function NewsSection() {
 
           <CarouselPrevious className="-left-3 hidden h-10 w-10 rounded-xl border-border/70 bg-card/90 text-foreground shadow-md backdrop-blur-sm hover:border-primary/50 hover:bg-[var(--primary-soft)] hover:text-primary md:flex" />
           <CarouselNext className="-right-3 hidden h-10 w-10 rounded-xl border-border/70 bg-card/90 text-foreground shadow-md backdrop-blur-sm hover:border-primary/50 hover:bg-[var(--primary-soft)] hover:text-primary md:flex" />
-        </Carousel>
+          </Carousel>
+        ) : (
+          <div className="mx-auto max-w-xl rounded-2xl border border-border/70 bg-card/80 px-4 py-8 text-center text-sm text-muted-foreground">
+            خبری در این دسته‌بندی برای نمایش وجود ندارد.
+          </div>
+        )}
       </div>
     </section>
   );

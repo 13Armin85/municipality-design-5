@@ -575,6 +575,19 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               viewport={{ once: true }}
               className="soft-card bg-card border border-border/50 rounded-2xl overflow-hidden"
             >
+              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-bold">لیست املاک</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 md:text-xs"
+                >
+                  <Info className="h-3.5 w-3.5" /> راهنما
+                </button>
+              </div>
               <div className="space-y-3 p-4">
                 {propertyItems.map((property, i) => (
                   <motion.div
@@ -677,6 +690,13 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                 transition={{ duration: 0.3 }}
                 className="soft-card bg-card border border-border/50 rounded-2xl relative h-[480px] overflow-hidden group"
               >
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="absolute right-4 top-4 z-20 inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
+                >
+                  <Info className="h-3.5 w-3.5" /> راهنما
+                </button>
                 <div className="absolute inset-0 bg-slate-700">
                   <div className="h-full w-full relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800" />

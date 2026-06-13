@@ -29,6 +29,10 @@ export function NotificationsPanel({
   onMarkAsRead,
   onOpenAll,
 }: NotificationsPanelProps) {
+  const panelClassName = isMobile
+    ? "fixed inset-x-2 top-[calc(env(safe-area-inset-top)+4.75rem)] z-50 w-auto overflow-hidden rounded-2xl border border-border/80 bg-card/95 shadow-[0_18px_42px_rgba(4,20,17,0.18)] backdrop-blur-xl"
+    : "absolute left-0 right-auto top-full z-50 mt-3 w-[min(22rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border/80 bg-card/95 shadow-[0_18px_42px_rgba(4,20,17,0.18)] backdrop-blur-xl";
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -41,7 +45,7 @@ export function NotificationsPanel({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] sm:hidden"
+              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
             />
           )}
 
@@ -52,13 +56,17 @@ export function NotificationsPanel({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: 0.16 }}
-            className="fixed inset-x-2 top-[calc(env(safe-area-inset-top)+4.75rem)] z-50 w-auto overflow-hidden rounded-2xl border border-border/80 bg-card/95 shadow-[0_18px_42px_rgba(4,20,17,0.18)] backdrop-blur-xl sm:absolute sm:inset-x-auto sm:left-0 sm:right-auto sm:top-full sm:mt-3 sm:w-[min(22rem,calc(100vw-1rem))]"
+            className={panelClassName}
           >
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
               <h3 className="text-sm font-bold text-foreground">اعلان‌ها</h3>
             </div>
 
-            <div className="max-h-[56vh] overflow-y-auto p-2 sm:max-h-72">
+            <div
+              className={`overflow-y-auto p-2 ${
+                isMobile ? "max-h-[56vh]" : "max-h-72"
+              }`}
+            >
               {notifications.map((item) => {
                 const isUnread = !readNotificationIds.includes(item.id);
                 return (

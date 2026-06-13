@@ -2,6 +2,7 @@ import {
   AlignLeft,
   Layout,
   LayoutDashboard,
+  Newspaper,
   Settings,
   TrendingUp,
   UserCheck,
@@ -113,6 +114,7 @@ export const settingsTabs = [
 
 export const navItems = [
   { id: "dashboard", label: "داشبورد", icon: LayoutDashboard },
+  { id: "news", label: "اخبار", icon: Newspaper },
   { id: "users", label: "مدیریت کاربران", icon: Users },
   { id: "settings", label: "تنظیمات", icon: Settings },
 ];

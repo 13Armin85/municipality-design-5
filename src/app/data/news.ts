@@ -7,7 +7,21 @@ export interface NewsItem {
   date: string;
   time: string;
   category: string;
+  publishAt?: string;
+  imageUrl?: string;
 }
+
+export const adminNewsStorageKey = "municipality-admin-news-items";
+
+export const newsCategories = [
+  "اطلاعیه",
+  "خبر",
+  "خدمات",
+  "پشتیبانی",
+  "گزارش",
+  "عمران",
+  "فرهنگی",
+];
 
 export const newsItems: NewsItem[] = [
   {
@@ -81,3 +95,32 @@ export const newsItems: NewsItem[] = [
     category: 'گزارش',
   },
 ];
+
+const normalizeDateTime = (value?: string) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+export const isNewsPublished = (item: NewsItem, now = new Date()) => {
+  const publishDate = normalizeDateTime(item.publishAt);
+  return !publishDate || publishDate.getTime() <= now.getTime();
+};
+
+export const getStoredNewsItems = (): NewsItem[] => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const parsed = JSON.parse(
+      localStorage.getItem(adminNewsStorageKey) ?? "[]",
+    );
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+export const getAllNewsItems = () => [...getStoredNewsItems(), ...newsItems];
+
+export const getVisibleNewsItems = (now = new Date()) =>
+  getAllNewsItems().filter((item) => isNewsPublished(item, now));

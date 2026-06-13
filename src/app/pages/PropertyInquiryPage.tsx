@@ -420,6 +420,7 @@ export function PropertyInquiryPage({
 
   const HelpButton = ({ title, desc }: { title: string; desc: string }) => (
     <button
+      type="button"
       onClick={() => handleOpenHelp(title, desc)}
       className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 md:text-xs"
     >
@@ -479,7 +480,12 @@ export function PropertyInquiryPage({
                   )}
                 </button>
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() =>
+                    handleOpenHelp(
+                      "راهنمای وضعیت عقب نشینی",
+                      "برای مشاهده وضعیت عقب‌نشینی، یک پرونده از لیست زیرمجموعه انتخاب کنید یا کد نوسازی را کامل وارد کرده و جستجو را بزنید. نتیجه در جدول‌های وضعیت، عقب‌نشینی و جهات چهارگانه نمایش داده می‌شود.",
+                    )
+                  }
                   className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 md:py-2 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95"
                 >
                   <Info className="h-3.5 w-3.5" />
@@ -559,7 +565,10 @@ export function PropertyInquiryPage({
                 <h2 className="text-sm font-bold">جستجو</h2>
               </div>
 
-              <HelpButton title="جستجو" desc="کد نوسازی" />
+              <HelpButton
+                title="جستجو"
+                desc="کد نوسازی را در بخش‌های مشخص‌شده وارد کنید یا از لیست پرونده‌های زیرمجموعه انتخاب کنید. با زدن دکمه جستجو، اطلاعات عقب‌نشینی و جهات ملک دریافت و در جدول‌های پایین نمایش داده می‌شود."
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-2 p-4 md:grid-cols-8">
@@ -592,9 +601,15 @@ export function PropertyInquiryPage({
 
           {/* Property Tree List */}
           <motion.article className="soft-card mesh-panel">
-            <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
-              <Layers className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">پرونده‌های زیر مجموعه</h2>
+            <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-bold">پرونده‌های زیر مجموعه</h2>
+              </div>
+              <HelpButton
+                title="پرونده‌های زیر مجموعه"
+                desc="پرونده‌های مرتبط با کد ملی شما در این بخش نمایش داده می‌شود. با انتخاب هر پرونده، کد نوسازی آن در فرم قرار می‌گیرد و اطلاعات عقب‌نشینی همان پرونده دریافت می‌شود."
+              />
             </div>
             <div className="p-4">
               <PropertyTreeList
@@ -606,10 +621,15 @@ export function PropertyInquiryPage({
           {/* area */}
           <div className="space-y-5">
             <motion.article className="soft-card mesh-panel">
-              <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
-                <FileText className="h-4 w-4 text-primary" />
-
-                <span className="text-sm font-bold">وضعیت عقب نشینی</span>
+              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-bold">وضعیت عقب نشینی</span>
+                </div>
+                <HelpButton
+                  title="جدول وضعیت عقب نشینی"
+                  desc="این جدول خلاصه اطلاعات عقب‌نشینی پرونده را به صورت عنوان و مقدار نشان می‌دهد. اگر داده‌ای نمی‌بینید، ابتدا پرونده را انتخاب و جستجو کنید یا کامل بودن کد نوسازی را بررسی کنید."
+                />
               </div>
 
               <div className="space-y-3 p-4">
@@ -628,10 +648,15 @@ export function PropertyInquiryPage({
             </motion.article>
 
             <motion.article className="soft-card mesh-panel overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
-                <FileText className="h-4 w-4 text-primary" />
-
-                <span className="text-sm font-bold">عقب‌نشینی</span>
+              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-bold">عقب‌نشینی</span>
+                </div>
+                <HelpButton
+                  title="جدول عقب‌نشینی"
+                  desc="در این جدول مقدار عقب‌نشینی هر جهت، عرض تعریض و اطلاعات تکمیلی نمایش داده می‌شود. ستون‌های تکمیلی در نمایشگرهای کوچک‌تر فشرده می‌شوند و با اسکرول افقی قابل بررسی هستند."
+                />
               </div>
 
               <div className="space-y-4 p-4">
@@ -654,10 +679,15 @@ export function PropertyInquiryPage({
 
             {/* directions */}
             <motion.article className="soft-card mesh-panel overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-border/70 px-4 py-3">
-                <Compass className="h-4 w-4 text-primary" />
-
-                <span className="text-sm font-bold">جهات چهارگانه</span>
+              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Compass className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-bold">جهات چهارگانه</span>
+                </div>
+                <HelpButton
+                  title="جدول جهات چهارگانه"
+                  desc="مشخصات هر ضلع ملک مانند نوع معبر، نام معبر، طول سندی و طول موجود در این جدول نمایش داده می‌شود. برای مقایسه دقیق، ردیف هر جهت را جداگانه بررسی کنید."
+                />
               </div>
 
               <div className="space-y-4 p-4">

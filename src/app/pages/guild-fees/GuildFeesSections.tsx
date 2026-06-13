@@ -257,6 +257,7 @@ export function GuildFeesCurrentFeesSection({
   isLoading = false,
   onExportExcel,
   onExportPdf,
+  onHelp,
 }: {
   title?: string;
   right: LabelValue[];
@@ -265,6 +266,7 @@ export function GuildFeesCurrentFeesSection({
   isLoading?: boolean;
   onExportExcel?: () => void;
   onExportPdf?: () => void;
+  onHelp?: (title: string, description: string) => void;
 }) {
   const rows = items ?? mergeColumns(right, left);
   const hasData = rows.length > 0;
@@ -279,8 +281,24 @@ export function GuildFeesCurrentFeesSection({
         <h2 className="text-sm font-bold text-foreground md:text-base">
           {title}
         </h2>
-        {hasData && !isLoading && (onExportExcel || onExportPdf) && (
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {onHelp && (
+            <button
+              type="button"
+              onClick={() =>
+                onHelp(
+                  title,
+                  "اطلاعات این جدول از سرویس شهرداری دریافت می‌شود. هر ردیف شامل عنوان داده و مقدار متناظر آن است و در صورت وجود داده می‌توانید خروجی بگیرید.",
+                )
+              }
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-primary/35 bg-[var(--primary-soft)] px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/10"
+            >
+              <Info className="h-4 w-4" />
+              راهنما
+            </button>
+          )}
+          {hasData && !isLoading && (onExportExcel || onExportPdf) && (
+            <>
             {onExportExcel && (
               <button
                 type="button"
@@ -301,8 +319,9 @@ export function GuildFeesCurrentFeesSection({
                 خروجی پی دی اف
               </button>
             )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
       <div className="p-4 md:p-5">
         {isLoading ? (
@@ -323,8 +342,10 @@ export function GuildFeesCurrentFeesSection({
 
 export function GuildFeesOwnersSection({
   owners,
+  onHelp,
 }: {
   owners: GuildOwnerItem[];
+  onHelp?: (title: string, description: string) => void;
 }) {
   return (
     <motion.article
@@ -336,6 +357,21 @@ export function GuildFeesOwnersSection({
         <h2 className="text-sm font-bold text-foreground md:text-base">
           مالکین
         </h2>
+        {onHelp && (
+          <button
+            type="button"
+            onClick={() =>
+              onHelp(
+                "جدول مالکین",
+                "در این جدول مشخصات مالک یا مالکین پرونده انتخاب‌شده نمایش داده می‌شود. پس از انتخاب پرونده یا جستجوی کد نوسازی، نام، نام خانوادگی، نوع مالک، نام پدر و محل صدور را از این بخش بررسی کنید.",
+              )
+            }
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-primary/35 bg-[var(--primary-soft)] px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/10"
+          >
+            <Info className="h-4 w-4" />
+            راهنما
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto p-4 md:p-5">
         <table className="min-w-full overflow-hidden rounded-xl border border-border/70 text-sm">
@@ -391,14 +427,37 @@ export function GuildFeesOwnersSection({
   );
 }
 
-export function GuildFeesEmptyState({ message }: { message?: string }) {
+export function GuildFeesEmptyState({
+  message,
+  onHelp,
+}: {
+  message?: string;
+  onHelp?: (title: string, description: string) => void;
+}) {
   return (
     <motion.article className="soft-card mesh-panel overflow-hidden">
       <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-5">
         <h2 className="text-sm font-bold text-foreground md:text-base">
           عوارض
         </h2>
-        <FileText className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-2">
+          {onHelp && (
+            <button
+              type="button"
+              onClick={() =>
+                onHelp(
+                  "بخش عوارض",
+                  "برای مشاهده فیش اصناف و عوارض صنفی، ابتدا یک پرونده از لیست زیرمجموعه انتخاب کنید یا کد نوسازی را وارد کرده و جستجو را بزنید. پس از دریافت داده، جدول‌ها و خروجی‌ها فعال می‌شوند.",
+                )
+              }
+              className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10"
+            >
+              <Info className="h-3.5 w-3.5" />
+              راهنما
+            </button>
+          )}
+          <FileText className="h-4 w-4 text-primary" />
+        </div>
       </div>
       <div className="p-4 md:p-5">
         <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -411,8 +470,10 @@ export function GuildFeesEmptyState({ message }: { message?: string }) {
 
 export function GuildFeesMapSection({
   activeData,
+  onHelp,
 }: {
   activeData: PropertyRecord | GuildPropertyItem | null;
+  onHelp?: (title: string, description: string) => void;
 }) {
   return (
     <motion.article className="soft-card mesh-panel overflow-hidden">
@@ -420,7 +481,24 @@ export function GuildFeesMapSection({
         <h2 className="text-sm font-bold text-foreground md:text-base">
           نقشه زمین (نمادین)
         </h2>
-        <Building2 className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-2">
+          {onHelp && (
+            <button
+              type="button"
+              onClick={() =>
+                onHelp(
+                  "نقشه زمین",
+                  "این نقشه یک نمایش نمادین از محدوده و قطعات است. بعد از انتخاب پرونده، محدوده فعال با کادر مشخص می‌شود و دکمه‌های بزرگنمایی برای کنترل نما قرار دارند.",
+                )
+              }
+              className="inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-[var(--primary-soft)] px-2.5 py-1 text-xs font-semibold text-primary transition-all hover:bg-primary/10"
+            >
+              <Info className="h-3.5 w-3.5" />
+              راهنما
+            </button>
+          )}
+          <Building2 className="h-4 w-4 text-primary" />
+        </div>
       </div>
       <div className="p-4 md:p-5">
         <div className="relative h-[30rem] overflow-hidden rounded-2xl border border-border/70 bg-[linear-gradient(145deg,#647257_0%,#7e8f6d_38%,#6a735f_100%)] md:h-[44rem]">
