@@ -8,7 +8,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
-import { apiFetch } from "../data/api";
+import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 import { GuildFeesHeader } from "./guild-fees/GuildFeesHeader";
 import { GuildFeesHelpModal } from "./guild-fees/GuildFeesHelpModal";
@@ -704,8 +704,8 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
 
       setIsCasesLoading(true);
       try {
-        const response = await apiFetch(
-          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+        const response = await dotNet10ApiFetch(
+          "/api/Files",
           {
             method: "GET",
             cache: "no-store",

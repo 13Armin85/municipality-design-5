@@ -28,7 +28,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
-import { apiFetch } from "../data/api";
+import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 
 interface OwnerPropertyItem {
@@ -381,8 +381,8 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
         const nationalCode = localStorage.getItem("user-national-code");
         if (!token || !nationalCode) return;
 
-        const response = await apiFetch(
-          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+        const response = await dotNet10ApiFetch(
+          "/api/Files",
           {
             method: "GET",
             cache: "no-store",

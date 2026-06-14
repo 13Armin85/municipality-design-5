@@ -18,17 +18,28 @@ export interface ApiError {
 }
 
 export interface ApiResponse<T = any> {
-  IsSuccess: boolean;
-  IsFailure: boolean;
+  IsSuccess?: boolean;
+  IsFailure?: boolean;
+  isSuccess?: boolean;
+  isFailure?: boolean;
   Error?: ApiError;
+  error?: {
+    code?: string;
+    name?: string;
+    description?: string;
+  };
   Value?: T;
+  value?: T;
 }
 
 /**
  * چک کردن موفقیت‌آمیز بودن پاسخ API
  */
 export const isApiSuccess = (response: ApiResponse): boolean => {
-  return response.IsSuccess === true && response.IsFailure === false;
+  const isSuccess = response.IsSuccess ?? response.isSuccess;
+  const isFailure = response.IsFailure ?? response.isFailure;
+
+  return isSuccess === true && isFailure === false;
 };
 
 /**
@@ -38,6 +49,12 @@ export const getApiErrorMessage = (response: ApiResponse): string => {
   if (response.Error?.Description) {
     return response.Error.Description;
   }
+  if (response.error?.description) {
+    return response.error.description;
+  }
+  if (response.error?.name) {
+    return response.error.name;
+  }
   return "خطای نامعلوم از سرور";
 };
 
@@ -45,7 +62,7 @@ export const getApiErrorMessage = (response: ApiResponse): string => {
  * دریافت مقدار از پاسخ API
  */
 export const getApiValue = <T = any>(response: ApiResponse): T | null => {
-  return response.Value ?? null;
+  return response.Value ?? response.value ?? null;
 };
 
 /**
@@ -56,7 +73,10 @@ export const normalizeApiResponse = (data: any): ApiResponse => {
   // اگر فرمت جدید است، برگردان
   if (
     typeof data === "object" &&
-    ("IsSuccess" in data || "IsFailure" in data)
+    ("IsSuccess" in data ||
+      "IsFailure" in data ||
+      "isSuccess" in data ||
+      "isFailure" in data)
   ) {
     return data;
   }

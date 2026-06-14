@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, Calendar, Clock, Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { getAllNewsItems, isNewsPublished } from "../data/news";
+import { fetchNews, type NewsItem } from "../data/news";
 
 interface NewsDetailPageProps {
   isDark: boolean;
@@ -10,9 +11,28 @@ interface NewsDetailPageProps {
 
 export function NewsDetailPage({ isDark, toggleTheme }: NewsDetailPageProps) {
   const { slug } = useParams();
-  const news = getAllNewsItems().find(
-    (item) => item.slug === slug && isNewsPublished(item),
-  );
+  const [news, setNews] = useState<NewsItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadNews = async () => {
+      try {
+        const items = await fetchNews(controller.signal);
+        setNews(items.find((item) => item.slug === slug) ?? null);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.error("Failed to load news details:", error);
+        setNews(null);
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    };
+
+    void loadNews();
+    return () => controller.abort();
+  }, [slug]);
 
   return (
     <>
@@ -68,7 +88,9 @@ export function NewsDetailPage({ isDark, toggleTheme }: NewsDetailPageProps) {
 
       <section className="section-decor px-3 pb-12 pt-24 md:pb-20 md:pt-28 lg:px-6">
         <div className="container mx-auto max-w-4xl px-0 md:px-2 lg:px-6">
-          {news ? (
+          {isLoading ? (
+            <div className="soft-card mesh-panel h-96 animate-pulse" />
+          ) : news ? (
             <motion.article
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}

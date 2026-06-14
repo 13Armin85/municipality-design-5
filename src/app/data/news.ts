@@ -1,3 +1,6 @@
+import { dotNet10ApiFetch, dotNet10ApiUrl } from "./api";
+import type { ApiResponse } from "../utils/apiResponseHandler";
+
 export interface NewsItem {
   id: string;
   slug: string;
@@ -9,6 +12,19 @@ export interface NewsItem {
   category: string;
   publishAt?: string;
   imageUrl?: string;
+}
+
+interface NewsApiItem {
+  id: string;
+  groupId: string;
+  groupName: string;
+  title: string;
+  description: string;
+  shortDescription: string;
+  picture: string;
+  publishDate: string;
+  publishTime: string;
+  isActive: boolean;
 }
 
 export const adminNewsStorageKey = "municipality-admin-news-items";
@@ -23,78 +39,105 @@ export const newsCategories = [
   "فرهنگی",
 ];
 
-export const newsItems: NewsItem[] = [
-  {
-    id: 'news-portal-update',
-    slug: 'portal-update',
-    title: 'راه‌اندازی نسخه جدید پرتال خدمات شهری',
-    excerpt: 'نسخه جدید سامانه با بهبود سرعت، دسترسی‌پذیری و پنل پیگیری درخواست‌ها در اختیار شهروندان قرار گرفت.',
-    content: [
-      'نسخه جدید پرتال خدمات شهری با هدف افزایش سرعت پاسخ‌گویی و ساده‌تر شدن فرآیند ثبت درخواست‌ها منتشر شد. در این نسخه، ساختار صفحات بازطراحی شده تا شهروندان بتوانند خدمات موردنیاز را سریع‌تر پیدا کنند.',
-      'یکی از قابلیت‌های اصلی این به‌روزرسانی، پنل پیگیری یکپارچه است که وضعیت هر درخواست را به‌صورت مرحله‌ای نمایش می‌دهد. همچنین اعلان‌های سیستمی برای تغییر وضعیت پرونده‌ها فعال شده است.',
-      'براساس اعلام واحد فناوری اطلاعات شهرداری، در هفته‌های آینده امکانات تکمیلی مانند گزارش‌های مالی شخصی و تاریخچه کامل مراجعات نیز به این پرتال اضافه خواهد شد.',
-    ],
-    date: '1405/02/18',
-    time: '10:30',
-    category: 'اطلاعیه',
-  },
-  {
-    id: 'news-renovation-discount',
-    slug: 'renovation-discount',
-    title: 'آغاز طرح تشویقی پرداخت عوارض نوسازی',
-    excerpt: 'شهروندان می‌توانند در بازه زمانی اعلام‌شده از تخفیف پرداخت آنلاین عوارض نوسازی استفاده کنند.',
-    content: [
-      'طرح تشویقی پرداخت عوارض نوسازی از ابتدای هفته جاری آغاز شده و تا پایان ماه ادامه دارد. هدف این طرح، کاهش مراجعات حضوری و تسهیل تسویه بدهی‌های شهری است.',
-      'در این بازه زمانی، پرداخت‌های آنلاین مشمول تخفیف بوده و رسید نهایی به‌صورت خودکار در حساب کاربری شهروندان ثبت می‌شود. برای استفاده از این طرح، کافی است شناسه قبض و شناسه پرداخت از پنل کاربری وارد شود.',
-      'شهرداری از شهروندان درخواست کرده برای جلوگیری از ترافیک روزهای پایانی، پرداخت‌ها را به روزهای آخر موکول نکنند.',
-    ],
-    date: '1405/02/16',
-    time: '14:15',
-    category: 'خبر',
-  },
-  {
-    id: 'news-property-inquiry',
-    slug: 'property-inquiry-update',
-    title: 'به‌روزرسانی خدمات استعلام املاک',
-    excerpt: 'سرویس استعلام املاک با نمایش تاریخچه پرونده و وضعیت جاری، دقیق‌تر و کامل‌تر شد.',
-    content: [
-      'سرویس استعلام املاک در پرتال شهرداری به‌روزرسانی شد و از این پس اطلاعات کامل‌تری از وضعیت پرونده‌های ملکی در اختیار کاربران قرار می‌گیرد.',
-      'در نسخه جدید، علاوه بر وضعیت جاری، تاریخچه تغییرات پرونده نیز نمایش داده می‌شود تا روند رسیدگی برای شهروندان شفاف‌تر باشد.',
-      'این قابلیت برای تمامی املاک ثبت‌شده در محدوده قانونی شهر فعال شده و دسترسی به آن از طریق بخش «خدمات ملکی» امکان‌پذیر است.',
-    ],
-    date: '1405/02/13',
-    time: '09:00',
-    category: 'خدمات',
-  },
-  {
-    id: 'news-support-hours',
-    slug: 'support-hours-extension',
-    title: 'افزایش ساعت پاسخ‌گویی پشتیبانی آنلاین',
-    excerpt: 'مرکز پشتیبانی پرتال خدمات شهری در روزهای کاری با ساعت بیشتری پاسخ‌گوی شهروندان خواهد بود.',
-    content: [
-      'برای بهبود تجربه شهروندان در استفاده از خدمات غیرحضوری، ساعت کاری مرکز پشتیبانی آنلاین افزایش یافت.',
-      'از این پس تیم پشتیبانی در روزهای کاری تا ساعت 20 آماده پاسخ‌گویی به سوالات مربوط به ثبت درخواست، پرداخت عوارض و پیگیری پرونده‌ها است.',
-      'شهروندان می‌توانند از طریق چت آنلاین، تماس تلفنی یا سامانه تیکتینگ با پشتیبانی ارتباط بگیرند.',
-    ],
-    date: '1405/02/11',
-    time: '17:40',
-    category: 'پشتیبانی',
-  },
-  {
-    id: 'news-e-payment-report',
-    slug: 'e-payment-report',
-    title: 'انتشار گزارش ماهانه پرداخت‌های الکترونیکی',
-    excerpt: 'گزارش جدید نشان می‌دهد استفاده از پرداخت الکترونیکی عوارض شهری رشد قابل‌توجهی داشته است.',
-    content: [
-      'گزارش ماهانه واحد درآمد شهرداری منتشر شد و آمارها از رشد استفاده شهروندان از درگاه‌های پرداخت الکترونیکی خبر می‌دهد.',
-      'بر اساس این گزارش، سهم پرداخت آنلاین عوارض نسبت به ماه گذشته افزایش یافته و تعداد مراجعات حضوری کاهش پیدا کرده است.',
-      'شهرداری اعلام کرد برنامه توسعه خدمات دیجیتال با تمرکز بر سادگی استفاده و امنیت تراکنش‌ها ادامه خواهد داشت.',
-    ],
-    date: '1405/02/09',
-    time: '11:05',
-    category: 'گزارش',
-  },
-];
+const formatPublishDate = (value: string) => {
+  if (!value) return "";
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("fa-IR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+};
+
+const formatPublishTime = (value: string) => {
+  const match = value.match(/^(\d{2}):(\d{2})/);
+  return match ? `${match[1]}:${match[2]}` : value;
+};
+
+const resolvePictureUrl = (picture: string) => {
+  const value = picture?.trim();
+  if (!value) return undefined;
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+
+  return dotNet10ApiUrl(value);
+};
+
+const toParagraphs = (description: string, fallback: string) => {
+  const text = description?.trim() || fallback?.trim();
+  if (!text) return [];
+
+  return text
+    .split(/\r?\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+};
+
+const mapNewsItem = (item: NewsApiItem): NewsItem => ({
+  id: item.id,
+  slug: item.id,
+  title: item.title?.trim() || "بدون عنوان",
+  excerpt: item.shortDescription?.trim() || item.description?.trim() || "",
+  content: toParagraphs(item.description, item.shortDescription),
+  date: formatPublishDate(item.publishDate),
+  time: formatPublishTime(item.publishTime),
+  category: item.groupName?.trim() || "خبر",
+  publishAt:
+    item.publishDate && item.publishTime
+      ? `${item.publishDate}T${item.publishTime}`
+      : item.publishDate,
+  imageUrl: resolvePictureUrl(item.picture),
+});
+
+const getPublishTimestamp = (item: NewsApiItem) => {
+  const value =
+    item.publishDate && item.publishTime
+      ? `${item.publishDate}T${item.publishTime}`
+      : item.publishDate;
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
+export async function fetchNews(signal?: AbortSignal): Promise<NewsItem[]> {
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("auth-token")?.replace(/^Bearer\s+/i, "")
+      : null;
+
+  const response = await dotNet10ApiFetch("/api/News", {
+    method: "GET",
+    headers: {
+      Accept: "text/plain",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`News request failed with status ${response.status}`);
+  }
+
+  const payload = (await response.json()) as ApiResponse<NewsApiItem[]>;
+  const isSuccess = payload.isSuccess ?? payload.IsSuccess;
+  const isFailure = payload.isFailure ?? payload.IsFailure;
+  const value = payload.value ?? payload.Value;
+
+  if (isSuccess === false || isFailure === true || !Array.isArray(value)) {
+    throw new Error(
+      payload.error?.name ||
+        payload.error?.description ||
+        payload.Error?.Description ||
+        "دریافت اخبار ناموفق بود.",
+    );
+  }
+
+  return value
+    .filter((item) => item.isActive)
+    .sort((a, b) => getPublishTimestamp(b) - getPublishTimestamp(a))
+    .map(mapNewsItem);
+}
 
 const normalizeDateTime = (value?: string) => {
   if (!value) return null;
@@ -120,7 +163,7 @@ export const getStoredNewsItems = (): NewsItem[] => {
   }
 };
 
-export const getAllNewsItems = () => [...getStoredNewsItems(), ...newsItems];
+export const getAllNewsItems = () => getStoredNewsItems();
 
 export const getVisibleNewsItems = (now = new Date()) =>
   getAllNewsItems().filter((item) => isNewsPublished(item, now));

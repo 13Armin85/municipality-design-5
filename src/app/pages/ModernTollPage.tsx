@@ -31,7 +31,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
-import { apiFetch } from "../data/api";
+import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem as TreePropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 
 interface LocalPropertyItem {
@@ -534,8 +534,8 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
       const nationalCode = localStorage.getItem("user-national-code");
       if (!token || !nationalCode) return;
       try {
-        const response = await apiFetch(
-          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+        const response = await dotNet10ApiFetch(
+          "/api/Files",
           {
             cache: "no-store",
             headers: {

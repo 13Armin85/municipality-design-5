@@ -27,7 +27,7 @@ import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
 import { useAuthModal } from "./AuthContext";
-import { apiFetch } from "../data/api";
+import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { serviceItems } from "../data/services";
 
 import { type ForgotStep } from "../pages/header/Forgotpasswordmodal";
@@ -52,11 +52,14 @@ const ForgotPasswordModal = lazy(() =>
     default: module.ForgotPasswordModal,
   })),
 );
-const SahkarVerificationModal = lazy(() =>
-  import("../pages/header/SahkarVerificationModal").then((module) => ({
-    default: module.SahkarVerificationModal,
-  })),
-);
+/*
+ * تأیید پیامکی ساهکار برای ورود موقتاً غیرفعال شده است.
+ * const SahkarVerificationModal = lazy(() =>
+ *   import("../pages/header/SahkarVerificationModal").then((module) => ({
+ *     default: module.SahkarVerificationModal,
+ *   })),
+ * );
+ */
 const MobileMenu = lazy(() =>
   import("../pages/header/MobileMenu").then((module) => ({
     default: module.MobileMenu,
@@ -150,12 +153,13 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [otpResendTimer, setOtpResendTimer] = useState(0);
 
-  const [isSahkarOpen, setIsSahkarOpen] = useState(false);
-  const [sahkarNationalCode, setSahkarNationalCode] = useState("");
-  const [sahkarMobile, setSahkarMobile] = useState("");
-  const [sahkarLoginType, setSahkarLoginType] = useState<"user" | "admin">(
-    "user",
-  );
+  /*
+   * stateهای مرحله ارسال و تأیید کد پیامکی ورود:
+   * const [isSahkarOpen, setIsSahkarOpen] = useState(false);
+   * const [sahkarNationalCode, setSahkarNationalCode] = useState("");
+   * const [sahkarMobile, setSahkarMobile] = useState("");
+   * const [sahkarLoginType, setSahkarLoginType] = useState<"user" | "admin">("user");
+   */
   const [isAdmin, setIsAdmin] = useState(false);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -223,7 +227,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     setLoginError("");
 
     try {
-      const response = await apiFetch("/api/auth/login", {
+      const response = await dotNet10ApiFetch("/api/Auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -240,14 +244,19 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
       const data = await response.json();
 
       // بررسی IsSuccess flag از API
-      if (data.IsFailure || !data.IsSuccess) {
+      const isSuccess = data.isSuccess ?? data.IsSuccess;
+      const isFailure = data.isFailure ?? data.IsFailure;
+      if (isFailure || !isSuccess) {
         setLoginError(
-          data.Error?.Description || "نام کاربری یا رمز عبور اشتباه است.",
+          data.error?.name ||
+            data.Error?.Description ||
+            "نام کاربری یا رمز عبور اشتباه است.",
         );
         return;
       }
 
       const token =
+        data.value?.token ??
         data.Value?.token ??
         data.token ??
         data.Token ??
@@ -261,12 +270,18 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
       // جایگزین این بخش در handleLogin بعد از دریافت token:
       const payload = decodeToken(token);
+      const roleClaim =
+        payload?.role ??
+        payload?.[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ];
       const adminStatus =
-        payload?.role === "Admin" ||
-        (Array.isArray(payload?.role) && payload.role.includes("Admin"));
+        roleClaim === "Admin" ||
+        (Array.isArray(roleClaim) && roleClaim.includes("Admin"));
 
       // دریافت کد ملی از response
       const nationalCode =
+        data.value?.nationalCode ??
         data.Value?.user?.nationalCode ??
         data.Value?.user?.NationalCode ??
         data.user?.nationalCode ??
@@ -276,6 +291,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
       // دریافت شماره تلفن از response
       const mobile =
+        data.value?.phoneNumber ??
         data.Value?.user?.phoneNumber ??
         data.Value?.user?.PhoneNumber ??
         data.Value?.user?.mobile ??
@@ -303,17 +319,28 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
       localStorage.setItem("auth-token", token);
 
-      // Store data temporarily for Sahkar verification
-      setSahkarNationalCode(String(nationalCode));
-      setSahkarMobile(String(mobile));
-      setSahkarLoginType(adminStatus ? "admin" : "user");
       setIsAdmin(adminStatus);
 
-      // Show Sahkar verification modal
+      const authenticatedUserType = adminStatus ? "admin" : "user";
+      localStorage.setItem(AUTH_STORAGE_KEY, "true");
+      localStorage.setItem(AUTH_TYPE_KEY, authenticatedUserType);
+      setIsAuthenticated(true);
+      setLoginType(authenticatedUserType);
       setIsLoginOpen(false);
       setUsername("");
       setPassword("");
-      setIsSahkarOpen(true);
+      navigate(adminStatus ? "/admin" : "/my-property");
+
+      /*
+       * روند قبلی ارسال کد SMS برای ورود (ساهکار) موقتاً غیرفعال است:
+       * setSahkarNationalCode(String(nationalCode));
+       * setSahkarMobile(String(mobile));
+       * setSahkarLoginType(adminStatus ? "admin" : "user");
+       * setIsLoginOpen(false);
+       * setUsername("");
+       * setPassword("");
+       * setIsSahkarOpen(true);
+       */
     } catch {
       setLoginError("خطا در اتصال به سرور. لطفا دوباره تلاش کنید.");
     } finally {
@@ -450,14 +477,17 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
 
   // ─── Sahkar verification handlers ────────────────────────────────────────
 
-  const handleSahkarSuccess = () => {
-    localStorage.setItem(AUTH_STORAGE_KEY, "true");
-    localStorage.setItem(AUTH_TYPE_KEY, sahkarLoginType);
-    setIsAuthenticated(true);
-    setLoginType(sahkarLoginType);
-    setIsSahkarOpen(false);
-    navigate(sahkarLoginType === "admin" ? "/admin" : "/my-property");
-  };
+  /*
+   * callback قبلی موفقیت تأیید پیامکی ورود:
+   * const handleSahkarSuccess = () => {
+   *   localStorage.setItem(AUTH_STORAGE_KEY, "true");
+   *   localStorage.setItem(AUTH_TYPE_KEY, sahkarLoginType);
+   *   setIsAuthenticated(true);
+   *   setLoginType(sahkarLoginType);
+   *   setIsSahkarOpen(false);
+   *   navigate(sahkarLoginType === "admin" ? "/admin" : "/my-property");
+   * };
+   */
 
   // ─── Effects ─────────────────────────────────────────────────────────────
 
@@ -516,14 +546,13 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
       isMenuOpen ||
       isAllNotificationsOpen ||
       isLoginOpen ||
-      isForgotOpen ||
-      isSahkarOpen
+      isForgotOpen
         ? "hidden"
         : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isMenuOpen, isAllNotificationsOpen, isLoginOpen, isForgotOpen, isSahkarOpen]);
+  }, [isMenuOpen, isAllNotificationsOpen, isLoginOpen, isForgotOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -772,17 +801,20 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
           }}
         />
 
-        <SahkarVerificationModal
-          isOpen={isSahkarOpen}
-          nationalCode={sahkarNationalCode}
-          mobile={sahkarMobile}
-          onClose={() => {
-            setIsSahkarOpen(false);
-            localStorage.removeItem("auth-token");
-          }}
-          onSuccess={handleSahkarSuccess}
-          onError={setLoginError}
-        />
+        {/*
+          مرحله ارسال و تأیید کد SMS ورود موقتاً غیرفعال است:
+          <SahkarVerificationModal
+            isOpen={isSahkarOpen}
+            nationalCode={sahkarNationalCode}
+            mobile={sahkarMobile}
+            onClose={() => {
+              setIsSahkarOpen(false);
+              localStorage.removeItem("auth-token");
+            }}
+            onSuccess={handleSahkarSuccess}
+            onError={setLoginError}
+          />
+        */}
       </Suspense>
 
       <Suspense fallback={null}>

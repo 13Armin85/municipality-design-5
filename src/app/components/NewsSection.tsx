@@ -1,8 +1,9 @@
 import { motion } from "motion/react";
 import { ArrowLeft, Calendar, Clock, Newspaper } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { getVisibleNewsItems } from "../data/news";
+import { fetchNews, type NewsItem } from "../data/news";
+import { fetchPublicNewsGroups, type NewsGroup } from "../data/newsGroups";
 import {
   Carousel,
   CarouselContent,
@@ -12,12 +13,61 @@ import {
 } from "./ui/carousel";
 
 export function NewsSection() {
-  const visibleNews = useMemo(() => getVisibleNewsItems(), []);
+  const [visibleNews, setVisibleNews] = useState<NewsItem[]>([]);
+  const [newsGroups, setNewsGroups] = useState<NewsGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [areGroupsLoading, setAreGroupsLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadNews = async () => {
+      try {
+        const items = await fetchNews(controller.signal);
+        setVisibleNews(items);
+        setHasError(false);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.error("Failed to load news:", error);
+        setHasError(true);
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    };
+
+    void loadNews();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadGroups = async () => {
+      try {
+        setNewsGroups(await fetchPublicNewsGroups(controller.signal));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.error("Failed to load news groups:", error);
+        setNewsGroups([]);
+      } finally {
+        if (!controller.signal.aborted) setAreGroupsLoading(false);
+      }
+    };
+
+    void loadGroups();
+    return () => controller.abort();
+  }, []);
+
   const categories = useMemo(
-    () => ["همه", ...Array.from(new Set(visibleNews.map((item) => item.category)))],
-    [visibleNews],
+    () => ["همه", ...newsGroups.map((group) => group.name)],
+    [newsGroups],
   );
   const [selectedCategory, setSelectedCategory] = useState("همه");
+
+  useEffect(() => {
+    if (!categories.includes(selectedCategory)) setSelectedCategory("همه");
+  }, [categories, selectedCategory]);
   const latestNews = useMemo(
     () =>
       visibleNews
@@ -55,28 +105,48 @@ export function NewsSection() {
         </motion.div>
 
         <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
-          {categories.map((category) => {
-            const isActive = selectedCategory === category;
+          {areGroupsLoading
+            ? [0, 1, 2, 3].map((item) => (
+                <span
+                  key={item}
+                  className="h-9 w-20 animate-pulse rounded-xl bg-muted"
+                />
+              ))
+            : categories.map((category) => {
+                const isActive = selectedCategory === category;
 
-            return (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setSelectedCategory(category)}
-                className={`h-9 rounded-xl border px-4 text-xs font-bold transition-colors md:text-sm ${
-                  isActive
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border/70 bg-card/80 text-muted-foreground hover:border-primary/40 hover:text-primary"
-                }`}
-              >
-                {category}
-              </button>
-            );
-          })}
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setSelectedCategory(category)}
+                    className={`h-9 rounded-xl border px-4 text-xs font-bold transition-colors md:text-sm ${
+                      isActive
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border/70 bg-card/80 text-muted-foreground hover:border-primary/40 hover:text-primary"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
         </div>
 
         {/* Carousel */}
-        {latestNews.length > 0 ? (
+        {isLoading ? (
+          <div className="mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="h-80 animate-pulse rounded-2xl border border-border/70 bg-card/80"
+              />
+            ))}
+          </div>
+        ) : hasError ? (
+          <div className="mx-auto max-w-xl rounded-2xl border border-destructive/30 bg-card/80 px-4 py-8 text-center text-sm text-muted-foreground">
+            دریافت اخبار با خطا مواجه شد. لطفاً دوباره تلاش کنید.
+          </div>
+        ) : latestNews.length > 0 ? (
           <Carousel
             opts={{
               align: "start",

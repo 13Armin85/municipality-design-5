@@ -14,8 +14,11 @@ import {
 import {
   adminNewsStorageKey,
   getStoredNewsItems,
-  newsCategories,
 } from "../../data/news";
+import {
+  fetchAdminNewsGroups,
+  type NewsGroup,
+} from "../../data/newsGroups";
 
 // ─── Persian Calendar Utilities ────────────────────────────────────────────
 
@@ -513,7 +516,7 @@ const emptyForm = {
   excerpt: "",
   description: "",
   publishAt: "",
-  category: newsCategories[0] ?? "خبر",
+  categoryId: "",
   imageUrl: "",
 };
 
@@ -580,10 +583,46 @@ const inputCls =
 export function AdminNewsPage() {
   const [form, setForm] = useState(emptyForm);
   const [items, setItems] = useState(() => getStoredNewsItems());
+  const [newsGroups, setNewsGroups] = useState<NewsGroup[]>([]);
+  const [areGroupsLoading, setAreGroupsLoading] = useState(true);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadGroups = async () => {
+      try {
+        const groups = await fetchAdminNewsGroups(controller.signal);
+        setNewsGroups(groups);
+        setForm((current) => ({
+          ...current,
+          categoryId:
+            groups.some((group) => group.id === current.categoryId)
+              ? current.categoryId
+              : (groups.find((group) => group.isActive)?.id ??
+                groups[0]?.id ??
+                ""),
+        }));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setMessage({
+          type: "error",
+          text:
+            error instanceof Error
+              ? error.message
+              : "دریافت دسته‌بندی‌های اخبار ناموفق بود.",
+        });
+      } finally {
+        if (!controller.signal.aborted) setAreGroupsLoading(false);
+      }
+    };
+
+    void loadGroups();
+    return () => controller.abort();
+  }, []);
 
   const scheduledCount = useMemo(
     () =>
@@ -613,15 +652,19 @@ export function AdminNewsPage() {
     if (
       !form.title.trim() ||
       !form.excerpt.trim() ||
-      !form.description.trim()
+      !form.description.trim() ||
+      !form.categoryId
     ) {
       setMessage({
         type: "error",
-        text: "عنوان، توضیحات کوتاه و متن خبر الزامی است.",
+        text: "عنوان، دسته‌بندی، توضیحات کوتاه و متن خبر الزامی است.",
       });
       return;
     }
     const publishDate = form.publishAt ? new Date(form.publishAt) : new Date();
+    const selectedGroup = newsGroups.find(
+      (group) => group.id === form.categoryId,
+    );
     const item = {
       id: `admin-news-${Date.now()}`,
       slug: slugify(form.title),
@@ -636,12 +679,18 @@ export function AdminNewsPage() {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      category: form.category,
+      category: selectedGroup?.name ?? "خبر",
       publishAt: publishDate.toISOString(),
       imageUrl: form.imageUrl,
     };
     saveItems([item, ...items]);
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      categoryId:
+        newsGroups.find((group) => group.isActive)?.id ??
+        newsGroups[0]?.id ??
+        "",
+    });
     setMessage({
       type: "success",
       text:
@@ -701,17 +750,27 @@ export function AdminNewsPage() {
             <Field label="دسته‌بندی">
               <span className="relative block">
                 <select
-                  value={form.category}
+                  value={form.categoryId}
+                  disabled={areGroupsLoading || newsGroups.length === 0}
                   onChange={(e) =>
-                    setForm((prev) => ({ ...prev, category: e.target.value }))
+                    setForm((prev) => ({
+                      ...prev,
+                      categoryId: e.target.value,
+                    }))
                   }
-                  className={`${inputCls} appearance-none`}
+                  className={`${inputCls} appearance-none disabled:cursor-not-allowed disabled:opacity-60`}
                 >
-                  {newsCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
+                  {areGroupsLoading ? (
+                    <option value="">در حال دریافت دسته‌بندی‌ها...</option>
+                  ) : newsGroups.length === 0 ? (
+                    <option value="">دسته‌بندی‌ای ثبت نشده است</option>
+                  ) : (
+                    newsGroups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <Tag className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               </span>

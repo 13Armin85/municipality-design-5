@@ -37,7 +37,7 @@ import type {
   RetreatDirectionTableRow,
   RetreatSetbackTableRow,
 } from "../data/retreat";
-import { apiFetch } from "../data/api";
+import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import {
   isApiSuccess,
   getApiErrorMessage,
@@ -316,8 +316,8 @@ export function PropertyInquiryPage({
       setSubPropertiesError(null);
 
       try {
-        const response = await apiFetch(
-          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+        const response = await dotNet10ApiFetch(
+          "/api/Files",
           {
             method: "GET",
             cache: "no-store",

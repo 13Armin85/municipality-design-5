@@ -28,7 +28,7 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
-import { apiFetch } from "../data/api";
+import { dotNet10ApiFetch } from "../data/api";
 
 interface MyPropertyPageProps {
   isDark: boolean;
@@ -64,14 +64,32 @@ const mapTreeItems = (
   fallbackCode = "",
 ): PropertyTreeItem[] =>
   (Array.isArray(items) ? items : []).map((item, index) => {
-    const text = String(item.Text ?? item.text ?? "").trim();
-    const fullCode = getTreeNodeCode(text) || fallbackCode;
+    const explicitFullCode =
+      item.codeNosazi ??
+      item.CodeNosazi ??
+      item.codeN ??
+      item.CodeN ??
+      item.fullCode;
+    const fullCode = String(
+      explicitFullCode ||
+        getTreeNodeCode(item.Text ?? item.text) ||
+        fallbackCode,
+    ).trim();
+    const type = String(item.type ?? item.Type ?? "").trim();
+    const legacyText = String(item.Text ?? item.text ?? "").trim();
+    const text =
+      legacyText ||
+      [fullCode, type].filter(Boolean).join(" - ") ||
+      fallbackCode;
 
     return {
       id: String(item.Id ?? item.id ?? `${fullCode || "node"}-${index}`),
       text: text || fullCode || "-",
       fullCode,
-      items: mapTreeItems(item.Items ?? item.items, fullCode),
+      items: mapTreeItems(
+        item.children ?? item.Children ?? item.Items ?? item.items,
+        fullCode,
+      ),
     };
   });
 
@@ -190,14 +208,8 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
           return;
         }
 
-        if (!nationalCode) {
-          setError("کد ملی یافت نشد. لطفاً دوباره وارد شوید.");
-          setLoading(false);
-          return;
-        }
-
-        const response = await apiFetch(
-          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+        const response = await dotNet10ApiFetch(
+          "/api/Files",
           {
             method: "GET",
             cache: "no-store",
@@ -251,17 +263,20 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
               item.codeNosazi ??
               "—",
             treeItems: mapTreeItems(
-              item.tvItems ?? item.TvItems ?? item.treeItems,
+              item.children || item.Children
+                ? [item]
+                : item.tvItems ?? item.TvItems ?? item.treeItems,
               item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi,
             ),
             description:
-              item.tvItems?.[0]?.Text?.trim() ??
-              item.TvItems?.[0]?.Text?.trim() ??
-              item.CodeN ??
-              item.codeN ??
-              item.fullCode ??
-              item.codeNosazi ??
-              "بدون توضیحات",
+              [item.codeNosazi, item.type].filter(Boolean).join(" - ") ||
+              (item.tvItems?.[0]?.Text?.trim() ??
+                item.TvItems?.[0]?.Text?.trim() ??
+                item.CodeN ??
+                item.codeN ??
+                item.fullCode ??
+                item.codeNosazi ??
+                "بدون توضیحات"),
           }),
         );
 

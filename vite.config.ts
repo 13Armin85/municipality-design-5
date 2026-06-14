@@ -31,6 +31,12 @@ export default defineConfig({
     port: 5173,
 
     proxy: {
+      "/dotnet10-api": {
+        target: "http://192.168.10.3:6500",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/dotnet10-api/, ""),
+      },
       "/api": {
         target: "http://192.168.10.3:6300",
 

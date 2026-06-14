@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { Dashboard } from "./adminpanel/AdminDashboard";
 import { AdminNewsPage } from "./adminpanel/AdminNewsPage";
+import { AdminNewsGroupsPage } from "./adminpanel/AdminNewsGroupsPage";
 import { SettingsPage } from "./adminpanel/AdminSettingsPage";
 import { UserManagement } from "./adminpanel/UserManagement";
 import { navItems } from "./adminpanel/adminData";
@@ -23,6 +24,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
   const pageComponents = {
     dashboard: <Dashboard />,
     news: <AdminNewsPage />,
+    "news-groups": <AdminNewsGroupsPage />,
     users: <UserManagement />,
     settings: <SettingsPage />,
   };

@@ -16,7 +16,7 @@ import {
   normalizeApiResponse,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
-import { apiFetch } from "../data/api";
+import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 import { SelectionModal } from "./sabtdarkhast/FormCommon";
 import { HelpModal } from "./sabtdarkhast/HelpModal";
@@ -756,8 +756,8 @@ export function SabtDarkhastPage({
 
         if (!token || !nationalCode) return;
 
-        const response = await apiFetch(
-          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+        const response = await dotNet10ApiFetch(
+          "/api/Files",
           {
             cache: "no-store",
             headers: getAuthHeaders(token),

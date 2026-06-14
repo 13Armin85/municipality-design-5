@@ -16,7 +16,7 @@ import {
   fetchJsonWithCache,
   propertyFileCacheKey,
 } from "../utils/requestCache";
-import { apiFetch } from "../data/api";
+import { dotNet10ApiFetch } from "../data/api";
 
 export interface PropertyTreeItem {
   id: string;
@@ -39,14 +39,32 @@ const mapTreeItems = (
   fallbackCode = "",
 ): PropertyTreeItem[] =>
   (Array.isArray(items) ? items : []).map((item, index) => {
-    const text = String(item.Text ?? item.text ?? "").trim();
-    const fullCode = getTreeNodeCode(text) || fallbackCode;
+    const explicitFullCode =
+      item.codeNosazi ??
+      item.CodeNosazi ??
+      item.codeN ??
+      item.CodeN ??
+      item.fullCode;
+    const fullCode = String(
+      explicitFullCode ||
+        getTreeNodeCode(item.Text ?? item.text) ||
+        fallbackCode,
+    ).trim();
+    const type = String(item.type ?? item.Type ?? "").trim();
+    const legacyText = String(item.Text ?? item.text ?? "").trim();
+    const text =
+      legacyText ||
+      [fullCode, type].filter(Boolean).join(" - ") ||
+      fallbackCode;
 
     return {
       id: String(item.Id ?? item.id ?? `${fullCode || "node"}-${index}`),
       text: text || fullCode || "-",
       fullCode,
-      items: mapTreeItems(item.Items ?? item.items, fullCode),
+      items: mapTreeItems(
+        item.children ?? item.Children ?? item.Items ?? item.items,
+        fullCode,
+      ),
     };
   });
 
@@ -65,12 +83,9 @@ const getInitialExpandedTreeIds = (items: PropertyTreeItem[]) => {
   return ids;
 };
 
-const fetchPropertyFile = async (
-  nationalCode: string,
-  token: string,
-): Promise<ApiResponse> => {
-  const response = await apiFetch(
-    `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
+const fetchPropertyFile = async (token: string): Promise<ApiResponse> => {
+  const response = await dotNet10ApiFetch(
+    "/api/Files",
     {
       method: "GET",
       cache: "no-store",
@@ -82,7 +97,7 @@ const fetchPropertyFile = async (
   );
 
   if (response.status === 404) {
-    return { IsSuccess: true, IsFailure: false, Value: [] };
+    return { isSuccess: true, isFailure: false, value: [] };
   }
 
   if (!response.ok) {
@@ -170,15 +185,9 @@ export function PropertyTreeList({
           return;
         }
 
-        if (!nationalCode) {
-          setError("کد ملی یافت نشد. لطفا دوباره وارد شوید.");
-          setLoading(false);
-          return;
-        }
-
         const data = await fetchJsonWithCache<ApiResponse>(
-          propertyFileCacheKey(nationalCode),
-          () => fetchPropertyFile(nationalCode, token),
+          propertyFileCacheKey(nationalCode ?? "current-user"),
+          () => fetchPropertyFile(token),
           /*
             const response = await fetch(
           `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
@@ -238,16 +247,19 @@ export function PropertyTreeList({
               item.codeNosazi ??
               "—",
             treeItems: mapTreeItems(
-              item.tvItems ?? item.TvItems ?? item.treeItems,
+              item.children || item.Children
+                ? [item]
+                : item.tvItems ?? item.TvItems ?? item.treeItems,
               item.codeN ?? item.CodeN ?? item.fullCode ?? item.codeNosazi,
             ),
             description:
-              item.tvItems?.[0]?.Text?.trim() ??
-              item.CodeN ??
-              item.codeN ??
-              item.fullCode ??
-              item.codeNosazi ??
-              "بدون توضیحات",
+              [item.codeNosazi, item.type].filter(Boolean).join(" - ") ||
+              (item.tvItems?.[0]?.Text?.trim() ??
+                item.CodeN ??
+                item.codeN ??
+                item.fullCode ??
+                item.codeNosazi ??
+                "بدون توضیحات"),
           }),
         );
 
