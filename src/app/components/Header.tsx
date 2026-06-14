@@ -255,6 +255,19 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
         return;
       }
 
+      const isActive =
+        data.value?.isActive ??
+        data.value?.user?.isActive ??
+        data.Value?.isActive ??
+        data.Value?.user?.isActive ??
+        data.user?.isActive ??
+        data.isActive;
+
+      if (isActive === false) {
+        setLoginError("حساب کاربری شما غیرفعال است.");
+        return;
+      }
+
       const token =
         data.value?.token ??
         data.Value?.token ??

@@ -1,19 +1,28 @@
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   ImagePlus,
+  Loader2,
   Newspaper,
+  Pencil,
+  Power,
+  RefreshCw,
   Save,
   Tag,
   Trash2,
   X,
 } from "lucide-react";
 import {
-  adminNewsStorageKey,
-  getStoredNewsItems,
+  changeNewsStatus,
+  createNews,
+  deleteNews,
+  fetchAdminNews,
+  updateNews,
+  type AdminNewsItem,
+  type NewsInput,
 } from "../../data/news";
 import {
   fetchAdminNewsGroups,
@@ -540,16 +549,24 @@ const getPublishStatus = (publishAt: string | undefined | null) => {
   return date.getTime() > Date.now() ? "زمان‌بندی شده" : "منتشر شده";
 };
 
-const slugify = (value: string) => {
-  const fallback = `news-${Date.now()}`;
-  const slug = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^\u0600-\u06FF\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-  return slug || fallback;
+const toPictureValue = (value: string) => {
+  const dataUrlMatch = value.match(/^data:image\/[^;]+;base64,(.+)$/i);
+  return dataUrlMatch?.[1] ?? value.trim();
+};
+
+const toNewsInput = (form: typeof emptyForm): NewsInput => {
+  const publishDate = form.publishAt ? new Date(form.publishAt) : new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return {
+    groupId: form.categoryId,
+    title: form.title.trim(),
+    description: form.description.trim(),
+    shortDescription: form.excerpt.trim(),
+    picture: toPictureValue(form.imageUrl),
+    publishDate: `${publishDate.getFullYear()}-${pad(publishDate.getMonth() + 1)}-${pad(publishDate.getDate())}`,
+    publishTime: `${pad(publishDate.getHours())}:${pad(publishDate.getMinutes())}:00.000Z`,
+  };
 };
 
 // ─── Field wrapper for consistent spacing ───────────────────────────────────
@@ -582,13 +599,36 @@ const inputCls =
 
 export function AdminNewsPage() {
   const [form, setForm] = useState(emptyForm);
-  const [items, setItems] = useState(() => getStoredNewsItems());
+  const [items, setItems] = useState<AdminNewsItem[]>([]);
   const [newsGroups, setNewsGroups] = useState<NewsGroup[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [areGroupsLoading, setAreGroupsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statusLoadingId, setStatusLoadingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  const loadNews = useCallback(async (signal?: AbortSignal) => {
+    setIsLoading(true);
+    try {
+      setItems(await fetchAdminNews(signal));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "دریافت خبرهای ثبت شده ناموفق بود.",
+      });
+    } finally {
+      if (!signal?.aborted) setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -620,9 +660,9 @@ export function AdminNewsPage() {
       }
     };
 
-    void loadGroups();
+    void Promise.all([loadGroups(), loadNews(controller.signal)]);
     return () => controller.abort();
-  }, []);
+  }, [loadNews]);
 
   const scheduledCount = useMemo(
     () =>
@@ -632,21 +672,38 @@ export function AdminNewsPage() {
     [items],
   );
 
-  const saveItems = (nextItems: typeof items) => {
-    setItems(nextItems);
-    localStorage.setItem(adminNewsStorageKey, JSON.stringify(nextItems));
+  const resetForm = () => {
+    setEditingId(null);
+    setForm({
+      ...emptyForm,
+      categoryId:
+        newsGroups.find((group) => group.isActive)?.id ??
+        newsGroups[0]?.id ??
+        "",
+    });
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      event.target.value = "";
+      setMessage({
+        type: "error",
+        text: "حجم تصویر باید حداکثر ۵ مگابایت باشد.",
+      });
+      return;
+    }
+
+    setMessage(null);
     const reader = new FileReader();
     reader.onload = () =>
       setForm((prev) => ({ ...prev, imageUrl: String(reader.result ?? "") }));
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setMessage(null);
     if (
@@ -661,47 +718,93 @@ export function AdminNewsPage() {
       });
       return;
     }
-    const publishDate = form.publishAt ? new Date(form.publishAt) : new Date();
-    const selectedGroup = newsGroups.find(
-      (group) => group.id === form.categoryId,
-    );
-    const item = {
-      id: `admin-news-${Date.now()}`,
-      slug: slugify(form.title),
-      title: form.title.trim(),
-      excerpt: form.excerpt.trim(),
-      content: form.description
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean),
-      date: publishDate.toLocaleDateString("fa-IR"),
-      time: publishDate.toLocaleTimeString("fa-IR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      category: selectedGroup?.name ?? "خبر",
-      publishAt: publishDate.toISOString(),
-      imageUrl: form.imageUrl,
-    };
-    saveItems([item, ...items]);
-    setForm({
-      ...emptyForm,
-      categoryId:
-        newsGroups.find((group) => group.isActive)?.id ??
-        newsGroups[0]?.id ??
-        "",
-    });
-    setMessage({
-      type: "success",
-      text:
-        publishDate.getTime() > Date.now()
-          ? "خبر ذخیره و برای تاریخ آینده زمان‌بندی شد."
-          : "خبر ذخیره و منتشر شد.",
-    });
+
+    setIsSubmitting(true);
+    try {
+      const payload = toNewsInput(form);
+      if (editingId) {
+        await updateNews(editingId, payload);
+      } else {
+        await createNews(payload);
+      }
+
+      setMessage({
+        type: "success",
+        text: editingId
+          ? "خبر با موفقیت ویرایش شد."
+          : "خبر با موفقیت ثبت شد.",
+      });
+      resetForm();
+      await loadNews();
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error ? error.message : "ذخیره خبر ناموفق بود.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDelete = (id: string) =>
-    saveItems(items.filter((item) => item.id !== id));
+  const handleEdit = (item: AdminNewsItem) => {
+    setEditingId(item.id);
+    setForm({
+      title: item.title,
+      excerpt: item.shortDescription,
+      description: item.description,
+      publishAt: item.publishAt ?? "",
+      categoryId: item.groupId,
+      imageUrl: item.imageUrl || item.picture || "",
+    });
+    setMessage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (item: AdminNewsItem) => {
+    if (!window.confirm(`خبر «${item.title}» حذف شود؟`)) return;
+
+    setDeletingId(item.id);
+    setMessage(null);
+    try {
+      await deleteNews(item.id);
+      if (editingId === item.id) resetForm();
+      setMessage({ type: "success", text: "خبر با موفقیت حذف شد." });
+      await loadNews();
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "حذف خبر ناموفق بود.",
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleToggleStatus = async (item: AdminNewsItem) => {
+    setStatusLoadingId(item.id);
+    setMessage(null);
+    try {
+      await changeNewsStatus(item.id);
+      setMessage({
+        type: "success",
+        text: item.isActive
+          ? "خبر با موفقیت غیرفعال شد."
+          : "خبر با موفقیت فعال شد.",
+      });
+      await loadNews();
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "تغییر وضعیت خبر ناموفق بود.",
+      });
+    } finally {
+      setStatusLoadingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -730,7 +833,9 @@ export function AdminNewsPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
             <Newspaper className="h-4 w-4 text-primary" />
           </div>
-          <span className="font-bold text-foreground">ثبت خبر جدید</span>
+          <span className="font-bold text-foreground">
+            {editingId ? "ویرایش خبر" : "ثبت خبر جدید"}
+          </span>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5">
@@ -873,11 +978,27 @@ export function AdminNewsPage() {
           <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center">
             <button
               type="submit"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 active:scale-95"
+              disabled={isSubmitting}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:shadow-primary/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Save className="h-4 w-4" />
-              ذخیره خبر
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {editingId ? "ذخیره تغییرات" : "ذخیره خبر"}
             </button>
+            {editingId && (
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={resetForm}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border px-5 text-sm font-bold text-muted-foreground transition-colors hover:bg-muted disabled:opacity-60"
+              >
+                <X className="h-4 w-4" />
+                انصراف از ویرایش
+              </button>
+            )}
 
             <AnimatePresence>
               {message && (
@@ -897,16 +1018,32 @@ export function AdminNewsPage() {
 
       {/* News list */}
       <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
-        <h3 className="mb-4 font-bold text-foreground">خبرهای ثبت شده</h3>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="font-bold text-foreground">خبرهای ثبت شده</h3>
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => void loadNews()}
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted disabled:opacity-60"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
+            />
+            بروزرسانی
+          </button>
+        </div>
         <div className="space-y-3">
-          {items.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center rounded-xl border border-dashed border-border bg-background/60 px-4 py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : items.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-background/60 px-4 py-8 text-center text-sm text-muted-foreground">
               هنوز خبری ثبت نشده است.
             </div>
           ) : (
             items.map((item, index) => {
-              const publishAt =
-                ((item as any).publishAt as string | undefined) ?? undefined;
+              const publishAt = item.publishAt;
               const status = getPublishStatus(publishAt);
               return (
                 <motion.div
@@ -916,9 +1053,9 @@ export function AdminNewsPage() {
                   transition={{ delay: index * 0.04 }}
                   className="flex flex-col gap-3 rounded-xl border border-border bg-background/50 p-3.5 sm:flex-row sm:items-center"
                 >
-                  {(item as any).imageUrl && (
+                  {item.imageUrl && (
                     <img
-                      src={(item as any).imageUrl}
+                      src={item.imageUrl}
                       alt={item.title}
                       className="h-20 w-full rounded-xl object-cover sm:w-28 sm:shrink-0"
                     />
@@ -940,6 +1077,11 @@ export function AdminNewsPage() {
                       >
                         {status}
                       </span>
+                      {!item.isActive && (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                          غیرفعال
+                        </span>
+                      )}
                     </div>
                     <p className="line-clamp-1 text-xs text-muted-foreground">
                       {item.excerpt}
@@ -948,14 +1090,47 @@ export function AdminNewsPage() {
                       انتشار: {toPersianDateTime(publishAt)}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item.id)}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-xl border border-destructive/30 bg-destructive/5 text-destructive transition-colors hover:bg-destructive/15 sm:self-center"
-                    aria-label="حذف خبر"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
+                    <button
+                      type="button"
+                      disabled={statusLoadingId === item.id}
+                      onClick={() => void handleToggleStatus(item)}
+                      className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors disabled:opacity-60 ${
+                        item.isActive
+                          ? "border-amber-500/30 bg-amber-500/5 text-amber-600 hover:bg-amber-500/15"
+                          : "border-emerald-500/30 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500/15"
+                      }`}
+                      aria-label={item.isActive ? "غیرفعال کردن خبر" : "فعال کردن خبر"}
+                      title={item.isActive ? "غیرفعال کردن خبر" : "فعال کردن خبر"}
+                    >
+                      {statusLoadingId === item.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Power className="h-4 w-4" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(item)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-primary/30 bg-primary/5 text-primary transition-colors hover:bg-primary/15"
+                      aria-label="ویرایش خبر"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingId === item.id}
+                      onClick={() => void handleDelete(item)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 text-destructive transition-colors hover:bg-destructive/15 disabled:opacity-60"
+                      aria-label="حذف خبر"
+                    >
+                      {deletingId === item.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </motion.div>
               );
             })

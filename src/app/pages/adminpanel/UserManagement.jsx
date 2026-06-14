@@ -3,7 +3,9 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   CheckCircle2,
   Edit3,
+  KeyRound,
   Loader2,
+  Power,
   Plus,
   RefreshCw,
   Search,
@@ -11,13 +13,20 @@ import {
   XCircle,
 } from "lucide-react";
 import {
+  changeAdminUserPassword,
+  changeAdminUserStatus,
   createAdminUser,
   deleteAdminUser,
   fetchAdminRoles,
   fetchAdminUsers,
   updateAdminUser,
 } from "../../data/adminUsers";
-import { AddUserModal, DeleteConfirmModal, EditUserModal } from "./AdminModals";
+import {
+  AddUserModal,
+  ChangePasswordModal,
+  DeleteConfirmModal,
+  EditUserModal,
+} from "./AdminModals";
 
 const statusStyles = {
   active: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
@@ -30,7 +39,14 @@ function fullName(user) {
   return `${user.name || ""} ${user.family || ""}`.trim() || "بدون نام";
 }
 
-function UserCard({ user, onDelete, onEdit }) {
+function UserCard({
+  user,
+  onChangePassword,
+  onDelete,
+  onEdit,
+  onToggleStatus,
+  statusLoading,
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -53,6 +69,29 @@ function UserCard({ user, onDelete, onEdit }) {
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            aria-label="تغییر رمز عبور"
+            title="تغییر رمز عبور"
+            onClick={() => onChangePassword(user)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 text-muted-foreground transition-all hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            disabled={statusLoading}
+            aria-label={user.isActive ? "غیرفعال کردن کاربر" : "فعال کردن کاربر"}
+            title={user.isActive ? "غیرفعال کردن کاربر" : "فعال کردن کاربر"}
+            onClick={() => onToggleStatus(user)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+          >
+            {statusLoading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Power className="h-3.5 w-3.5" />
+            )}
+          </button>
           <button
             type="button"
             aria-label="ویرایش کاربر"
@@ -104,6 +143,8 @@ export function UserManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [deleteUser, setDeleteUser] = useState(null);
+  const [passwordUser, setPasswordUser] = useState(null);
+  const [statusLoadingId, setStatusLoadingId] = useState(null);
 
   const loadUsers = useCallback(async (signal) => {
     setLoading(true);
@@ -171,6 +212,24 @@ export function UserManagement() {
     await deleteAdminUser(deleteUser.id);
     setUsers((current) => current.filter((user) => user.id !== deleteUser.id));
     setDeleteUser(null);
+  };
+
+  const handlePasswordChange = async (input) => {
+    await changeAdminUserPassword(input);
+    setPasswordUser(null);
+  };
+
+  const handleToggleStatus = async (user) => {
+    setStatusLoadingId(user.id);
+    setError("");
+    try {
+      await changeAdminUserStatus(user.id);
+      await loadUsers();
+    } catch (requestError) {
+      setError(requestError.message || "تغییر وضعیت کاربر انجام نشد.");
+    } finally {
+      setStatusLoadingId(null);
+    }
   };
 
   return (
@@ -283,6 +342,12 @@ export function UserManagement() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
+                            <button type="button" onClick={() => setPasswordUser(user)} aria-label="تغییر رمز عبور" title="تغییر رمز عبور" className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 text-muted-foreground hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600">
+                              <KeyRound className="h-3.5 w-3.5" />
+                            </button>
+                            <button type="button" disabled={statusLoadingId === user.id} onClick={() => void handleToggleStatus(user)} aria-label={user.isActive ? "غیرفعال کردن کاربر" : "فعال کردن کاربر"} title={user.isActive ? "غیرفعال کردن کاربر" : "فعال کردن کاربر"} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:opacity-50">
+                              {statusLoadingId === user.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />}
+                            </button>
                             <button type="button" onClick={() => setEditUser(user)} aria-label="ویرایش کاربر" title="ویرایش کاربر" className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/70 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary">
                               <Edit3 className="h-3.5 w-3.5" />
                             </button>
@@ -302,7 +367,15 @@ export function UserManagement() {
           <div className="space-y-3 md:hidden">
             <AnimatePresence>
               {filteredUsers.map((user) => (
-                <UserCard key={user.id} user={user} onDelete={setDeleteUser} onEdit={setEditUser} />
+                <UserCard
+                  key={user.id}
+                  user={user}
+                  onChangePassword={setPasswordUser}
+                  onDelete={setDeleteUser}
+                  onEdit={setEditUser}
+                  onToggleStatus={(selectedUser) => void handleToggleStatus(selectedUser)}
+                  statusLoading={statusLoadingId === user.id}
+                />
               ))}
             </AnimatePresence>
           </div>
@@ -339,6 +412,13 @@ export function UserManagement() {
         )}
         {deleteUser && (
           <DeleteConfirmModal user={deleteUser} onClose={() => setDeleteUser(null)} onConfirm={handleDelete} />
+        )}
+        {passwordUser && (
+          <ChangePasswordModal
+            user={passwordUser}
+            onClose={() => setPasswordUser(null)}
+            onSave={handlePasswordChange}
+          />
         )}
       </AnimatePresence>
     </div>

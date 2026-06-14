@@ -140,3 +140,18 @@ export async function deleteNewsGroup(id: string): Promise<void> {
   });
   await parseResponse(response);
 }
+
+export async function changeNewsGroupStatus(id: string): Promise<void> {
+  const response = await dotNet10ApiFetch(
+    `${NEWS_GROUPS_ENDPOINT}/change-status`,
+    {
+      method: "PATCH",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    },
+  );
+  await parseResponse(response);
+}

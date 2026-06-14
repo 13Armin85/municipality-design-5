@@ -14,6 +14,26 @@ export interface NewsItem {
   imageUrl?: string;
 }
 
+export interface AdminNewsItem extends NewsItem {
+  groupId: string;
+  description: string;
+  shortDescription: string;
+  picture: string;
+  publishDate: string;
+  publishTime: string;
+  isActive: boolean;
+}
+
+export interface NewsInput {
+  groupId: string;
+  title: string;
+  description: string;
+  shortDescription: string;
+  picture: string;
+  publishDate: string;
+  publishTime: string;
+}
+
 interface NewsApiItem {
   id: string;
   groupId: string;
@@ -27,17 +47,14 @@ interface NewsApiItem {
   isActive: boolean;
 }
 
-export const adminNewsStorageKey = "municipality-admin-news-items";
+interface ProblemDetails {
+  title?: string;
+  detail?: string;
+  errors?: Record<string, string[]>;
+}
 
-export const newsCategories = [
-  "اطلاعیه",
-  "خبر",
-  "خدمات",
-  "پشتیبانی",
-  "گزارش",
-  "عمران",
-  "فرهنگی",
-];
+const NEWS_ENDPOINT = "/api/News";
+const ADMIN_NEWS_ENDPOINT = `${NEWS_ENDPOINT}/admin`;
 
 const formatPublishDate = (value: string) => {
   if (!value) return "";
@@ -57,10 +74,21 @@ const formatPublishTime = (value: string) => {
   return match ? `${match[1]}:${match[2]}` : value;
 };
 
+const getBase64ImageMimeType = (value: string) => {
+  if (value.startsWith("/9j/")) return "image/jpeg";
+  if (value.startsWith("iVBORw0KGgo")) return "image/png";
+  if (value.startsWith("R0lGOD")) return "image/gif";
+  if (value.startsWith("UklGR")) return "image/webp";
+  return null;
+};
+
 const resolvePictureUrl = (picture: string) => {
   const value = picture?.trim();
   if (!value) return undefined;
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
+
+  const mimeType = getBase64ImageMimeType(value);
+  if (mimeType) return `data:${mimeType};base64,${value}`;
 
   return dotNet10ApiUrl(value);
 };
@@ -75,7 +103,15 @@ const toParagraphs = (description: string, fallback: string) => {
     .filter(Boolean);
 };
 
-const mapNewsItem = (item: NewsApiItem): NewsItem => ({
+const getPublishAt = (item: NewsApiItem) => {
+  if (!item.publishDate) return "";
+  if (!item.publishTime) return item.publishDate;
+
+  // TimeOnly values may include Z, but the selected publication clock time is local.
+  return `${item.publishDate}T${item.publishTime.replace(/Z$/i, "")}`;
+};
+
+const mapNewsItem = (item: NewsApiItem): AdminNewsItem => ({
   id: item.id,
   slug: item.id,
   title: item.title?.trim() || "بدون عنوان",
@@ -84,59 +120,159 @@ const mapNewsItem = (item: NewsApiItem): NewsItem => ({
   date: formatPublishDate(item.publishDate),
   time: formatPublishTime(item.publishTime),
   category: item.groupName?.trim() || "خبر",
-  publishAt:
-    item.publishDate && item.publishTime
-      ? `${item.publishDate}T${item.publishTime}`
-      : item.publishDate,
+  publishAt: getPublishAt(item),
   imageUrl: resolvePictureUrl(item.picture),
+  groupId: item.groupId,
+  description: item.description ?? "",
+  shortDescription: item.shortDescription ?? "",
+  picture: item.picture ?? "",
+  publishDate: item.publishDate ?? "",
+  publishTime: item.publishTime ?? "",
+  isActive: item.isActive,
 });
 
 const getPublishTimestamp = (item: NewsApiItem) => {
-  const value =
-    item.publishDate && item.publishTime
-      ? `${item.publishDate}T${item.publishTime}`
-      : item.publishDate;
-  const timestamp = new Date(value).getTime();
+  const timestamp = new Date(getPublishAt(item)).getTime();
   return Number.isNaN(timestamp) ? 0 : timestamp;
 };
 
-export async function fetchNews(signal?: AbortSignal): Promise<NewsItem[]> {
+function getAuthHeaders(): HeadersInit {
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem("auth-token")?.replace(/^Bearer\s+/i, "")
       : null;
 
-  const response = await dotNet10ApiFetch("/api/News", {
-    method: "GET",
-    headers: {
-      Accept: "text/plain",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    signal,
-  });
+  return {
+    Accept: "text/plain",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
-  if (!response.ok) {
-    throw new Error(`News request failed with status ${response.status}`);
-  }
+async function parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
+  const text = await response.text();
+  let payload: ApiResponse<T> & ProblemDetails = {};
 
-  const payload = (await response.json()) as ApiResponse<NewsApiItem[]>;
-  const isSuccess = payload.isSuccess ?? payload.IsSuccess;
-  const isFailure = payload.isFailure ?? payload.IsFailure;
-  const value = payload.value ?? payload.Value;
-
-  if (isSuccess === false || isFailure === true || !Array.isArray(value)) {
+  if (response.status === 405) {
     throw new Error(
-      payload.error?.name ||
-        payload.error?.description ||
-        payload.Error?.Description ||
-        "دریافت اخبار ناموفق بود.",
+      "سرور متدهای PUT و DELETE را مسدود کرده است. تنظیمات WebDAV یا HTTP Verbs سرور API باید بررسی شود.",
     );
   }
+
+  if (text) {
+    try {
+      payload = JSON.parse(text) as ApiResponse<T> & ProblemDetails;
+    } catch {
+      if (!response.ok) throw new Error(text);
+    }
+  }
+
+  const isSuccess = payload.isSuccess ?? payload.IsSuccess;
+  const isFailure = payload.isFailure ?? payload.IsFailure;
+
+  if (!response.ok || isSuccess === false || isFailure === true) {
+    const validationMessage = payload.errors
+      ? Object.entries(payload.errors)
+          .flatMap(([field, messages]) =>
+            messages.filter(Boolean).map((message) => `${field}: ${message}`),
+          )
+          .join(" ")
+      : "";
+
+    throw new Error(
+      validationMessage ||
+        payload.detail ||
+        payload.error?.name ||
+        payload.error?.description ||
+        payload.Error?.Description ||
+        payload.title ||
+        "عملیات اخبار با خطا مواجه شد.",
+    );
+  }
+
+  return payload;
+}
+
+async function requestNews<T>(
+  endpoint: string,
+  options: RequestInit,
+): Promise<ApiResponse<T>> {
+  const response = await dotNet10ApiFetch(endpoint, {
+    ...options,
+    headers: {
+      ...getAuthHeaders(),
+      ...options.headers,
+    },
+  });
+
+  return parseResponse<T>(response);
+}
+
+export async function fetchNews(signal?: AbortSignal): Promise<NewsItem[]> {
+  const payload = await requestNews<NewsApiItem[]>(NEWS_ENDPOINT, {
+    method: "GET",
+    signal,
+  });
+  const value = payload.value ?? payload.Value;
+
+  if (!Array.isArray(value)) throw new Error("دریافت اخبار ناموفق بود.");
 
   return value
     .filter((item) => item.isActive)
     .sort((a, b) => getPublishTimestamp(b) - getPublishTimestamp(a))
     .map(mapNewsItem);
+}
+
+export async function fetchAdminNews(
+  signal?: AbortSignal,
+): Promise<AdminNewsItem[]> {
+  const payload = await requestNews<NewsApiItem[]>(ADMIN_NEWS_ENDPOINT, {
+    method: "GET",
+    signal,
+  });
+  const value = payload.value ?? payload.Value;
+
+  if (!Array.isArray(value)) {
+    throw new Error("دریافت خبرهای ثبت شده ناموفق بود.");
+  }
+
+  return value
+    .sort((a, b) => getPublishTimestamp(b) - getPublishTimestamp(a))
+    .map(mapNewsItem);
+}
+
+export async function createNews(news: NewsInput): Promise<void> {
+  await requestNews(NEWS_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(news),
+  });
+}
+
+export async function updateNews(
+  id: string,
+  news: NewsInput,
+): Promise<void> {
+  await requestNews(NEWS_ENDPOINT, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, ...news }),
+  });
+}
+
+export async function deleteNews(id: string): Promise<void> {
+  await requestNews(NEWS_ENDPOINT, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+}
+
+export async function changeNewsStatus(id: string): Promise<void> {
+  await requestNews(`${NEWS_ENDPOINT}/change-status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
 }
 
 const normalizeDateTime = (value?: string) => {
@@ -149,21 +285,3 @@ export const isNewsPublished = (item: NewsItem, now = new Date()) => {
   const publishDate = normalizeDateTime(item.publishAt);
   return !publishDate || publishDate.getTime() <= now.getTime();
 };
-
-export const getStoredNewsItems = (): NewsItem[] => {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const parsed = JSON.parse(
-      localStorage.getItem(adminNewsStorageKey) ?? "[]",
-    );
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-export const getAllNewsItems = () => getStoredNewsItems();
-
-export const getVisibleNewsItems = (now = new Date()) =>
-  getAllNewsItems().filter((item) => isNewsPublished(item, now));

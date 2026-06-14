@@ -4,6 +4,7 @@ import {
   FolderPlus,
   Loader2,
   Pencil,
+  Power,
   RefreshCw,
   Save,
   Tags,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
+  changeNewsGroupStatus,
   createNewsGroup,
   deleteNewsGroup,
   fetchAdminNewsGroups,
@@ -28,6 +30,7 @@ export function AdminNewsGroupsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statusLoadingId, setStatusLoadingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -128,6 +131,31 @@ export function AdminNewsGroupsPage() {
       });
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleToggleStatus = async (group: NewsGroup) => {
+    setStatusLoadingId(group.id);
+    setMessage(null);
+    try {
+      await changeNewsGroupStatus(group.id);
+      setMessage({
+        type: "success",
+        text: group.isActive
+          ? "دسته‌بندی با موفقیت غیرفعال شد."
+          : "دسته‌بندی با موفقیت فعال شد.",
+      });
+      await loadGroups();
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "تغییر وضعیت دسته‌بندی ناموفق بود.",
+      });
+    } finally {
+      setStatusLoadingId(null);
     }
   };
 
@@ -300,6 +328,28 @@ export function AdminNewsGroupsPage() {
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleToggleStatus(group)}
+                    disabled={statusLoadingId === group.id}
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors disabled:opacity-60 ${
+                      group.isActive
+                        ? "border-amber-500/30 bg-amber-500/5 text-amber-600 hover:bg-amber-500/15"
+                        : "border-emerald-500/30 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500/15"
+                    }`}
+                    aria-label={
+                      group.isActive
+                        ? `غیرفعال کردن ${group.name}`
+                        : `فعال کردن ${group.name}`
+                    }
+                    title={group.isActive ? "غیرفعال کردن" : "فعال کردن"}
+                  >
+                    {statusLoadingId === group.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Power className="h-4 w-4" />
+                    )}
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleEdit(group)}

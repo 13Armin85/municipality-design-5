@@ -38,6 +38,12 @@ export interface UpdateAdminUser {
   roleId: string;
 }
 
+export interface ChangeAdminUserPassword {
+  userId: string;
+  password: string;
+  repeatPassword: string;
+}
+
 type ApiEnvelope<T = unknown> = {
   isSuccess?: boolean;
   IsSuccess?: boolean;
@@ -170,6 +176,32 @@ export async function deleteAdminUser(userId: string): Promise<void> {
     method: "DELETE",
     headers: getAuthHeaders(),
     body,
+  });
+  await parseResponse(response);
+}
+
+export async function changeAdminUserPassword(
+  input: ChangeAdminUserPassword,
+): Promise<void> {
+  const response = await dotNet10ApiFetch(`${USERS_ENDPOINT}/change-password`, {
+    method: "PATCH",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  await parseResponse(response);
+}
+
+export async function changeAdminUserStatus(userId: string): Promise<void> {
+  const response = await dotNet10ApiFetch(`${USERS_ENDPOINT}/change-status`, {
+    method: "PATCH",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id: userId }),
   });
   await parseResponse(response);
 }

@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Edit3,
+  KeyRound,
   Loader2,
   Plus,
   RefreshCw,
@@ -509,6 +510,75 @@ export function EditUserModal({
         <div className="flex gap-2 pt-2">
           <SubmitButton loading={loading} icon={Save}>
             ذخیره تغییرات
+          </SubmitButton>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={onClose}
+            className="rounded-xl border border-border px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted disabled:opacity-60"
+          >
+            انصراف
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+export function ChangePasswordModal({ user, onClose, onSave }) {
+  const [form, setForm] = useState({ password: "", repeatPassword: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (form.password !== form.repeatPassword) {
+      setError("رمز عبور و تکرار آن یکسان نیستند.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      await onSave({
+        userId: user.id,
+        password: form.password,
+        repeatPassword: form.repeatPassword,
+      });
+    } catch (requestError) {
+      setError(requestError.message || "تغییر رمز عبور انجام نشد.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ModalShell onClose={loading ? undefined : onClose} maxWidth="max-w-md">
+      <ModalHeader
+        icon={KeyRound}
+        title="تغییر رمز عبور"
+        subtitle={`${user.name} ${user.family}`}
+        onClose={onClose}
+      />
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Field
+          label="رمز عبور جدید"
+          name="password"
+          type="password"
+          form={form}
+          setForm={setForm}
+        />
+        <Field
+          label="تکرار رمز عبور جدید"
+          name="repeatPassword"
+          type="password"
+          form={form}
+          setForm={setForm}
+        />
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <div className="flex gap-2 pt-2">
+          <SubmitButton loading={loading} icon={KeyRound}>
+            تغییر رمز عبور
           </SubmitButton>
           <button
             type="button"
