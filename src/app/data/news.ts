@@ -29,9 +29,8 @@ export interface NewsInput {
   title: string;
   description: string;
   shortDescription: string;
-  picture: string;
-  publishDate: string;
-  publishTime: string;
+  picture?: string | File | null;
+  publishDateTime: string;
 }
 
 interface NewsApiItem {
@@ -55,6 +54,9 @@ interface ProblemDetails {
 
 const NEWS_ENDPOINT = "/api/News";
 const ADMIN_NEWS_ENDPOINT = `${NEWS_ENDPOINT}/admin`;
+
+let adminNewsCache: AdminNewsItem[] | null = null;
+let adminNewsCacheToken = "";
 
 const formatPublishDate = (value: string) => {
   if (!value) return "";
@@ -148,6 +150,12 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
+function getAuthTokenKey() {
+  return typeof window !== "undefined"
+    ? (localStorage.getItem("auth-token")?.replace(/^Bearer\s+/i, "") ?? "")
+    : "";
+}
+
 async function parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
   const text = await response.text();
   let payload: ApiResponse<T> & ProblemDetails = {};
@@ -169,7 +177,7 @@ async function parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
   const isSuccess = payload.isSuccess ?? payload.IsSuccess;
   const isFailure = payload.isFailure ?? payload.IsFailure;
 
-  if (!response.ok || isSuccess === false || isFailure === true) {
+  if (!response.ok || isSuccess === false || (isSuccess !== true && isFailure === true)) {
     const validationMessage = payload.errors
       ? Object.entries(payload.errors)
           .flatMap(([field, messages]) =>
@@ -224,7 +232,18 @@ export async function fetchNews(signal?: AbortSignal): Promise<NewsItem[]> {
 
 export async function fetchAdminNews(
   signal?: AbortSignal,
+  options?: { force?: boolean },
 ): Promise<AdminNewsItem[]> {
+  const tokenKey = getAuthTokenKey();
+
+  if (
+    !options?.force &&
+    adminNewsCache &&
+    adminNewsCacheToken === tokenKey
+  ) {
+    return adminNewsCache;
+  }
+
   const payload = await requestNews<NewsApiItem[]>(ADMIN_NEWS_ENDPOINT, {
     method: "GET",
     signal,
@@ -235,17 +254,22 @@ export async function fetchAdminNews(
     throw new Error("دریافت خبرهای ثبت شده ناموفق بود.");
   }
 
-  return value
+  const items = value
     .sort((a, b) => getPublishTimestamp(b) - getPublishTimestamp(a))
     .map(mapNewsItem);
+
+  adminNewsCache = items;
+  adminNewsCacheToken = tokenKey;
+
+  return items;
 }
 
 export async function createNews(news: NewsInput): Promise<void> {
   await requestNews(NEWS_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(news),
+    body: toNewsFormData(news),
   });
+  adminNewsCache = null;
 }
 
 export async function updateNews(
@@ -254,25 +278,46 @@ export async function updateNews(
 ): Promise<void> {
   await requestNews(NEWS_ENDPOINT, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, ...news }),
+    body: toNewsFormData(news, id),
   });
+  adminNewsCache = null;
 }
 
 export async function deleteNews(id: string): Promise<void> {
-  await requestNews(NEWS_ENDPOINT, {
+  await requestNews(`${NEWS_ENDPOINT}/${id}`, {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
   });
+  adminNewsCache = adminNewsCache?.filter((item) => item.id !== id) ?? null;
 }
 
 export async function changeNewsStatus(id: string): Promise<void> {
-  await requestNews(`${NEWS_ENDPOINT}/change-status`, {
+  await requestNews(`${NEWS_ENDPOINT}/${id}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id }),
   });
+  adminNewsCache =
+    adminNewsCache?.map((item) =>
+      item.id === id ? { ...item, isActive: !item.isActive } : item,
+    ) ?? null;
+}
+
+function toNewsFormData(news: NewsInput, id?: string) {
+  const formData = new FormData();
+
+  if (id) formData.append("Id", id);
+  formData.append("GroupId", news.groupId);
+  formData.append("Title", news.title);
+  formData.append("Description", news.description);
+  formData.append("ShortDescription", news.shortDescription);
+
+  if (typeof File !== "undefined" && news.picture instanceof File) {
+    formData.append("Picture", news.picture, news.picture.name);
+  } else {
+    formData.append("Picture", "");
+  }
+
+  formData.append("PublishDateTime", news.publishDateTime);
+
+  return formData;
 }
 
 const normalizeDateTime = (value?: string) => {

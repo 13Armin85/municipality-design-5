@@ -59,7 +59,7 @@ async function parseResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
   const isSuccess = data.isSuccess ?? data.IsSuccess;
   const isFailure = data.isFailure ?? data.IsFailure;
 
-  if (!response.ok || isSuccess === false || isFailure === true) {
+  if (!response.ok || isSuccess === false || (isSuccess !== true && isFailure === true)) {
     throw new Error(
       data.error?.name ||
         data.error?.description ||
@@ -130,27 +130,19 @@ export async function updateNewsGroup(
 }
 
 export async function deleteNewsGroup(id: string): Promise<void> {
-  const response = await dotNet10ApiFetch(NEWS_GROUPS_ENDPOINT, {
+  const response = await dotNet10ApiFetch(`${NEWS_GROUPS_ENDPOINT}/${id}`, {
     method: "DELETE",
-    headers: {
-      ...getAuthHeaders(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ id }),
+    headers: getAuthHeaders(),
   });
   await parseResponse(response);
 }
 
 export async function changeNewsGroupStatus(id: string): Promise<void> {
   const response = await dotNet10ApiFetch(
-    `${NEWS_GROUPS_ENDPOINT}/change-status`,
+    `${NEWS_GROUPS_ENDPOINT}/${id}/status`,
     {
       method: "PATCH",
-      headers: {
-        ...getAuthHeaders(),
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id }),
+      headers: getAuthHeaders(),
     },
   );
   await parseResponse(response);

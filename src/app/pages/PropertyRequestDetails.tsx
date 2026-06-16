@@ -30,6 +30,7 @@ import {
 } from "../utils/apiResponseHandler";
 import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
+import { flattenApiPropertyFiles } from "../data/propertyFiles";
 
 interface OwnerPropertyItem {
   id: string;
@@ -382,7 +383,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
         if (!token || !nationalCode) return;
 
         const response = await dotNet10ApiFetch(
-          "/api/Files",
+          `/api/Files/${encodeURIComponent(nationalCode)}`,
           {
             method: "GET",
             cache: "no-store",
@@ -408,15 +409,15 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
           ? fileValue
           : (fileValue?.items ?? fileValue?.data ?? fileValue?.files ?? []);
 
-        const mappedProperties: OwnerPropertyItem[] = rawList.map(
+        const mappedProperties: OwnerPropertyItem[] = flattenApiPropertyFiles(rawList).map(
           (item: any, index: number) => ({
             id: String(item.Id ?? item.id ?? index),
-            fullCode: item.codeN ?? item.fullCode ?? "—",
+            fullCode: item.codeN ?? item.fullCode ?? item.codeNosazi ?? "—",
             type: item.type ?? "ملک",
             ownerName: getOwnerNameFromItem(item),
             description:
               getTextValue(item.tvItems?.[0]?.Text?.trim()) ||
-              getTextValue(item.codeN) ||
+              getTextValue(item.codeN ?? item.codeNosazi) ||
               "بدون توضیحات",
             raw: item,
           }),

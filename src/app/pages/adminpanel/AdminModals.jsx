@@ -17,6 +17,34 @@ import {
 const inputClassName =
   "w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/10";
 
+const normalizeDigits = (value) =>
+  String(value ?? "")
+    .replace(/[\u06f0-\u06f9]/g, (digit) =>
+      String(digit.charCodeAt(0) - 0x06f0),
+    )
+    .replace(/[\u0660-\u0669]/g, (digit) =>
+      String(digit.charCodeAt(0) - 0x0660),
+    );
+
+const onlyDigits = (value) => normalizeDigits(value).replace(/\D/g, "");
+
+const isValidIranianNationalCode = (value) => {
+  const code = onlyDigits(value);
+  return /^\d{10}$/.test(code);
+};
+
+const isValidMobileNumber = (value) => /^09\d{9}$/.test(onlyDigits(value));
+
+const cleanUserForm = (form) => ({
+  ...form,
+  name: form.name.trim(),
+  family: form.family.trim(),
+  userName: form.userName.trim(),
+  nationalCode: onlyDigits(form.nationalCode),
+  phoneNumber: onlyDigits(form.phoneNumber),
+  roleId: form.roleId.trim(),
+});
+
 function Field({
   label,
   name,
@@ -25,6 +53,9 @@ function Field({
   type = "text",
   placeholder,
   dir,
+  inputMode,
+  maxLength,
+  normalizeValue = (value) => value,
 }) {
   return (
     <div className="space-y-1">
@@ -36,10 +67,15 @@ function Field({
         name={name}
         type={type}
         dir={dir}
+        inputMode={inputMode}
+        maxLength={maxLength}
         placeholder={placeholder}
         value={form[name]}
         onChange={(event) =>
-          setForm((current) => ({ ...current, [name]: event.target.value }))
+          setForm((current) => ({
+            ...current,
+            [name]: normalizeValue(event.target.value),
+          }))
         }
         className={inputClassName}
       />
@@ -322,7 +358,21 @@ export function AddUserModal({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.roleId) {
+    const cleanForm = cleanUserForm(form);
+
+    if (!cleanForm.name || !cleanForm.family || !cleanForm.userName) {
+      setError("نام، نام خانوادگی و نام کاربری را کامل وارد کنید.");
+      return;
+    }
+    if (!isValidIranianNationalCode(cleanForm.nationalCode)) {
+      setError("کد ملی باید دقیقاً ۱۰ رقم باشد.");
+      return;
+    }
+    if (!isValidMobileNumber(cleanForm.phoneNumber)) {
+      setError("شماره موبایل باید ۱۱ رقم و با 09 شروع شود.");
+      return;
+    }
+    if (!cleanForm.roleId) {
       setError("لطفاً نقش کاربر را انتخاب کنید.");
       return;
     }
@@ -334,7 +384,11 @@ export function AddUserModal({
     setLoading(true);
     setError("");
     try {
-      await onAdd(form);
+      await onAdd({
+        ...cleanForm,
+        password: form.password,
+        repeatPassword: form.repeatPassword,
+      });
     } catch (requestError) {
       setError(requestError.message || "ثبت کاربر انجام نشد.");
     } finally {
@@ -372,6 +426,9 @@ export function AddUserModal({
             form={form}
             setForm={setForm}
             placeholder="0012345678"
+            inputMode="numeric"
+            maxLength={10}
+            normalizeValue={onlyDigits}
           />
           <Field
             label="شماره تماس"
@@ -380,6 +437,9 @@ export function AddUserModal({
             form={form}
             setForm={setForm}
             placeholder="09120000000"
+            inputMode="tel"
+            maxLength={11}
+            normalizeValue={onlyDigits}
           />
           <RoleField
             form={form}
@@ -446,14 +506,28 @@ export function EditUserModal({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.roleId) {
+    const cleanForm = cleanUserForm(form);
+
+    if (!cleanForm.name || !cleanForm.family || !cleanForm.userName) {
+      setError("نام، نام خانوادگی و نام کاربری را کامل وارد کنید.");
+      return;
+    }
+    if (!isValidIranianNationalCode(cleanForm.nationalCode)) {
+      setError("کد ملی باید دقیقاً ۱۰ رقم باشد.");
+      return;
+    }
+    if (!isValidMobileNumber(cleanForm.phoneNumber)) {
+      setError("شماره موبایل باید ۱۱ رقم و با 09 شروع شود.");
+      return;
+    }
+    if (!cleanForm.roleId) {
       setError("لطفاً نقش کاربر را انتخاب کنید.");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      await onSave(form);
+      await onSave(cleanForm);
     } catch (requestError) {
       setError(requestError.message || "ویرایش کاربر انجام نشد.");
     } finally {
@@ -489,6 +563,9 @@ export function EditUserModal({
             name="nationalCode"
             form={form}
             setForm={setForm}
+            inputMode="numeric"
+            maxLength={10}
+            normalizeValue={onlyDigits}
           />
           <Field
             label="شماره تماس"
@@ -496,6 +573,9 @@ export function EditUserModal({
             type="tel"
             form={form}
             setForm={setForm}
+            inputMode="tel"
+            maxLength={11}
+            normalizeValue={onlyDigits}
           />
           <RoleField
             form={form}

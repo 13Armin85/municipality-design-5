@@ -10,6 +10,7 @@ import {
 } from "../utils/apiResponseHandler";
 import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
+import { flattenApiPropertyFiles } from "../data/propertyFiles";
 import { GuildFeesHeader } from "./guild-fees/GuildFeesHeader";
 import { GuildFeesHelpModal } from "./guild-fees/GuildFeesHelpModal";
 import {
@@ -543,7 +544,7 @@ const mapFileItem = (item: any, index: number): GuildPropertyItem => {
     item.tvItems?.[0]?.Text?.trim() ?? item.codeN ?? "بدون توضیحات",
   );
   return {
-    id: String(item.Id ?? item.id ?? item.shop ?? index + 1),
+    id: String(item.shop ?? item.Shop ?? item.Id ?? item.id ?? index + 1),
     fullCode: fullCode || "—",
     ownerName: toDisplay(
       item.ownerName ??
@@ -705,7 +706,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
       setIsCasesLoading(true);
       try {
         const response = await dotNet10ApiFetch(
-          "/api/Files",
+          `/api/Files/${encodeURIComponent(nationalCode)}`,
           {
             method: "GET",
             cache: "no-store",
@@ -723,7 +724,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
         }
 
         const fileValue = getApiValue(data);
-        const mapped = unwrapList(fileValue).map(mapFileItem);
+        const mapped = flattenApiPropertyFiles(unwrapList(fileValue)).map(mapFileItem);
         setCases(mapped);
         
         if (mapped.length > 0) {

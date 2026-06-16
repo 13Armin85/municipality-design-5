@@ -45,6 +45,7 @@ import {
   type ApiResponse,
 } from "../utils/apiResponseHandler";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
+import { flattenApiPropertyFiles } from "../data/propertyFiles";
 
 interface PropertyInquiryPageProps {
   isDark: boolean;
@@ -317,7 +318,7 @@ export function PropertyInquiryPage({
 
       try {
         const response = await dotNet10ApiFetch(
-          "/api/Files",
+          `/api/Files/${encodeURIComponent(nationalCode)}`,
           {
             method: "GET",
             cache: "no-store",
@@ -345,7 +346,7 @@ export function PropertyInquiryPage({
           ? fileValue
           : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
 
-        const mapped: SubProperty[] = rawList.map(
+        const mapped: SubProperty[] = flattenApiPropertyFiles(rawList).map(
           (item: any, index: number) => ({
             id: String(item.Id ?? item.shop ?? index + 1),
 

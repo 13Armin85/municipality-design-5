@@ -18,6 +18,7 @@ import {
 } from "../utils/apiResponseHandler";
 import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
+import { flattenApiPropertyFiles } from "../data/propertyFiles";
 import { SelectionModal } from "./sabtdarkhast/FormCommon";
 import { HelpModal } from "./sabtdarkhast/HelpModal";
 import {
@@ -757,7 +758,7 @@ export function SabtDarkhastPage({
         if (!token || !nationalCode) return;
 
         const response = await dotNet10ApiFetch(
-          "/api/Files",
+          `/api/Files/${encodeURIComponent(nationalCode)}`,
           {
             cache: "no-store",
             headers: getAuthHeaders(token),
@@ -770,7 +771,7 @@ export function SabtDarkhastPage({
 
         if (!isApiSuccess(data)) return;
 
-        const rawList = getListFromApiValue(getApiValue(data));
+        const rawList = flattenApiPropertyFiles(getListFromApiValue(getApiValue(data)));
 
         const base = emptyProperty;
 

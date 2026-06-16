@@ -520,13 +520,24 @@ function PersianDatePicker({ value, onChange }: PersianDatePickerProps) {
 
 // ─── Form & Utilities ───────────────────────────────────────────────────────
 
-const emptyForm = {
+interface NewsForm {
+  title: string;
+  excerpt: string;
+  description: string;
+  publishAt: string;
+  categoryId: string;
+  imageUrl: string;
+  imageFile: File | null;
+}
+
+const emptyForm: NewsForm = {
   title: "",
   excerpt: "",
   description: "",
   publishAt: "",
   categoryId: "",
   imageUrl: "",
+  imageFile: null,
 };
 
 const toPersianDateTime = (value: string | undefined | null) => {
@@ -554,18 +565,16 @@ const toPictureValue = (value: string) => {
   return dataUrlMatch?.[1] ?? value.trim();
 };
 
-const toNewsInput = (form: typeof emptyForm): NewsInput => {
+const toNewsInput = (form: NewsForm): NewsInput => {
   const publishDate = form.publishAt ? new Date(form.publishAt) : new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
 
   return {
     groupId: form.categoryId,
     title: form.title.trim(),
     description: form.description.trim(),
     shortDescription: form.excerpt.trim(),
-    picture: toPictureValue(form.imageUrl),
-    publishDate: `${publishDate.getFullYear()}-${pad(publishDate.getMonth() + 1)}-${pad(publishDate.getDate())}`,
-    publishTime: `${pad(publishDate.getHours())}:${pad(publishDate.getMinutes())}:00.000Z`,
+    picture: form.imageFile ?? toPictureValue(form.imageUrl),
+    publishDateTime: publishDate.toISOString(),
   };
 };
 
@@ -612,10 +621,13 @@ export function AdminNewsPage() {
     text: string;
   } | null>(null);
 
-  const loadNews = useCallback(async (signal?: AbortSignal) => {
+  const loadNews = useCallback(async (
+    signal?: AbortSignal,
+    options?: { force?: boolean },
+  ) => {
     setIsLoading(true);
     try {
-      setItems(await fetchAdminNews(signal));
+      setItems(await fetchAdminNews(signal, options));
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setMessage({
@@ -699,7 +711,11 @@ export function AdminNewsPage() {
     setMessage(null);
     const reader = new FileReader();
     reader.onload = () =>
-      setForm((prev) => ({ ...prev, imageUrl: String(reader.result ?? "") }));
+      setForm((prev) => ({
+        ...prev,
+        imageUrl: String(reader.result ?? ""),
+        imageFile: file,
+      }));
     reader.readAsDataURL(file);
   };
 
@@ -756,6 +772,7 @@ export function AdminNewsPage() {
       publishAt: item.publishAt ?? "",
       categoryId: item.groupId,
       imageUrl: item.imageUrl || item.picture || "",
+      imageFile: null,
     });
     setMessage(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -962,7 +979,11 @@ export function AdminNewsPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setForm((prev) => ({ ...prev, imageUrl: "" }))
+                      setForm((prev) => ({
+                        ...prev,
+                        imageUrl: "",
+                        imageFile: null,
+                      }))
                     }
                     className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors w-fit"
                   >
@@ -1023,7 +1044,7 @@ export function AdminNewsPage() {
           <button
             type="button"
             disabled={isLoading}
-            onClick={() => void loadNews()}
+            onClick={() => void loadNews(undefined, { force: true })}
             className="inline-flex h-9 items-center gap-2 rounded-xl border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted disabled:opacity-60"
           >
             <RefreshCw

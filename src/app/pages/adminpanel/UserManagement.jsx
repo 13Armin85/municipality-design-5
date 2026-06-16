@@ -223,7 +223,7 @@ export function UserManagement() {
     setStatusLoadingId(user.id);
     setError("");
     try {
-      await changeAdminUserStatus(user.id);
+      await changeAdminUserStatus(user);
       await loadUsers();
     } catch (requestError) {
       setError(requestError.message || "تغییر وضعیت کاربر انجام نشد.");

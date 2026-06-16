@@ -83,7 +83,7 @@ const mapTreeItems = (
       fallbackCode;
 
     return {
-      id: String(item.Id ?? item.id ?? `${fullCode || "node"}-${index}`),
+      id: String(item.shop ?? item.Shop ?? item.Id ?? item.id ?? `${fullCode || "node"}-${index}`),
       text: text || fullCode || "-",
       fullCode,
       items: mapTreeItems(
@@ -200,7 +200,9 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
       try {
         const token = localStorage.getItem("auth-token");
-        const nationalCode = localStorage.getItem("user-national-code");
+        const nationalCode =
+          localStorage.getItem("user-national-code") ??
+          decodeToken(token ?? "")?.NationalCode;
 
         if (!token) {
           setError("توکن احراز هویت یافت نشد. لطفاً دوباره وارد شوید.");
@@ -209,7 +211,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
         }
 
         const response = await dotNet10ApiFetch(
-          "/api/Files",
+          `/api/Files/${encodeURIComponent(nationalCode || "")}`,
           {
             method: "GET",
             cache: "no-store",

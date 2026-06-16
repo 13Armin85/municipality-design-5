@@ -49,8 +49,16 @@ type ApiEnvelope<T = unknown> = {
   IsSuccess?: boolean;
   isFailure?: boolean;
   IsFailure?: boolean;
+  code?: string;
+  name?: string;
+  message?: string;
+  Message?: string;
   error?: { code?: string; name?: string; description?: string };
-  Error?: { Description?: string };
+  Error?: { Code?: string; Name?: string; Description?: string };
+  errors?: unknown;
+  Errors?: unknown;
+  modelState?: unknown;
+  ModelState?: unknown;
   value?: T;
   Value?: T;
 };
@@ -62,9 +70,41 @@ function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("auth-token")?.replace(/^Bearer\s+/i, "");
 
   return {
-    Accept: "text/plain",
+    Accept: "application/json, text/plain, */*",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
+}
+
+function collectMessages(value: unknown): string[] {
+  if (!value) return [];
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(collectMessages);
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap(
+      collectMessages,
+    );
+  }
+
+  return [];
+}
+
+function getErrorMessage(data: ApiEnvelope, fallback: string) {
+  const messages = [
+    data.name,
+    data.message,
+    data.Message,
+    data.error?.name,
+    data.error?.description,
+    data.Error?.Name,
+    data.Error?.Description,
+    ...collectMessages(data.errors),
+    ...collectMessages(data.Errors),
+    ...collectMessages(data.modelState),
+    ...collectMessages(data.ModelState),
+  ].filter(Boolean);
+
+  return messages.length > 0 ? messages.join(" ") : fallback;
 }
 
 async function parseResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
@@ -84,12 +124,7 @@ async function parseResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
   const isSuccess = data.isSuccess ?? data.IsSuccess;
   const isFailure = data.isFailure ?? data.IsFailure;
   if (!response.ok || isFailure === true || isSuccess === false) {
-    throw new Error(
-      data.error?.name ||
-        data.error?.description ||
-        data.Error?.Description ||
-        "انجام عملیات کاربران با خطا مواجه شد.",
-    );
+    throw new Error(getErrorMessage(data, "انجام عملیات کاربران با خطا مواجه شد."));
   }
 
   return data;
@@ -101,6 +136,28 @@ function appendFields(
 ): FormData {
   Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
   return formData;
+}
+
+function createAdminUserPayload(user: CreateAdminUser) {
+  return {
+    Name: user.name,
+    Family: user.family,
+    UserName: user.userName,
+    NationalCode: user.nationalCode,
+    PhoneNumber: user.phoneNumber,
+    Password: user.password,
+    RepeatPassword: user.repeatPassword,
+    RoleId: user.roleId,
+  };
+}
+
+async function responseHasErrorCode(response: Response, code: string) {
+  const data = await response.json().catch(() => null);
+  const errors = data?.errors ?? data?.Errors;
+
+  return Array.isArray(errors)
+    ? errors.some((error) => error?.code === code || error?.Code === code)
+    : false;
 }
 
 export async function fetchAdminUsers(
@@ -130,53 +187,62 @@ export async function fetchAdminRoles(
 export async function createAdminUser(
   user: CreateAdminUser,
 ): Promise<void> {
-  const body = appendFields(new FormData(), {
-    Name: user.name,
-    Family: user.family,
-    UserName: user.userName,
-    NationalCode: user.nationalCode,
-    PhoneNumber: user.phoneNumber,
-    Password: user.password,
-    RepeatPassword: user.repeatPassword,
-    RoleId: user.roleId,
-  });
-
+  const payload = createAdminUserPayload(user);
   const response = await dotNet10ApiFetch(USERS_ENDPOINT, {
     method: "POST",
-    headers: getAuthHeaders(),
-    body,
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
   });
+
+  if (
+    !response.ok &&
+    (await responseHasErrorCode(response.clone(), "ExactLengthValidator"))
+  ) {
+    const formResponse = await dotNet10ApiFetch(USERS_ENDPOINT, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: appendFields(new FormData(), payload),
+    });
+    await parseResponse(formResponse);
+    return;
+  }
+
   await parseResponse(response);
 }
 
 export async function updateAdminUser(
   user: UpdateAdminUser,
 ): Promise<void> {
-  const body = appendFields(new FormData(), {
-    Id: user.id,
-    Name: user.name,
-    Family: user.family,
-    PhoneNumber: user.phoneNumber,
-    NationalCode: user.nationalCode,
-    UserName: user.userName,
-    RoleId: user.roleId,
-  });
-
   const response = await dotNet10ApiFetch(USERS_ENDPOINT, {
     method: "PUT",
-    headers: getAuthHeaders(),
-    body,
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: user.id,
+      name: user.name,
+      family: user.family,
+      phoneNumber: user.phoneNumber,
+      nationalCode: user.nationalCode,
+      userName: user.userName,
+      roleId: user.roleId,
+    }),
   });
   await parseResponse(response);
 }
 
 export async function deleteAdminUser(userId: string): Promise<void> {
-  const body = appendFields(new FormData(), { UserId: userId });
-  const response = await dotNet10ApiFetch(USERS_ENDPOINT, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-    body,
-  });
+  const response = await dotNet10ApiFetch(
+    `${USERS_ENDPOINT}/${encodeURIComponent(userId)}`,
+    {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    },
+  );
   await parseResponse(response);
 }
 
@@ -194,14 +260,13 @@ export async function changeAdminUserPassword(
   await parseResponse(response);
 }
 
-export async function changeAdminUserStatus(userId: string): Promise<void> {
-  const response = await dotNet10ApiFetch(`${USERS_ENDPOINT}/change-status`, {
-    method: "PATCH",
-    headers: {
-      ...getAuthHeaders(),
-      "Content-Type": "application/json",
+export async function changeAdminUserStatus(user: AdminUser): Promise<void> {
+  const response = await dotNet10ApiFetch(
+    `${USERS_ENDPOINT}/${encodeURIComponent(user.id)}/status`,
+    {
+      method: "PATCH",
+      headers: getAuthHeaders(),
     },
-    body: JSON.stringify({ id: userId }),
-  });
+  );
   await parseResponse(response);
 }

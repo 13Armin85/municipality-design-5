@@ -17,20 +17,17 @@ import {
   propertyFileCacheKey,
 } from "../utils/requestCache";
 import { dotNet10ApiFetch } from "../data/api";
+import {
+  fetchCurrentUserPropertyFiles,
+  getCurrentUserNationalCode,
+  getInitialExpandedTreeIds as getInitialExpandedPropertyTreeIds,
+  getPropertyFileList,
+  mapApiFilesToTreeProperties,
+  type PropertyItem,
+  type PropertyTreeItem,
+} from "../data/propertyFiles";
 
-export interface PropertyTreeItem {
-  id: string;
-  text: string;
-  fullCode: string;
-  items: PropertyTreeItem[];
-}
-
-export interface PropertyItem {
-  id: string;
-  fullCode: string;
-  description: string;
-  treeItems: PropertyTreeItem[];
-}
+export type { PropertyItem, PropertyTreeItem } from "../data/propertyFiles";
 
 const getTreeNodeCode = (text = "") => text.split(" - ")[0]?.trim() ?? "";
 
@@ -84,8 +81,9 @@ const getInitialExpandedTreeIds = (items: PropertyTreeItem[]) => {
 };
 
 const fetchPropertyFile = async (token: string): Promise<ApiResponse> => {
+  return fetchCurrentUserPropertyFiles(token);
   const response = await dotNet10ApiFetch(
-    "/api/Files",
+    `/api/Files/${encodeURIComponent(getCurrentUserNationalCode(token))}`,
     {
       method: "GET",
       cache: "no-store",
@@ -177,7 +175,7 @@ export function PropertyTreeList({
 
       try {
         const token = localStorage.getItem("auth-token");
-        const nationalCode = localStorage.getItem("user-national-code");
+        const nationalCode = getCurrentUserNationalCode(token);
 
         if (!token) {
           setError("توکن احراز هویت یافت نشد. لطفا دوباره وارد شوید.");
@@ -224,12 +222,13 @@ export function PropertyTreeList({
           return;
         }
 
+        const mapped = mapApiFilesToTreeProperties(getPropertyFileList(data));
         const fileValue = getApiValue(data);
         const rawList = Array.isArray(fileValue)
           ? fileValue
           : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
 
-        const mapped: PropertyItem[] = rawList.map(
+        const legacyMapped: PropertyItem[] = rawList.map(
           (item: any, index: number) => ({
             id: String(
               item.shop ??
@@ -267,7 +266,7 @@ export function PropertyTreeList({
         setExpandedTreeIds(
           new Set(
             mapped.flatMap((property) =>
-              getInitialExpandedTreeIds(property.treeItems).slice(0, 1),
+              getInitialExpandedPropertyTreeIds(property.treeItems).slice(0, 1),
             ),
           ),
         );

@@ -33,6 +33,7 @@ import {
 } from "../utils/apiResponseHandler";
 import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem as TreePropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
+import { flattenApiPropertyFiles } from "../data/propertyFiles";
 
 interface LocalPropertyItem {
   id: string;
@@ -535,7 +536,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
       if (!token || !nationalCode) return;
       try {
         const response = await dotNet10ApiFetch(
-          "/api/Files",
+          `/api/Files/${encodeURIComponent(nationalCode)}`,
           {
             cache: "no-store",
             headers: {
@@ -553,10 +554,10 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         const rawList = Array.isArray(fileValue)
           ? fileValue
           : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
-        const mapped: LocalPropertyItem[] = rawList.map(
+        const mapped: LocalPropertyItem[] = flattenApiPropertyFiles(rawList).map(
           (item: any, index: number) => {
             const cleanedCode = normalizeCode(
-              item.codeN ?? item.fullCode ?? "",
+              item.codeN ?? item.fullCode ?? item.codeNosazi ?? "",
             );
             return {
               id: String(item.Id ?? item.shop ?? index + 1),
