@@ -4,6 +4,10 @@ import {
   isApiSuccess,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
+import {
+  AUTH_TOKEN_KEY,
+  USER_NATIONAL_CODE_KEY,
+} from "../utils/authStorage";
 
 export interface PropertyTreeItem {
   id: string;
@@ -60,10 +64,10 @@ const decodeJwtPayload = (token: string | null) => {
 export const getCurrentUserNationalCode = (token?: string | null) => {
   if (typeof window === "undefined") return "";
 
-  const storedCode = localStorage.getItem("user-national-code");
+  const storedCode = localStorage.getItem(USER_NATIONAL_CODE_KEY);
   if (storedCode?.trim()) return storedCode.trim();
 
-  const payload = decodeJwtPayload(token ?? localStorage.getItem("auth-token"));
+  const payload = decodeJwtPayload(token ?? localStorage.getItem(AUTH_TOKEN_KEY));
   const claimValue = firstText(
     payload?.NationalCode,
     payload?.nationalCode,
@@ -76,7 +80,7 @@ export const getCurrentUserNationalCode = (token?: string | null) => {
   );
 
   if (claimValue) {
-    localStorage.setItem("user-national-code", claimValue);
+    localStorage.setItem(USER_NATIONAL_CODE_KEY, claimValue);
   }
 
   return claimValue;
@@ -87,7 +91,7 @@ export async function fetchCurrentUserPropertyFiles(
 ): Promise<ApiResponse> {
   const authToken =
     token ??
-    (typeof window !== "undefined" ? localStorage.getItem("auth-token") : "");
+    (typeof window !== "undefined" ? localStorage.getItem(AUTH_TOKEN_KEY) : "");
   const nationalCode = getCurrentUserNationalCode(authToken);
 
   if (!authToken) {

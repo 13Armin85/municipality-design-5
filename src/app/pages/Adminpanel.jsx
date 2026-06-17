@@ -15,17 +15,14 @@ import { AdminNewsGroupsPage } from "./adminpanel/AdminNewsGroupsPage";
 import { SettingsPage } from "./adminpanel/AdminSettingsPage";
 import { UserManagement } from "./adminpanel/UserManagement";
 import { navItems } from "./adminpanel/adminData";
-import { useAuthModal } from "../components/AuthContext";
 import {
   AUTH_STORAGE_KEY,
   AUTH_TYPE_KEY,
-  clearLocalStorageExceptTheme,
 } from "../utils/authStorage";
 
 // ==================== MAIN ADMIN PANEL ====================
 export default function AdminPanel({ isDark, toggleTheme }) {
   const navigate = useNavigate();
-  const { setIsAuthenticated } = useAuthModal();
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -45,8 +42,6 @@ export default function AdminPanel({ isDark, toggleTheme }) {
   }, [navigate]);
 
   const handleLogout = () => {
-    clearLocalStorageExceptTheme();
-    setIsAuthenticated(false);
     navigate("/", { replace: true });
   };
 

@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
-import { AUTH_STORAGE_KEY } from "../utils/authStorage";
+import { hasStoredAuthSession } from "../utils/authStorage";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -26,7 +26,7 @@ export function ProtectedRoute({
   const navigate = useNavigate();
   const [open, setOpen] = useState(true);
   const { setIsLoginModalOpen } = useAuthModal();
-  const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+  const isAuthenticated = hasStoredAuthSession();
 
   if (!isAuthenticated) {
     const handleLoginClick = () => {

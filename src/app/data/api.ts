@@ -1,9 +1,16 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "")
+const DEFAULT_DOTNET48_API_BASE_URL = "http://192.168.10.3:6300";
+const DEFAULT_DOTNET10_API_BASE_URL = "http://192.168.10.3:6500";
+
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.DEV ? "" : DEFAULT_DOTNET48_API_BASE_URL)
+)
   .trim()
   .replace(/\/+$/, "");
 
 const DOTNET10_API_BASE_URL = (
-  import.meta.env.VITE_DOTNET10_API_URL ?? "/dotnet10-api"
+  import.meta.env.VITE_DOTNET10_API_URL ??
+  (import.meta.env.DEV ? "/dotnet10-api" : DEFAULT_DOTNET10_API_BASE_URL)
 )
   .trim()
   .replace(/\/+$/, "");

@@ -29,7 +29,12 @@ import { useIsMobile } from "./ui/use-mobile";
 import { useAuthModal } from "./AuthContext";
 import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { serviceItems } from "../data/services";
-import { AUTH_STORAGE_KEY, AUTH_TYPE_KEY } from "../utils/authStorage";
+import {
+  AUTH_STORAGE_KEY,
+  AUTH_TOKEN_KEY,
+  AUTH_TYPE_KEY,
+  USER_NATIONAL_CODE_KEY,
+} from "../utils/authStorage";
 
 import { type ForgotStep } from "../pages/header/Forgotpasswordmodal";
 
@@ -360,10 +365,10 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
       }
 
       if (nationalCode) {
-        localStorage.setItem("user-national-code", String(nationalCode));
+        localStorage.setItem(USER_NATIONAL_CODE_KEY, String(nationalCode));
       }
 
-      localStorage.setItem("auth-token", token);
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
 
       const authenticatedUserType = adminStatus ? "admin" : "user";
       localStorage.setItem(AUTH_STORAGE_KEY, "true");

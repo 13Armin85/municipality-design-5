@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useState } from "react";
-import { AUTH_STORAGE_KEY } from "../utils/authStorage";
+import { AUTH_STORAGE_KEY, hasStoredAuthSession } from "../utils/authStorage";
 
 interface AuthContextType {
   isLoginModalOpen: boolean;
@@ -14,7 +14,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+    const hasSession = hasStoredAuthSession();
+    if (hasSession) {
+      localStorage.setItem(AUTH_STORAGE_KEY, "true");
+    }
+    return hasSession;
   });
 
   const handleSetIsAuthenticated = (authenticated: boolean) => {
