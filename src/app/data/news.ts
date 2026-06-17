@@ -110,7 +110,9 @@ const getPublishAt = (item: NewsApiItem) => {
   if (!item.publishTime) return item.publishDate;
 
   // TimeOnly values may include Z, but the selected publication clock time is local.
-  return `${item.publishDate}T${item.publishTime.replace(/Z$/i, "")}`;
+  const cleanTime = item.publishTime.replace(/Z$/i, "");
+  const separator = /^\d{4}-\d{2}-\d{2}/.test(item.publishDate) ? "T" : " ";
+  return `${item.publishDate}${separator}${cleanTime}`;
 };
 
 const mapNewsItem = (item: NewsApiItem): AdminNewsItem => ({
@@ -133,9 +135,83 @@ const mapNewsItem = (item: NewsApiItem): AdminNewsItem => ({
   isActive: item.isActive,
 });
 
+function fromJalali(jy: number, jm: number, jd: number): Date {
+  const jy2 = jy - 979;
+  const jm2 = jm - 1;
+  const jd2 = jd - 1;
+
+  let jDayNo =
+    365 * jy2 + Math.floor(jy2 / 33) * 8 + Math.floor(((jy2 % 33) + 3) / 4);
+
+  for (let i = 0; i < jm2; i++) jDayNo += i < 6 ? 31 : 30;
+  jDayNo += jd2;
+
+  const gDayNo = jDayNo + 79;
+  let gy = 1600 + 400 * Math.floor(gDayNo / 146097);
+  let days = gDayNo % 146097;
+
+  let leap = true;
+  if (days >= 36525) {
+    days--;
+    gy += 100 * Math.floor(days / 36524);
+    days %= 36524;
+    if (days >= 365) days++;
+    else leap = false;
+  }
+
+  gy += 4 * Math.floor(days / 1461);
+  days %= 1461;
+
+  if (days >= 366) {
+    leap = false;
+    days--;
+    gy += Math.floor(days / 365);
+    days %= 365;
+  }
+
+  const gDaysInMonth = [
+    31,
+    leap ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+  let gm = 0;
+  for (let i = 0; i < 12 && days >= gDaysInMonth[i]; i++) {
+    days -= gDaysInMonth[i];
+    gm = i + 1;
+  }
+  return new Date(gy, gm, days + 1);
+}
+
+const parsePublishDateTime = (value?: string) => {
+  if (!value) return null;
+
+  const jalaliMatch = value.match(
+    /^(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/,
+  );
+
+  if (jalaliMatch) {
+    const [, year, month, day, hour = "0", minute = "0", second = "0"] =
+      jalaliMatch;
+    const date = fromJalali(Number(year), Number(month), Number(day));
+    date.setHours(Number(hour), Number(minute), Number(second), 0);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const getPublishTimestamp = (item: NewsApiItem) => {
-  const timestamp = new Date(getPublishAt(item)).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
+  return parsePublishDateTime(getPublishAt(item))?.getTime() ?? 0;
 };
 
 function getAuthHeaders(): HeadersInit {
@@ -321,9 +397,7 @@ function toNewsFormData(news: NewsInput, id?: string) {
 }
 
 const normalizeDateTime = (value?: string) => {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return parsePublishDateTime(value);
 };
 
 export const isNewsPublished = (item: NewsItem, now = new Date()) => {

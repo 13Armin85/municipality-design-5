@@ -8,6 +8,18 @@ const DOTNET10_API_BASE_URL = (
   .trim()
   .replace(/\/+$/, "");
 
+const DOTNET48_ACCEPT_HEADER = "text/plain";
+
+function withDotNet48Headers(options?: RequestInit): RequestInit {
+  const headers = new Headers(options?.headers);
+  headers.set("Accept", DOTNET48_ACCEPT_HEADER);
+
+  return {
+    ...options,
+    headers,
+  };
+}
+
 export function dotNet10ApiUrl(endpoint: string) {
   const normalizedEndpoint = endpoint.startsWith("/")
     ? endpoint
@@ -17,8 +29,10 @@ export function dotNet10ApiUrl(endpoint: string) {
 }
 
 export async function apiFetch(endpoint: string, options?: RequestInit) {
+  const fetchOptions = withDotNet48Headers(options);
+
   if (/^https?:\/\//i.test(endpoint)) {
-    return fetch(endpoint, options);
+    return fetch(endpoint, fetchOptions);
   }
 
   const normalizedEndpoint = endpoint.startsWith("/")
@@ -28,7 +42,7 @@ export async function apiFetch(endpoint: string, options?: RequestInit) {
     ? `${API_BASE_URL}${normalizedEndpoint}`
     : normalizedEndpoint;
 
-  return fetch(url, options);
+  return fetch(url, fetchOptions);
 }
 
 export async function dotNet10ApiFetch(

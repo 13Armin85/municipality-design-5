@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import {
   Building2,
   ChevronLeft,
@@ -14,12 +15,40 @@ import { AdminNewsGroupsPage } from "./adminpanel/AdminNewsGroupsPage";
 import { SettingsPage } from "./adminpanel/AdminSettingsPage";
 import { UserManagement } from "./adminpanel/UserManagement";
 import { navItems } from "./adminpanel/adminData";
+import { useAuthModal } from "../components/AuthContext";
+import {
+  AUTH_STORAGE_KEY,
+  AUTH_TYPE_KEY,
+  clearLocalStorageExceptTheme,
+} from "../utils/authStorage";
 
 // ==================== MAIN ADMIN PANEL ====================
 export default function AdminPanel({ isDark, toggleTheme }) {
+  const navigate = useNavigate();
+  const { setIsAuthenticated } = useAuthModal();
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+    const userType = localStorage.getItem(AUTH_TYPE_KEY);
+
+    if (!isAuthenticated) {
+      navigate("/", { replace: true });
+      return;
+    }
+
+    if (userType !== "admin") {
+      navigate("/my-property", { replace: true });
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    clearLocalStorageExceptTheme();
+    setIsAuthenticated(false);
+    navigate("/", { replace: true });
+  };
 
   const pageComponents = {
     dashboard: <Dashboard />,
@@ -132,7 +161,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
           style={{ borderColor: "var(--border)" }}
         >
           <button
-            onClick={() => (window.location.href = "/")}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
             <LogOut className="h-5 w-5 shrink-0" />

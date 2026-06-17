@@ -29,6 +29,7 @@ import { useIsMobile } from "./ui/use-mobile";
 import { useAuthModal } from "./AuthContext";
 import { apiFetch, dotNet10ApiFetch } from "../data/api";
 import { serviceItems } from "../data/services";
+import { AUTH_STORAGE_KEY, AUTH_TYPE_KEY } from "../utils/authStorage";
 
 import { type ForgotStep } from "../pages/header/Forgotpasswordmodal";
 
@@ -110,15 +111,58 @@ const notifications = [
   { id: "n3", title: "پاسخ تیکت #TK-1082 ثبت شد", time: "امروز، 10:15" },
 ];
 
-const AUTH_STORAGE_KEY = "municipality-user-authenticated";
-const AUTH_TYPE_KEY = "municipality-user-type";
-
 const decodeToken = (token: string) => {
   try {
     return JSON.parse(atob(token.split(".")[1]));
   } catch {
     return null;
   }
+};
+
+const ADMIN_ROLE_NAMES = ["admin", "administrator", "ادمین", "مدیر"];
+
+const isAdminRoleValue = (value: unknown): boolean => {
+  if (Array.isArray(value)) return value.some(isAdminRoleValue);
+  if (value === null || value === undefined) return false;
+
+  return String(value)
+    .split(/[,\s]+/)
+    .map((role) => role.trim().toLowerCase())
+    .filter(Boolean)
+    .some((normalized) =>
+      ADMIN_ROLE_NAMES.some((role) => normalized === role),
+    );
+};
+
+const getClaim = (source: any, keys: string[]) => {
+  if (!source || typeof source !== "object") return undefined;
+  for (const key of keys) {
+    if (source[key] !== undefined && source[key] !== null) return source[key];
+  }
+  return undefined;
+};
+
+const getIsAdminFromAuthPayload = (data: any, token: string) => {
+  const payload = decodeToken(token);
+  const roleKeys = [
+    "role",
+    "Role",
+    "roles",
+    "Roles",
+    "roleName",
+    "RoleName",
+    "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+  ];
+  const value = data?.value ?? data?.Value;
+  const candidates = [
+    getClaim(payload, roleKeys),
+    getClaim(data, roleKeys),
+    getClaim(value, roleKeys),
+    getClaim(value?.user ?? value?.User, roleKeys),
+    getClaim(data?.user ?? data?.User, roleKeys),
+  ];
+
+  return candidates.some(isAdminRoleValue);
 };
 
 export function Header({ isDark, toggleTheme }: HeaderProps) {
@@ -160,8 +204,6 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
    * const [sahkarMobile, setSahkarMobile] = useState("");
    * const [sahkarLoginType, setSahkarLoginType] = useState<"user" | "admin">("user");
    */
-  const [isAdmin, setIsAdmin] = useState(false);
-
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -281,16 +323,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
         return;
       }
 
-      // جایگزین این بخش در handleLogin بعد از دریافت token:
-      const payload = decodeToken(token);
-      const roleClaim =
-        payload?.role ??
-        payload?.[
-          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        ];
-      const adminStatus =
-        roleClaim === "Admin" ||
-        (Array.isArray(roleClaim) && roleClaim.includes("Admin"));
+      const adminStatus = getIsAdminFromAuthPayload(data, token);
 
       // دریافت کد ملی از response
       const nationalCode =
@@ -331,8 +364,6 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
       }
 
       localStorage.setItem("auth-token", token);
-
-      setIsAdmin(adminStatus);
 
       const authenticatedUserType = adminStatus ? "admin" : "user";
       localStorage.setItem(AUTH_STORAGE_KEY, "true");

@@ -1,6 +1,5 @@
 import { createContext, useContext, ReactNode, useState } from "react";
-
-const AUTH_STORAGE_KEY = "municipality-user-authenticated";
+import { AUTH_STORAGE_KEY } from "../utils/authStorage";
 
 interface AuthContextType {
   isLoginModalOpen: boolean;

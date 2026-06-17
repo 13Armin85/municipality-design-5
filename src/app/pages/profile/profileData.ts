@@ -7,9 +7,9 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
+import { AUTH_STORAGE_KEY } from "../../utils/authStorage";
 
 export const PROFILE_IMAGE_STORAGE_KEY = "municipality-user-profile-image";
-export const AUTH_STORAGE_KEY = "municipality-user-authenticated";
 
 export const personalInfo = [
   { label: "نام و نام خانوادگی", value: "امیررضا محمدی" },

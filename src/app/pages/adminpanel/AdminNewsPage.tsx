@@ -168,20 +168,33 @@ interface PersianDate {
 function toPersianStr(date: PersianDate | null): string {
   if (!date) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.jy}/${pad(date.jm)}/${pad(date.jd)} ${pad(date.hour)}:${pad(date.minute)}`;
+  return `${date.jy}/${pad(date.jm)}/${pad(date.jd)} ${pad(date.hour)}:${pad(date.minute)}:00`;
 }
 
-function dateToISO(date: PersianDate | null): string {
-  if (!date) return "";
-  const d = fromJalali(date.jy, date.jm, date.jd); // jm already 1-based
-  d.setHours(date.hour, date.minute, 0, 0);
-  return d.toISOString();
+function dateToApiDateTime(date: PersianDate): string {
+  return toPersianStr(date);
 }
 
-function isoToPersianDate(iso: string): PersianDate | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return null;
+function apiDateTimeToGregorianDate(value: string): Date | null {
+  const match = value.match(
+    /^(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/,
+  );
+
+  if (!match) return null;
+
+  const [, year, month, day, hour = "0", minute = "0", second = "0"] = match;
+  const date = fromJalali(Number(year), Number(month), Number(day));
+  date.setHours(Number(hour), Number(minute), Number(second), 0);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function valueToPersianDate(value: string): PersianDate | null {
+  if (!value) return null;
+
+  const apiDate = apiDateTimeToGregorianDate(value);
+  const d = apiDate ?? new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+
   const [jy, jm, jd] = toJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
   return { jy, jm, jd, hour: d.getHours(), minute: d.getMinutes() }; // jm is 1-based from toJalali
 }
@@ -200,7 +213,7 @@ function PersianDatePicker({ value, onChange }: PersianDatePickerProps) {
     now.getDate(),
   );
 
-  const selected = isoToPersianDate(value);
+  const selected = valueToPersianDate(value);
 
   // viewMonth is 0-based (0=فروردین … 11=اسفند)
   const [viewYear, setViewYear] = useState(selected?.jy ?? ty);
@@ -235,13 +248,13 @@ function PersianDatePicker({ value, onChange }: PersianDatePickerProps) {
       hour,
       minute,
     };
-    onChange(dateToISO(pd));
+    onChange(dateToApiDateTime(pd));
   };
 
   const confirmTime = () => {
     if (selected) {
       const pd: PersianDate = { ...selected, hour, minute };
-      onChange(dateToISO(pd));
+      onChange(dateToApiDateTime(pd));
     }
     setOpen(false);
   };
@@ -542,7 +555,7 @@ const emptyForm: NewsForm = {
 
 const toPersianDateTime = (value: string | undefined | null) => {
   if (!value) return "بدون زمان انتشار";
-  const date = new Date(value);
+  const date = apiDateTimeToGregorianDate(value) ?? new Date(value);
   if (Number.isNaN(date.getTime())) return "بدون زمان انتشار";
   return date.toLocaleString("fa-IR", {
     year: "numeric",
@@ -555,7 +568,7 @@ const toPersianDateTime = (value: string | undefined | null) => {
 
 const getPublishStatus = (publishAt: string | undefined | null) => {
   if (!publishAt) return "منتشر شده";
-  const date = new Date(publishAt);
+  const date = apiDateTimeToGregorianDate(publishAt) ?? new Date(publishAt);
   if (Number.isNaN(date.getTime())) return "منتشر شده";
   return date.getTime() > Date.now() ? "زمان‌بندی شده" : "منتشر شده";
 };
@@ -566,7 +579,23 @@ const toPictureValue = (value: string) => {
 };
 
 const toNewsInput = (form: NewsForm): NewsInput => {
-  const publishDate = form.publishAt ? new Date(form.publishAt) : new Date();
+  const publishDate =
+    valueToPersianDate(form.publishAt) ??
+    (() => {
+      const now = new Date();
+      const [jy, jm, jd] = toJalali(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        now.getDate(),
+      );
+      return {
+        jy,
+        jm,
+        jd,
+        hour: now.getHours(),
+        minute: now.getMinutes(),
+      };
+    })();
 
   return {
     groupId: form.categoryId,
@@ -574,7 +603,7 @@ const toNewsInput = (form: NewsForm): NewsInput => {
     description: form.description.trim(),
     shortDescription: form.excerpt.trim(),
     picture: form.imageFile ?? toPictureValue(form.imageUrl),
-    publishDateTime: publishDate.toISOString(),
+    publishDateTime: dateToApiDateTime(publishDate),
   };
 };
 

@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
-import { AUTH_STORAGE_KEY } from "../pages/profile/profileData";
+import { AUTH_STORAGE_KEY } from "../utils/authStorage";
 
 interface ProtectedRouteProps {
   children: ReactNode;
