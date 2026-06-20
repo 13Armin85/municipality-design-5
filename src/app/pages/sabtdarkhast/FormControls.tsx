@@ -1,12 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence } from "motion/react";
 import { Calendar, Info, MoreHorizontal } from "lucide-react";
 import { FormErrors } from "./types";
-import {
-  getCurrentJalaliDateString,
-  PersianDatePicker,
-} from "./PersianDatePicker";
+import { getCurrentJalaliDateString, PersianDatePicker } from "./PersianDatePicker";
 import { FieldError } from "./FormCommon";
 
 interface HelpButtonProps {
@@ -185,15 +182,11 @@ export function DateField({
   setActiveDatePicker,
 }: DateFieldProps) {
   const isOpen = activeDatePicker === pickerId;
-  const resolvedValue = value || getCurrentJalaliDateString();
+  const pickerValue = value || getCurrentJalaliDateString();
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties | null>(
     null,
   );
-
-  useEffect(() => {
-    if (!value) onChange(getCurrentJalaliDateString());
-  }, [onChange, value]);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -247,7 +240,7 @@ export function DateField({
               className="pointer-events-auto"
             >
               <PersianDatePicker
-                value={resolvedValue}
+                value={pickerValue}
                 onChange={(v) => onChange(v)}
                 onClose={() => setActiveDatePicker(null)}
               />
@@ -265,7 +258,7 @@ export function DateField({
     >
       <div className="relative">
         <input
-          value={resolvedValue}
+          value={value}
           onChange={(e) => onChange(e.target.value)}
           className="h-10 w-full rounded-xl border border-border/70 bg-card px-3 pl-10 text-sm outline-none transition-colors focus:border-primary"
           placeholder="1403/01/01"

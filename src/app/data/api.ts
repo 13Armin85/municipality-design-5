@@ -19,7 +19,9 @@ const DOTNET48_ACCEPT_HEADER = "text/plain";
 
 function withDotNet48Headers(options?: RequestInit): RequestInit {
   const headers = new Headers(options?.headers);
-  headers.set("Accept", DOTNET48_ACCEPT_HEADER);
+  if (!headers.has("Accept")) {
+    headers.set("Accept", DOTNET48_ACCEPT_HEADER);
+  }
 
   return {
     ...options,

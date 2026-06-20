@@ -46,13 +46,10 @@ export interface RetreatDirectionTableRow {
 
 export interface RetreatSetbackTableRow {
   direction: string;
-  wideningWidth: string;
-  retreat: string;
-  expansionDepth: string;
-  originalFrontDepth: string;
-  boundaryType: string;
-  boundaryDistance: string;
-  adjacencyType: string;
+  amount: string;
+  length: string;
+  width: string;
+  compliant: string;
 }
 
 export interface RetreatData {
@@ -93,18 +90,6 @@ const formatValue = (value: unknown, unit = "") => {
 const firstDefined = (...values: unknown[]) =>
   values.find((value) => value !== undefined && value !== null && value !== "");
 
-const asNumber = (value: unknown) => {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  const normalized = String(value ?? "")
-    .replace(/[۰-۹]/g, (digit) => String(persianDigits.indexOf(digit)))
-    .match(/-?\d+(\.\d+)?/);
-
-  if (!normalized) return 0;
-
-  const numberValue = Number(normalized[0]);
-  return Number.isFinite(numberValue) ? numberValue : 0;
-};
-
 const unwrapList = (data: any): any[] => {
   if (Array.isArray(data)) return data;
   if (!data || typeof data !== "object") return [];
@@ -116,25 +101,34 @@ const unwrapList = (data: any): any[] => {
   return [data];
 };
 
-const totalByKey = (rows: any[], key: string) =>
-  rows.reduce((sum, row) => sum + asNumber(row?.[key]), 0);
+const unwrapObject = (data: any): any | null => {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
 
-const createAreaData = (rows: any[]): RetreatAreaData | null => {
-  if (rows.length === 0) return null;
+  for (const key of ["Value", "value", "data", "result"]) {
+    if (data[key] && typeof data[key] === "object" && !Array.isArray(data[key])) {
+      return data[key];
+    }
+  }
 
-  const originalArea = totalByKey(rows, "masahat1");
-  const reformedArea = totalByKey(rows, "masahat2");
-  const remainingArea = totalByKey(rows, "masahatposht");
+  return data;
+};
+
+const createAreaData = (area: any): RetreatAreaData | null => {
+  const source = unwrapObject(area);
+  if (!source) return null;
+
+  const originalArea = firstDefined(source?.masahat_s, source?.masahat1, source?.originalArea);
+  const reformedArea = firstDefined(source?.masahat_e, source?.masahat2, source?.reformedArea);
+  const remainingArea = firstDefined(source?.masahat_b, source?.masahatposht, source?.remainingArea);
 
   return {
     originalArea: formatValue(originalArea, "متر مربع"),
     reformedArea: formatValue(reformedArea, "متر مربع"),
     remainingArea: formatValue(remainingArea, "متر مربع"),
     rows: [
-      { label: "مساحت طبق وضع موجود", value: formatValue(originalArea, "متر مربع") },
+      { label: "مساحت سندی", value: formatValue(originalArea, "متر مربع") },
       { label: "مساحت اصلاحی", value: formatValue(reformedArea, "متر مربع") },
-      { label: "مساحت باقیمانده پشت", value: formatValue(remainingArea, "متر مربع") },
-      { label: "تعداد جهات ثبت شده", value: formatValue(rows.length) },
+      { label: "مساحت باقیمانده", value: formatValue(remainingArea, "متر مربع") },
     ],
   };
 };
@@ -172,20 +166,11 @@ const createDirectionRows = (row: any): LabelValueRow[] => [
 const createSetbackRows = (row: any): LabelValueRow[] => [
   { label: "ردیف", value: formatValue(row?.d_radif) },
   { label: "شناسه", value: formatValue(row?.id) },
-  { label: "جهت", value: formatValue(row?.jahat_m) },
-  { label: "عرض تعریض", value: formatValue(row?.Arz_Tariz, "متر") },
-  { label: "عمق نمای اصلی", value: formatValue(row?.OrginFrontDepth, "متر") },
-  { label: "کد عمق نمای اصلی", value: formatValue(row?.c_OrginFrontDepth) },
-  { label: "کد نوع حریم", value: formatValue(row?.c_noe_harim) },
-  { label: "نوع حریم", value: formatValue(row?.noe_harim) },
-  { label: "فاصله حریم", value: formatValue(row?.faseleh_harim, "متر") },
-  { label: "نوع مجاورت", value: formatValue(row?.AdjacencyType) },
-  { label: "کد نوع مجاورت", value: formatValue(row?.c_AdjacencyType) },
-  { label: "عقب‌نشینی", value: formatValue(row?.Retreat, "متر") },
-  { label: "عمق توسعه", value: formatValue(row?.Depthofexpansion, "متر") },
-  { label: "طول ضلع اصلاحی", value: formatValue(row?.tolzeleslahi, "متر") },
-  { label: "طول بر اصلاحی", value: formatValue(row?.tolbareslahi, "متر") },
-  { label: "توضیحات", value: formatValue(row?.tozihat) },
+  { label: "جهت عقب‌نشینی", value: formatValue(firstDefined(row?.aghab, row?.jahat_m)) },
+  { label: "مقدار", value: formatValue(firstDefined(row?.meghdar, row?.Retreat), "متر") },
+  { label: "طول عقب‌نشینی", value: formatValue(row?.LengthAghabNeshini, "متر") },
+  { label: "عرض عقب‌نشینی", value: formatValue(row?.WidthAghabNeshini, "متر") },
+  { label: "رعایت شده", value: formatValue(row?.reayat) },
 ];
 
 const createDirectionTableRow = (row: any): RetreatDirectionTableRow => ({
@@ -199,62 +184,79 @@ const createDirectionTableRow = (row: any): RetreatDirectionTableRow => ({
 });
 
 const createSetbackTableRow = (row: any): RetreatSetbackTableRow => ({
-  direction: formatValue(row?.jahat_m),
-  wideningWidth: formatValue(row?.Arz_Tariz),
-  retreat: formatValue(row?.Retreat),
-  expansionDepth: formatValue(row?.Depthofexpansion),
-  originalFrontDepth: formatValue(row?.OrginFrontDepth),
-  boundaryType: formatValue(row?.noe_harim),
-  boundaryDistance: formatValue(row?.faseleh_harim),
-  adjacencyType: formatValue(row?.AdjacencyType),
+  direction: formatValue(firstDefined(row?.aghab, row?.jahat_m)),
+  amount: formatValue(firstDefined(row?.meghdar, row?.Retreat), "متر"),
+  length: formatValue(row?.LengthAghabNeshini, "متر"),
+  width: formatValue(row?.WidthAghabNeshini, "متر"),
+  compliant: formatValue(row?.reayat),
 });
 
-const createRetreatData = (rows: any[]): RetreatData => ({
-  area: createAreaData(rows),
-  directions: rows.map((row, index) => ({
+const createRetreatData = (
+  setbackRows: any[],
+  area: any,
+  directionRows: any[],
+): RetreatData => ({
+  area: createAreaData(area),
+  directions: directionRows.map((row, index) => ({
     title: getDirectionTitle(row, index),
     rowNumber: formatValue(firstDefined(row?.d_radif, index + 1)),
     direction: formatValue(row?.jahat_m),
     rows: createDirectionRows(row),
   })),
-  setbacks: rows.map((row, index) => ({
+  setbacks: setbackRows.map((row, index) => ({
     title: `عقب‌نشینی ${normalizeText(row?.jahat_m, String(index + 1))}`,
     rowNumber: formatValue(firstDefined(row?.d_radif, index + 1)),
     direction: formatValue(row?.jahat_m),
     rows: createSetbackRows(row),
   })),
-  directionRows: rows.map(createDirectionTableRow),
-  setbackRows: rows.map(createSetbackTableRow),
+  directionRows: directionRows.map(createDirectionTableRow),
+  setbackRows: setbackRows.map(createSetbackTableRow),
 });
 
 /**
  * GET /api/retreat
+ * GET /api/retreat/area
+ * GET /api/retreat/directions
  */
 export const fetchRetreatData = async (
   codeNosazi: string,
   token: string,
 ): Promise<RetreatData> => {
-  const response = await apiFetch(
-    `/api/retreat?codeNosazi=${encodeURIComponent(codeNosazi)}`,
-    {
+  const authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+  const headers = {
+    Accept: "application/json",
+    Authorization: authorization,
+  };
+  const encodedCode = encodeURIComponent(codeNosazi);
+
+  const fetchApiValue = async (endpoint: string, errorMessage: string) => {
+    const response = await apiFetch(`${endpoint}?codeNosazi=${encodedCode}`, {
       method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
-      },
-    },
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(errorMessage);
+    }
+
+    const result: ApiResponse = await response.json();
+
+    if (!isApiSuccess(result)) {
+      throw new Error(getApiErrorMessage(result));
+    }
+
+    return getApiValue(result);
+  };
+
+  const [retreatValue, areaValue, directionsValue] = await Promise.all([
+    fetchApiValue("/api/retreat", "خطا در دریافت جدول وضعیت عقب‌نشینی"),
+    fetchApiValue("/api/retreat/area", "خطا در دریافت جدول عقب‌نشینی"),
+    fetchApiValue("/api/retreat/directions", "خطا در دریافت جهات چهارگانه"),
+  ]);
+
+  return createRetreatData(
+    unwrapList(retreatValue),
+    areaValue,
+    unwrapList(directionsValue),
   );
-
-  if (!response.ok) {
-    throw new Error("خطا در دریافت وضعیت عقب‌نشینی");
-  }
-
-  const result: ApiResponse = await response.json();
-
-  if (!isApiSuccess(result)) {
-    throw new Error(getApiErrorMessage(result));
-  }
-
-  const rows = unwrapList(getApiValue(result));
-  return createRetreatData(rows);
 };

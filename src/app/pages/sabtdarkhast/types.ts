@@ -8,6 +8,7 @@ export interface SabtDarkhastPageProps {
 export type StepState = "form" | "upload" | "success";
 
 export interface OwnerFormState {
+  identityType: "1" | "2";
   nationalId: string;
   name: string;
   phone: string;
@@ -34,9 +35,12 @@ export interface LackDocumentItem {
 }
 
 export interface ApplicantFormState {
+  identityType: "1" | "2";
   nationalId: string;
   name: string;
   phone: string;
+  postalCode: string;
+  address: string;
 }
 
 export interface ComplementaryFormState {
@@ -45,6 +49,16 @@ export interface ComplementaryFormState {
   secretNo: string;
   secretDate: string;
   office: string;
+  desc: string;
+}
+
+export interface BuyerFormState {
+  identityType: "1" | "2";
+  nationalId: string;
+  name: string;
+  phone: string;
+  transferShare: string;
+  totalTransferShare: string;
 }
 
 export interface SelectionModalState {

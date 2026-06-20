@@ -2,55 +2,10 @@
 > @figma/my-make-file@0.0.1 dev
 > vite --host 0.0.0.0
 
-[32m✔[0m [33mConsole Ninja[0m extension is connected to [33mVite[0m, see [36mhttps://tinyurl.com/2vt8jxzw[0m
 Port 5173 is in use, trying another one...
 
-  [32m[1mVITE[22m v6.3.5[39m  [2mready in [0m[1m460[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v6.3.5[39m  [2mready in [0m[1m322[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5174[22m/[39m
   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.23.49:[1m5174[22m/[39m
   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.1.34:[1m5174[22m/[39m
-[2m1:16:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/retreat.ts[22m
-[2m2:25:25 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/guild-fees/GuildFeesSections.tsx[22m
-[2m3:02:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/retreat.ts[22m
-[2m3:02:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/Useretreatdata.ts[22m
-[2m3:11:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/api.ts[22m
-[2m3:11:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/api.ts[22m
-[2m3:11:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/api.ts[22m
-[2m3:16:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/api.ts[22m
-[2m3:16:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/retreat.ts[22m
-[2m3:17:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/components/PropertyTreeList.tsx[22m
-[2m3:18:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/components/Header.tsx, /src/styles/index.css[22m
-[2m3:18:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/components/Header.tsx[22m
-[2m3:18:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/components/Header.tsx[22m
-[2m3:19:49 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/components/Header.tsx, /src/styles/index.css[22m
-[2m3:21:01 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/api.ts[22m
-[2m3:25:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/guild-fees/GuildFeesSections.tsx[22m
-[2m3:31:52 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/guild-fees/GuildFeesSections.tsx[22m
-[2m3:44:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/sabtdarkhast/UploadStep.tsx[22m
-[2m3:44:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/components/Header.tsx[22m
-[2m3:44:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
-[2m3:44:27 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/sabtdarkhast/SabtdarkhastFormPrimary.tsx[22m
-[2m4:03:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/components/Header.tsx, /src/styles/index.css[22m
-[2m4:03:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/sabtdarkhast/UploadStep.tsx[22m
-[2m4:03:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/components/Header.tsx[22m
-[2m4:03:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/guild-fees/GuildFeesSections.tsx[22m
-[2m4:03:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/api.ts[22m
-[2m4:03:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/vite-env.d.ts[22m
-[2m4:03:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/components/PropertyTreeList.tsx[22m
-[2m4:03:00 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/sabtdarkhast/SabtdarkhastFormPrimary.tsx[22m
-[2m4:03:26 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/Useretreatdata.ts[22m
-[2m4:06:22 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/properties.ts[22m
-[2m4:06:22 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/properties.ts[22m
-[2m4:06:40 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/hooks/useSelectedProperty.ts[22m
-[2m4:06:58 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/guild-fees/GuildFeesSections.tsx[22m
-[2m4:07:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/sabtdarkhast/SabtdarkhastFormSecondary.tsx[22m
-[2m4:07:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/sabtdarkhast/types.ts[22m
-[2m4:26:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/app/components/Header.tsx, /src/styles/index.css[22m
-[2m4:26:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/sabtdarkhast/UploadStep.tsx[22m
-[2m4:26:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/index.css, /src/app/components/Header.tsx[22m
-[2m4:26:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/data/api.ts[22m
-[2m4:26:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/vite-env.d.ts[22m
-[2m4:26:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
-[2m4:26:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/components/PropertyTreeList.tsx[22m
-[2m4:26:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/pages/sabtdarkhast/SabtdarkhastFormPrimary.tsx[22m

@@ -31,6 +31,7 @@ import { SuccessScreen } from "./sabtdarkhast/SuccessScreen";
 import { UploadStep } from "./sabtdarkhast/UploadStep";
 import {
   ApplicantFormState,
+  BuyerFormState,
   ComplementaryFormState,
   FormErrors,
   HelpModalContent,
@@ -108,18 +109,27 @@ const commonLabelKeys = [
   "Text",
   "label",
   "Label",
-  "value",
-  "Value",
   "sharh",
   "Sharh",
   "GardeshKar",
 ];
 
 const commonCodeKeys = [
+  "C_GardeshKar",
+  "c_GardeshKar",
+  "gardeshKarCode",
+  "GardeshKarCode",
+  "kodfarei",
+  "KodFarei",
+  "kodFarei",
+  "Kodfarei",
   "id",
   "Id",
+  "ID",
   "code",
   "Code",
+  "CodeId",
+  "codeId",
   "key",
   "Key",
   "value",
@@ -165,8 +175,11 @@ const extractLookupOptions = (
 };
 
 const getLookupCode = (options: LookupOption[], selectedLabel: string) => {
+  const normalizedSelected = selectedLabel.trim();
   const selected = options.find(
-    (option) => option.label.trim() === selectedLabel.trim(),
+    (option) =>
+      option.label.trim() === normalizedSelected ||
+      option.code.trim() === normalizedSelected,
   );
 
   return toNumber(selected?.code) ?? toNumber(selectedLabel);
@@ -206,12 +219,12 @@ const readApiResponse = async (
   return data;
 };
 
-const requestTypeLabelKeys = ["noedarkhast", "NoeDarkhast", "requestTitle"];
-const requestTypeCodeKeys = ["c_noedarkhast", "C_NoeDarkhast", "requestTypeId"];
-const applicantTypeLabelKeys = ["noemot", "NoeMot", "ApplicantType"];
-const applicantTypeCodeKeys = ["c_noemot", "C_NoeMot", "applicantTypeId"];
-const officeLabelKeys = ["sahebname", "SahebName", "OfficeName"];
-const officeCodeKeys = ["C_Estelam", "c_estelam", "officeId"];
+const requestTypeLabelKeys = ["GardeshKar", "noedarkhast", "NoeDarkhast", "requestTitle"];
+const requestTypeCodeKeys = ["C_GardeshKar", "c_GardeshKar", "c_noedarkhast", "C_NoeDarkhast", "requestTypeId"];
+const applicantTypeLabelKeys = ["sharh", "Sharh", "noemot", "NoeMot", "ApplicantType"];
+const applicantTypeCodeKeys = ["kodfarei", "KodFarei", "c_noemot", "C_NoeMot", "applicantTypeId"];
+const officeLabelKeys = ["sharh", "Sharh", "sahebname", "SahebName", "OfficeName"];
+const officeCodeKeys = ["kodfarei", "KodFarei", "C_Estelam", "c_estelam", "officeId"];
 
 const agreementTypeLabels: Record<string, string> = {
   "1": "مالک",
@@ -403,6 +416,38 @@ const firstDefined = (...values: unknown[]) =>
 const firstText = (...values: unknown[]) =>
   values.map(getTextValue).find(Boolean) ?? "";
 
+const getIdentityTypeFromValue = (value: unknown): "1" | "2" => {
+  const digitCount = normalizeDigits(value).replace(/\D/g, "").length;
+  return digitCount > 10 ? "2" : "1";
+};
+
+const resolveIdentityType = (
+  typeValue: unknown,
+  identityValue: unknown,
+): "1" | "2" => {
+  const normalizedType = normalizeDigits(typeValue).replace(/\D/g, "");
+  if (normalizedType === "1" || normalizedType === "2") {
+    return normalizedType;
+  }
+
+  const typeText = getTextValue(typeValue).toLowerCase();
+  if (
+    typeText.includes("national") ||
+    typeText.includes("meli") ||
+    typeText.includes("کد")
+  ) {
+    return "1";
+  }
+  if (typeText.includes("legal") || typeText.includes("شناسه")) {
+    return "2";
+  }
+
+  return getIdentityTypeFromValue(identityValue);
+};
+
+const firstObject = (...values: any[]) =>
+  values.find((value) => value && typeof value === "object" && !Array.isArray(value));
+
 const getFileShopValue = (item: any) =>
   firstDefined(
     item.shop,
@@ -495,6 +540,7 @@ export function SabtDarkhastPage({
   const [vakadari, setVakadari] = useState("");
 
   const [ownerForm, setOwnerForm] = useState<OwnerFormState>({
+    identityType: getIdentityTypeFromValue(selectedProperty.owner.nationalId),
     nationalId: selectedProperty.owner.nationalId,
     name: selectedProperty.owner.name,
     phone: selectedProperty.owner.phone,
@@ -509,9 +555,12 @@ export function SabtDarkhastPage({
   });
 
   const [applicantForm, setApplicantForm] = useState<ApplicantFormState>({
+    identityType: getIdentityTypeFromValue(selectedProperty.owner.nationalId),
     nationalId: selectedProperty.owner.nationalId,
     name: selectedProperty.owner.name,
     phone: selectedProperty.owner.phone,
+    postalCode: selectedProperty.owner.postalCode,
+    address: selectedProperty.owner.address,
   });
 
   const [complementaryForm, setComplementaryForm] =
@@ -521,7 +570,19 @@ export function SabtDarkhastPage({
       secretNo: selectedProperty.registration.complementary.secretNo,
       secretDate: selectedProperty.registration.complementary.secretDate,
       office: selectedProperty.registration.complementary.office,
+      desc: selectedProperty.registration.complementary.desc,
     });
+
+  const [buyerForm, setBuyerForm] = useState<BuyerFormState>({
+    identityType: getIdentityTypeFromValue(
+      selectedProperty.registration.buyer.nationalId,
+    ),
+    nationalId: selectedProperty.registration.buyer.nationalId,
+    name: selectedProperty.registration.buyer.name,
+    phone: selectedProperty.registration.buyer.phone,
+    transferShare: selectedProperty.registration.buyer.share,
+    totalTransferShare: "",
+  });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [showErrors, setShowErrors] = useState(false);
@@ -610,10 +671,340 @@ export function SabtDarkhastPage({
     }
   };
 
+  const applyFileCheckDataToForm = (rawValue: any, codeNosazi: string) => {
+    const record = getListFromApiValue(rawValue)[0] ?? rawValue ?? {};
+    const ownerList = [
+      ...getListFromApiValue(record?.owners),
+      ...getListFromApiValue(record?.Owners),
+      ...getListFromApiValue(record?.malekin),
+      ...getListFromApiValue(record?.Malekin),
+    ];
+    const ownerSource =
+      firstObject(
+        record?.owner,
+        record?.Owner,
+        record?.malek,
+        record?.Malek,
+        record?.melkVm,
+        record?.MelkVm,
+        ownerList[0],
+      ) ?? record;
+    const applicantSource =
+      firstObject(
+        record?.applicant,
+        record?.Applicant,
+        record?.motaghazi,
+        record?.Motaghazi,
+        record?.moteghazi,
+        record?.Moteghazi,
+      ) ?? record;
+
+    const ownerFirstName = firstText(
+      ownerSource.Name,
+      ownerSource.name,
+      ownerSource.firstName,
+      ownerSource.FirstName,
+    );
+    const ownerLastName = firstText(
+      ownerSource.Family,
+      ownerSource.family,
+      ownerSource.lastName,
+      ownerSource.LastName,
+    );
+    const ownerNationalId = firstText(
+      ownerSource.NationalCode,
+      ownerSource.nationalCode,
+      ownerSource.CodeMeli,
+      ownerSource.codeMeli,
+      ownerSource.ShenaseMeli,
+      ownerSource.shenaseMeli,
+      record.NationalCode,
+      record.nationalCode,
+      record.CodeMeli,
+      record.codeMeli,
+      record.ShenaseMeli,
+      record.shenaseMeli,
+    );
+    const ownerName =
+      firstText(
+        ownerSource.FullName,
+        ownerSource.fullName,
+        ownerSource.ownerName,
+        ownerSource.OwnerName,
+        ownerSource.name,
+        record.ownerName,
+        record.OwnerName,
+      ) || [ownerFirstName, ownerLastName].filter(Boolean).join(" ");
+    const ownerPhone = firstText(
+      ownerSource.Mobile,
+      ownerSource.mobile,
+      ownerSource.Phone,
+      ownerSource.phone,
+      ownerSource.mob,
+      ownerSource.tel,
+      record.Mobile,
+      record.mobile,
+      record.Phone,
+      record.phone,
+      record.mob,
+    );
+    const ownerPostalCode = firstText(
+      ownerSource.PostalCode,
+      ownerSource.postalCode,
+      ownerSource.codeposti,
+      ownerSource.CodePosti,
+      record.PostalCode,
+      record.postalCode,
+      record.codeposti,
+    );
+    const ownerAddress = firstText(
+      ownerSource.Address,
+      ownerSource.address,
+      ownerSource.Address_Malek,
+      ownerSource.address_Malek,
+      record.Address,
+      record.address,
+      record.Address_Malek,
+      record.address_Malek,
+    );
+    const applicantNationalId = firstText(
+      applicantSource.applicantNationalCode,
+      applicantSource.ApplicantNationalCode,
+      applicantSource.NationalCode,
+      applicantSource.nationalCode,
+      applicantSource.CodeMeli,
+      applicantSource.codeMeli,
+      applicantSource.ShenaseMeli,
+      applicantSource.shenaseMeli,
+      record.applicantNationalCode,
+      record.ApplicantNationalCode,
+    );
+    const applicantName = firstText(
+      applicantSource.moteghazi,
+      applicantSource.Moteghazi,
+      applicantSource.FullName,
+      applicantSource.fullName,
+      applicantSource.name,
+      record.moteghazi,
+      record.Moteghazi,
+    );
+    const applicantPhone = firstText(
+      applicantSource.applicantMobile,
+      applicantSource.ApplicantMobile,
+      applicantSource.Mobile,
+      applicantSource.mobile,
+      applicantSource.Phone,
+      applicantSource.phone,
+      record.applicantMobile,
+      record.ApplicantMobile,
+    );
+    const applicantPostalCode = firstText(
+      applicantSource.applicantPostalcode,
+      applicantSource.ApplicantPostalcode,
+      applicantSource.postalCode,
+      applicantSource.PostalCode,
+      record.applicantPostalcode,
+      record.ApplicantPostalcode,
+    );
+    const applicantAddress = firstText(
+      applicantSource.applicantAddress,
+      applicantSource.ApplicantAddress,
+      applicantSource.address,
+      applicantSource.Address,
+      record.applicantAddress,
+      record.ApplicantAddress,
+    );
+    const buyerSource =
+      firstObject(record?.buyer, record?.Buyer, record?.kharidar, record?.Kharidar) ??
+      record;
+    const buyerNationalId = firstText(
+      buyerSource.BuyerNationalCode,
+      buyerSource.buyerNationalCode,
+      buyerSource.NationalCode,
+      buyerSource.nationalCode,
+      record.BuyerNationalCode,
+      record.buyerNationalCode,
+    );
+    const buyerName = firstText(
+      buyerSource.kharidar,
+      buyerSource.Kharidar,
+      buyerSource.name,
+      buyerSource.Name,
+      record.kharidar,
+      record.Kharidar,
+    );
+    const buyerPhone = firstText(
+      buyerSource.BuyerMobile,
+      buyerSource.buyerMobile,
+      buyerSource.Mobile,
+      buyerSource.mobile,
+      buyerSource.Phone,
+      buyerSource.phone,
+      record.BuyerMobile,
+      record.buyerMobile,
+    );
+
+    setOwnerForm((prev) => ({
+      identityType: ownerNationalId
+        ? resolveIdentityType(
+            firstText(ownerSource.MeliType, ownerSource.meliType, record.MeliType),
+            ownerNationalId,
+          )
+        : prev.identityType,
+      nationalId: ownerNationalId || prev.nationalId,
+      name: ownerName || prev.name,
+      phone: ownerPhone || prev.phone,
+      postalCode: ownerPostalCode || prev.postalCode,
+      address: ownerAddress || prev.address,
+    }));
+
+    setApplicantForm((prev) => {
+      const nextNationalId = applicantNationalId || ownerNationalId || prev.nationalId;
+      return {
+        identityType: nextNationalId
+          ? resolveIdentityType(
+              firstText(
+                applicantSource.applicantMeliType,
+                applicantSource.ApplicantMeliType,
+                applicantSource.MeliType,
+                applicantSource.meliType,
+                record.applicantMeliType,
+              ),
+              nextNationalId,
+            )
+          : prev.identityType,
+        nationalId: nextNationalId,
+        name: applicantName || ownerName || prev.name,
+        phone: applicantPhone || ownerPhone || prev.phone,
+        postalCode: applicantPostalCode || ownerPostalCode || prev.postalCode,
+        address: applicantAddress || ownerAddress || prev.address,
+      };
+    });
+
+    setRequestForm((prev) => ({
+      id:
+        prev.id ||
+        firstText(record.shodarkhast, record.requestId, record.requestNo, record.id),
+      type:
+        firstText(record.noedarkhast, record.NoeDarkhast, record.requestTitle) ||
+        prev.type,
+      applicantType:
+        firstText(record.noemot, record.NoeMot, record.applicantType) ||
+        prev.applicantType,
+    }));
+
+    setComplementaryForm((prev) => ({
+      letterNo: firstText(record.shonaame, record.letterNo, record.LetterNo) || prev.letterNo,
+      letterDate:
+        firstText(record.strtarikhnaame, record.letterDate, record.LetterDate) ||
+        prev.letterDate,
+      secretNo: firstText(record.showdabir, record.secretNo, record.SecretNo) || prev.secretNo,
+      secretDate:
+        firstText(record.strtarikhdabir, record.secretDate, record.SecretDate) ||
+        prev.secretDate,
+      office: firstText(record.sahebname, record.SahebName, record.office) || prev.office,
+      desc: firstText(record.tozihat, record.Tozihat, record.desc, record.description) || prev.desc,
+    }));
+
+    setBuyerForm((prev) => ({
+      identityType: buyerNationalId
+        ? resolveIdentityType(
+            firstText(
+              buyerSource.BuyerMeliType,
+              buyerSource.buyerMeliType,
+              record.BuyerMeliType,
+              record.buyerMeliType,
+            ),
+            buyerNationalId,
+          )
+        : prev.identityType,
+      nationalId: buyerNationalId || prev.nationalId,
+      name: buyerName || prev.name,
+      phone: buyerPhone || prev.phone,
+      transferShare:
+        firstText(
+          record.SahmeMoredeEnteghal,
+          record.sahmeMoredeEnteghal,
+          buyerSource.SahmeMoredeEnteghal,
+        ) || prev.transferShare,
+      totalTransferShare:
+        firstText(
+          record.SahmeKolleMoredeEnteghal,
+          record.sahmeKolleMoredeEnteghal,
+          buyerSource.SahmeKolleMoredeEnteghal,
+        ) || prev.totalTransferShare,
+    }));
+
+    const shop = firstText(
+      record.shop,
+      record.Shop,
+      record.shopId,
+      record.ShopId,
+      record.malekId,
+      record.MalekId,
+      ownerSource.shop,
+      ownerSource.Shop,
+    );
+
+    setActiveProperty((prev) => {
+      const current = prev ?? emptyProperty;
+      return {
+        ...current,
+        id: shop || current.id,
+        fullCode: codeNosazi || current.fullCode,
+        ownerName: ownerName || current.ownerName,
+        owner: {
+          ...current.owner,
+          firstName: ownerFirstName || current.owner.firstName,
+          lastName: ownerLastName || current.owner.lastName,
+          name: ownerName || current.owner.name,
+          nationalId: ownerNationalId || current.owner.nationalId,
+          phone: ownerPhone || current.owner.phone,
+          postalCode: ownerPostalCode || current.owner.postalCode,
+          address: ownerAddress || current.owner.address,
+        },
+      };
+    });
+  };
+
+  const fetchFileCheckData = async (codeNosazi: string) => {
+    const cleanCode = codeNosazi.trim();
+    if (!cleanCode || cleanCode === "------") return;
+
+    try {
+      const token = normalizeAuthToken(localStorage.getItem("auth-token"));
+      const response = await apiFetch(
+        `/api/file/check?codeNosazi=${encodeURIComponent(cleanCode)}`,
+        {
+          method: "GET",
+          cache: "no-store",
+          headers: getAuthHeaders(token),
+        },
+      );
+      const data = normalizeApiResponse(await response.json().catch(() => null));
+
+      if (!response.ok) {
+        throw new Error(getApiErrorMessage(data));
+      }
+
+      if (!isApiSuccess(data)) {
+        throw new Error(getApiErrorMessage(data));
+      }
+
+      applyFileCheckDataToForm(getApiValue(data), cleanCode);
+      setRequestSubmitError("");
+    } catch (error) {
+      setRequestSubmitError(
+        error instanceof Error ? error.message : "خطا در دریافت اطلاعات پرونده.",
+      );
+    }
+  };
+
   const applyPropertyToPage = (property: PropertyRecord) => {
     setActiveProperty(property);
 
     setOwnerForm({
+      identityType: getIdentityTypeFromValue(property.owner.nationalId),
       nationalId: property.owner.nationalId,
       name: property.owner.name,
       phone: property.owner.phone,
@@ -628,9 +1019,12 @@ export function SabtDarkhastPage({
     }));
 
     setApplicantForm({
+      identityType: getIdentityTypeFromValue(property.owner.nationalId),
       nationalId: property.owner.nationalId,
       name: property.owner.name,
       phone: property.owner.phone,
+      postalCode: property.owner.postalCode,
+      address: property.owner.address,
     });
 
     setComplementaryForm({
@@ -639,6 +1033,16 @@ export function SabtDarkhastPage({
       secretNo: property.registration.complementary.secretNo,
       secretDate: property.registration.complementary.secretDate,
       office: property.registration.complementary.office,
+      desc: property.registration.complementary.desc,
+    });
+
+    setBuyerForm({
+      identityType: getIdentityTypeFromValue(property.registration.buyer.nationalId),
+      nationalId: property.registration.buyer.nationalId,
+      name: property.registration.buyer.name,
+      phone: property.registration.buyer.phone,
+      transferShare: property.registration.buyer.share,
+      totalTransferShare: "",
     });
 
     setErrors({});
@@ -656,17 +1060,23 @@ export function SabtDarkhastPage({
     if (isOwnerApplicantType(requestForm.applicantType)) {
       setApplicantForm((prev) => {
         if (
+          prev.identityType === ownerForm.identityType &&
           prev.nationalId === ownerForm.nationalId &&
           prev.name === ownerForm.name &&
-          prev.phone === ownerForm.phone
+          prev.phone === ownerForm.phone &&
+          prev.postalCode === ownerForm.postalCode &&
+          prev.address === ownerForm.address
         ) {
           return prev;
         }
 
         return {
+          identityType: ownerForm.identityType,
           nationalId: ownerForm.nationalId,
           name: ownerForm.name,
           phone: ownerForm.phone,
+          postalCode: ownerForm.postalCode,
+          address: ownerForm.address,
         };
       });
     }
@@ -674,6 +1084,9 @@ export function SabtDarkhastPage({
     ownerForm.name,
     ownerForm.nationalId,
     ownerForm.phone,
+    ownerForm.postalCode,
+    ownerForm.address,
+    ownerForm.identityType,
     requestForm.applicantType,
   ]);
 
@@ -928,6 +1341,7 @@ export function SabtDarkhastPage({
               : buildValuesFromCode(codeToSelect),
           );
           applyPropertyToPage(propertyToSelect);
+          void fetchFileCheckData(codeToSelect);
           void fetchRegisteredRequests(codeToSelect);
         }
       } catch (error) {
@@ -991,6 +1405,7 @@ export function SabtDarkhastPage({
   };
 
   const handleSearch = () => {
+    const codeNosazi = buildCodeFromValues(searchValues);
     const found = propertyItems.find((property) =>
       areRenewalCodesEqual(property.codes, searchValues),
     );
@@ -998,14 +1413,23 @@ export function SabtDarkhastPage({
     if (found) {
       applyPropertyToPage(found);
       setSelectedTreeItemId(found.id);
+      void fetchFileCheckData(
+        found.fullCode || buildCodeFromValues(found.codes),
+      );
       void fetchRegisteredRequests(
         found.fullCode || buildCodeFromValues(found.codes),
       );
     } else {
-      alert("ملکی با این مشخصات یافت نشد.");
-      setActiveProperty(null);
+      setActiveProperty({
+        ...emptyProperty,
+        fullCode: codeNosazi,
+        codes: searchValues,
+      });
+      setSelectedTreeItemId("");
       setRegisteredRequests([]);
       setRegisteredRequestsError("");
+      void fetchFileCheckData(codeNosazi);
+      void fetchRegisteredRequests(codeNosazi);
     }
   };
 
@@ -1027,8 +1451,7 @@ export function SabtDarkhastPage({
     selectedProperty.id ||
     "";
 
-  const getMeliType = (nationalId: string) =>
-    normalizeDigits(nationalId).length === 10 ? "کد ملی" : "شناسه ملی";
+  const getMeliType = (identityType: "1" | "2") => identityType;
 
   const buildRequestPayload = () => {
     const requestTypeCode = getLookupCode(requestTypeOptions, requestForm.type);
@@ -1042,7 +1465,7 @@ export function SabtDarkhastPage({
     return {
       shop: getCurrentShopNumber() ?? 0,
       c_nosazi: getCurrentCodeNosazi(),
-      MeliType: getMeliType(ownerForm.nationalId),
+      MeliType: getMeliType(ownerForm.identityType),
       NationalCode: ownerForm.nationalId.trim(),
       Malek_Name: ownerForm.name.trim(),
       mob: ownerForm.phone.trim(),
@@ -1053,27 +1476,29 @@ export function SabtDarkhastPage({
       c_noedarkhast: requestTypeCode ?? 0,
       noemot: requestForm.applicantType.trim(),
       c_noemot: applicantTypeCode ?? 0,
-      applicantMeliType: getMeliType(applicantForm.nationalId),
+      applicantMeliType: getMeliType(applicantForm.identityType),
       applicantNationalCode: applicantForm.nationalId.trim(),
       moteghazi: applicantForm.name.trim(),
       applicantMobile: applicantForm.phone.trim(),
       AgreementType: getAgreementTypeLabel(vakadari),
       C_AgreementType: agreementTypeCode,
-      applicantPostalcode: ownerForm.postalCode.trim(),
-      applicantAddress: ownerForm.address.trim(),
+      applicantPostalcode: applicantForm.postalCode.trim(),
+      applicantAddress: applicantForm.address.trim(),
       shonaame: complementaryForm.letterNo.trim(),
       strtarikhnaame: complementaryForm.letterDate.trim(),
       showdabir: complementaryForm.secretNo.trim(),
       strtarikhdabir: complementaryForm.secretDate.trim(),
       sahebname: complementaryForm.office.trim(),
       C_Estelam: officeCode ?? 0,
-      tozihat: "",
-      BuyerMeliType: "",
-      BuyerNationalCode: "",
-      kharidar: "",
-      BuyerMobile: "",
-      SahmeMoredeEnteghal: 0,
-      SahmeKolleMoredeEnteghal: 0,
+      tozihat: complementaryForm.desc.trim(),
+      BuyerMeliType: buyerForm.nationalId.trim()
+        ? getMeliType(buyerForm.identityType)
+        : "",
+      BuyerNationalCode: buyerForm.nationalId.trim(),
+      kharidar: buyerForm.name.trim(),
+      BuyerMobile: buyerForm.phone.trim(),
+      SahmeMoredeEnteghal: toNumber(buyerForm.transferShare) ?? 0,
+      SahmeKolleMoredeEnteghal: toNumber(buyerForm.totalTransferShare) ?? 0,
     };
   };
 
@@ -1126,6 +1551,15 @@ export function SabtDarkhastPage({
 
     if (!payload.shodarkhast) {
       nextErrors["request.id"] = "شماره درخواست معتبر نیست";
+    }
+    if (!payload.c_noedarkhast) {
+      nextErrors["request.type"] = "کد نوع درخواست معتبر نیست";
+    }
+    if (!payload.c_noemot) {
+      nextErrors["request.applicantType"] = "کد نوع متقاضی معتبر نیست";
+    }
+    if (complementaryForm.office.trim() && !payload.C_Estelam) {
+      nextErrors["complementary.office"] = "کد اداره استعلام کننده معتبر نیست";
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -1273,6 +1707,11 @@ export function SabtDarkhastPage({
     if (matchedProperty) {
       applyPropertyToPage(matchedProperty);
       setSearchValues(codes);
+      void fetchFileCheckData(
+        selectedFullCode ||
+          matchedProperty.fullCode ||
+          buildCodeFromValues(codes),
+      );
       void fetchRegisteredRequests(
         selectedFullCode ||
           matchedProperty.fullCode ||
@@ -1288,6 +1727,7 @@ export function SabtDarkhastPage({
         description: property.description || fallbackBase.description,
       });
       setSearchValues(codes);
+      void fetchFileCheckData(selectedFullCode || buildCodeFromValues(codes));
       void fetchRegisteredRequests(selectedFullCode || buildCodeFromValues(codes));
     }
   };
@@ -1410,6 +1850,7 @@ export function SabtDarkhastPage({
                   requestForm={requestForm}
                   applicantForm={applicantForm}
                   complementaryForm={complementaryForm}
+                  buyerForm={buyerForm}
                   vakadari={vakadari}
                   activeDatePicker={activeDatePicker}
                   // ✅ داده‌های سلکشن رو پاس کن
@@ -1424,6 +1865,7 @@ export function SabtDarkhastPage({
                   setRequestForm={setRequestForm}
                   setApplicantForm={setApplicantForm}
                   setComplementaryForm={setComplementaryForm}
+                  setBuyerForm={setBuyerForm}
                   setVakadari={setVakadari}
                   setActiveDatePicker={setActiveDatePicker}
                   clearError={clearError}

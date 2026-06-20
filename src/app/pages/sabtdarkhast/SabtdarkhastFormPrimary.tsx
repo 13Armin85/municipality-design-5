@@ -23,6 +23,7 @@ import {
 } from "./FormControls";
 import {
   ApplicantFormState,
+  BuyerFormState,
   ComplementaryFormState,
   FormErrors,
   OwnerFormState,
@@ -37,6 +38,7 @@ interface SabtdarkhastFormPrimaryProps {
   requestForm: RequestFormState;
   applicantForm: ApplicantFormState;
   complementaryForm: ComplementaryFormState;
+  buyerForm: BuyerFormState;
   vakadari: string;
   activeDatePicker: string | null;
   requestTypeItems: string[];
@@ -53,6 +55,7 @@ interface SabtdarkhastFormPrimaryProps {
   setRequestForm: (value: RequestFormState) => void;
   setApplicantForm: (value: ApplicantFormState) => void;
   setComplementaryForm: (value: ComplementaryFormState) => void;
+  setBuyerForm: (value: BuyerFormState) => void;
   setVakadari: (value: string) => void;
   setActiveDatePicker: (value: string | null) => void;
   clearError: (errorKey: string) => void;
@@ -74,6 +77,7 @@ export function SabtdarkhastFormPrimary({
   requestForm,
   applicantForm,
   complementaryForm,
+  buyerForm,
   vakadari,
   activeDatePicker,
   requestTypeItems,
@@ -87,6 +91,7 @@ export function SabtdarkhastFormPrimary({
   setRequestForm,
   setApplicantForm,
   setComplementaryForm,
+  setBuyerForm,
   setVakadari,
   setActiveDatePicker,
   clearError,
@@ -95,6 +100,9 @@ export function SabtdarkhastFormPrimary({
   submitError,
   isSubmitting,
 }: SabtdarkhastFormPrimaryProps) {
+  const getIdentityLabel = (identityType: "1" | "2") =>
+    identityType === "1" ? "کد ملی" : "شناسه ملی";
+
   return (
     <>
       {showErrors && Object.keys(errors).length > 0 && (
@@ -217,6 +225,10 @@ export function SabtdarkhastFormPrimary({
                   <input
                     type="radio"
                     name="malek-type"
+                    checked={ownerForm.identityType === "1"}
+                    onChange={() =>
+                      setOwnerForm({ ...ownerForm, identityType: "1" })
+                    }
                     className="accent-primary"
                   />{" "}
                   کد ملی
@@ -225,14 +237,17 @@ export function SabtdarkhastFormPrimary({
                   <input
                     type="radio"
                     name="malek-type"
-                    defaultChecked
+                    checked={ownerForm.identityType === "2"}
+                    onChange={() =>
+                      setOwnerForm({ ...ownerForm, identityType: "2" })
+                    }
                     className="accent-primary"
                   />{" "}
                   شناسه ملی
                 </label>
               </div>
               <EditableField
-                label="شناسه ملی"
+                label={getIdentityLabel(ownerForm.identityType)}
                 required
                 value={ownerForm.nationalId}
                 onChange={(v) => setOwnerForm({ ...ownerForm, nationalId: v })}
@@ -286,7 +301,39 @@ export function SabtdarkhastFormPrimary({
 
           <div>
             <SectionHeader icon={ClipboardList} title="اطلاعات درخواست" />
-            <div className="grid grid-cols-1 gap-x-3 gap-y-5 sm:grid-cols-2 md:grid-cols-3">
+            <div className="col-span-1 flex items-center gap-4 text-xs text-muted-foreground sm:col-span-2 md:col-span-4">
+              <label className="flex cursor-pointer items-center gap-1.5">
+                <input
+                  type="radio"
+                  name="applicant-type"
+                  checked={applicantForm.identityType === "1"}
+                  onChange={() =>
+                    setApplicantForm({
+                      ...applicantForm,
+                      identityType: "1",
+                    })
+                  }
+                  className="accent-primary"
+                />{" "}
+                کد ملی
+              </label>
+              <label className="flex cursor-pointer items-center gap-1.5">
+                <input
+                  type="radio"
+                  name="applicant-type"
+                  checked={applicantForm.identityType === "2"}
+                  onChange={() =>
+                    setApplicantForm({
+                      ...applicantForm,
+                      identityType: "2",
+                    })
+                  }
+                  className="accent-primary"
+                />{" "}
+                شناسه ملی
+              </label>
+            </div>
+            <div className="grid grid-cols-1 gap-x-3 gap-y-5 sm:grid-cols-2 md:grid-cols-4 mt-[22px]">
               <EditableField
                 label="شماره درخواست"
                 required
@@ -326,14 +373,9 @@ export function SabtdarkhastFormPrimary({
                 clearError={clearError}
                 openSelection={openSelection}
               />
-            </div>
-          </div>
 
-          <div>
-            <SectionHeader icon={User} title="اطلاعات متقاضی" />
-            <div className="grid grid-cols-1 gap-x-3 gap-y-5 sm:grid-cols-2 md:grid-cols-4">
               <EditableField
-                label="شناسه ملی"
+                label={getIdentityLabel(applicantForm.identityType)}
                 required
                 value={applicantForm.nationalId}
                 onChange={(v) =>
@@ -344,6 +386,12 @@ export function SabtdarkhastFormPrimary({
                 errors={errors}
                 clearError={clearError}
               />
+            </div>
+          </div>
+
+          <div>
+            <SectionHeader icon={User} title="اطلاعات متقاضی" />
+            <div className="grid grid-cols-1 gap-x-3 gap-y-5 sm:grid-cols-2 md:grid-cols-4">
               <EditableField
                 label="نام متقاضی"
                 required
@@ -368,6 +416,16 @@ export function SabtdarkhastFormPrimary({
                 errors={errors}
                 clearError={clearError}
               />
+              <EditableField
+                label="کد پستی متقاضی"
+                value={applicantForm.postalCode}
+                onChange={(v) =>
+                  setApplicantForm({ ...applicantForm, postalCode: v })
+                }
+                showErrors={showErrors}
+                errors={errors}
+                clearError={clearError}
+              />
               <div className="relative">
                 <select
                   value={vakadari}
@@ -384,6 +442,97 @@ export function SabtdarkhastFormPrimary({
                 </span>
                 <ChevronDown className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               </div>
+              <div className="relative col-span-1 sm:col-span-2 md:col-span-4">
+                <input
+                  value={applicantForm.address}
+                  onChange={(e) =>
+                    setApplicantForm({
+                      ...applicantForm,
+                      address: e.target.value,
+                    })
+                  }
+                  className="h-10 w-full rounded-xl border border-border/70 bg-card px-3 text-sm outline-none transition-colors focus:border-primary"
+                />
+                <span className="absolute -top-2.5 right-3 bg-card px-1 text-[10px] text-muted-foreground">
+                  نشانی متقاضی
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <SectionHeader icon={User} title="اطلاعات خریدار" />
+            <div className="grid grid-cols-1 gap-x-3 gap-y-5 sm:grid-cols-2 md:grid-cols-4">
+              <div className="col-span-1 flex items-center gap-4 text-xs text-muted-foreground sm:col-span-2 md:col-span-4">
+                <label className="flex cursor-pointer items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="buyer-type"
+                    checked={buyerForm.identityType === "1"}
+                    onChange={() =>
+                      setBuyerForm({ ...buyerForm, identityType: "1" })
+                    }
+                    className="accent-primary"
+                  />{" "}
+                  کد ملی
+                </label>
+                <label className="flex cursor-pointer items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="buyer-type"
+                    checked={buyerForm.identityType === "2"}
+                    onChange={() =>
+                      setBuyerForm({ ...buyerForm, identityType: "2" })
+                    }
+                    className="accent-primary"
+                  />{" "}
+                  شناسه ملی
+                </label>
+              </div>
+              <EditableField
+                label={getIdentityLabel(buyerForm.identityType)}
+                value={buyerForm.nationalId}
+                onChange={(v) => setBuyerForm({ ...buyerForm, nationalId: v })}
+                showErrors={showErrors}
+                errors={errors}
+                clearError={clearError}
+              />
+              <EditableField
+                label="نام خریدار"
+                value={buyerForm.name}
+                onChange={(v) => setBuyerForm({ ...buyerForm, name: v })}
+                showErrors={showErrors}
+                errors={errors}
+                clearError={clearError}
+              />
+              <EditableField
+                label="موبایل خریدار"
+                value={buyerForm.phone}
+                onChange={(v) => setBuyerForm({ ...buyerForm, phone: v })}
+                showErrors={showErrors}
+                errors={errors}
+                clearError={clearError}
+              />
+              <EditableField
+                label="سهم مورد انتقال"
+                value={buyerForm.transferShare}
+                onChange={(v) =>
+                  setBuyerForm({ ...buyerForm, transferShare: v })
+                }
+                showErrors={showErrors}
+                errors={errors}
+                clearError={clearError}
+              />
+              <EditableField
+                label="سهم کل مورد انتقال"
+                value={buyerForm.totalTransferShare}
+                onChange={(v) =>
+                  setBuyerForm({ ...buyerForm, totalTransferShare: v })
+                }
+                showErrors={showErrors}
+                errors={errors}
+                clearError={clearError}
+              />
             </div>
           </div>
 
@@ -448,11 +597,27 @@ export function SabtdarkhastFormPrimary({
                 }
                 items={officeItems}
                 title="انتخاب اداره استعلام کننده"
+                errorKey="complementary.office"
                 showErrors={showErrors}
                 errors={errors}
                 clearError={clearError}
                 openSelection={openSelection}
               />
+              <div className="relative">
+                <textarea
+                  value={complementaryForm.desc}
+                  onChange={(e) =>
+                    setComplementaryForm({
+                      ...complementaryForm,
+                      desc: e.target.value,
+                    })
+                  }
+                  className="min-h-24 w-full resize-y rounded-xl border border-border/70 bg-card px-3 py-3 text-sm outline-none transition-colors focus:border-primary"
+                />
+                <span className="absolute -top-2.5 right-3 bg-card px-1 text-[10px] text-muted-foreground">
+                  توضیحات
+                </span>
+              </div>
             </div>
           </div>
 

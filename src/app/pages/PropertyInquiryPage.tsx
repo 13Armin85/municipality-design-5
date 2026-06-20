@@ -152,14 +152,11 @@ function CompactRetreatTable<T extends object>({
 }
 
 const setbackColumns: CompactColumn<RetreatSetbackTableRow>[] = [
-  { key: "direction", label: "جهت" },
-  { key: "wideningWidth", label: "عرض تعریض" },
-  { key: "retreat", label: "عقب‌نشینی" },
-  { key: "expansionDepth", label: "عمق توسعه", optional: true },
-  { key: "originalFrontDepth", label: "عمق نمای اصلی", optional: true },
-  { key: "boundaryType", label: "نوع حریم", optional: true },
-  { key: "boundaryDistance", label: "فاصله حریم", optional: true },
-  { key: "adjacencyType", label: "نوع مجاورت", optional: true },
+  { key: "direction", label: "جهت عقب‌نشینی" },
+  { key: "amount", label: "مقدار" },
+  { key: "length", label: "طول عقب‌نشینی" },
+  { key: "width", label: "عرض عقب‌نشینی" },
+  { key: "compliant", label: "رعایت شده" },
 ];
 
 const directionColumns: CompactColumn<RetreatDirectionTableRow>[] = [
@@ -629,33 +626,6 @@ export function PropertyInquiryPage({
                 </div>
                 <HelpButton
                   title="جدول وضعیت عقب نشینی"
-                  desc="این جدول خلاصه اطلاعات عقب‌نشینی پرونده را به صورت عنوان و مقدار نشان می‌دهد. اگر داده‌ای نمی‌بینید، ابتدا پرونده را انتخاب و جستجو کنید یا کامل بودن کد نوسازی را بررسی کنید."
-                />
-              </div>
-
-              <div className="space-y-3 p-4">
-                {loadingRetreat ? (
-                  <LoadingSpinner />
-                ) : retreatError ? (
-                  <ErrorAlert message={retreatError} />
-                ) : retreatData?.area ? (
-                  <ResponsiveInfoTable rows={retreatData.area.rows} />
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    ابتدا جستجو کنید
-                  </div>
-                )}
-              </div>
-            </motion.article>
-
-            <motion.article className="soft-card mesh-panel overflow-hidden">
-              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-bold">عقب‌نشینی</span>
-                </div>
-                <HelpButton
-                  title="جدول عقب‌نشینی"
                   desc="در این جدول مقدار عقب‌نشینی هر جهت، عرض تعریض و اطلاعات تکمیلی نمایش داده می‌شود. ستون‌های تکمیلی در نمایشگرهای کوچک‌تر فشرده می‌شوند و با اسکرول افقی قابل بررسی هستند."
                 />
               </div>
@@ -673,6 +643,33 @@ export function PropertyInquiryPage({
                 ) : (
                   <div className="py-8 text-center text-sm text-muted-foreground">
                     اطلاعاتی موجود نیست
+                  </div>
+                )}
+              </div>
+            </motion.article>
+
+            <motion.article className="soft-card mesh-panel overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-bold">عقب‌نشینی</span>
+                </div>
+                <HelpButton
+                  title="جدول عقب‌نشینی"
+                  desc="این جدول مقادیر مساحت سندی، مساحت اصلاحی و مساحت باقیمانده را از سرویس عقب‌نشینی نمایش می‌دهد. اگر داده‌ای نمی‌بینید، ابتدا پرونده را انتخاب و جستجو کنید یا کامل بودن کد نوسازی را بررسی کنید."
+                />
+              </div>
+
+              <div className="space-y-3 p-4">
+                {loadingRetreat ? (
+                  <LoadingSpinner />
+                ) : retreatError ? (
+                  <ErrorAlert message={retreatError} />
+                ) : retreatData?.area ? (
+                  <ResponsiveInfoTable rows={retreatData.area.rows} />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    ابتدا جستجو کنید
                   </div>
                 )}
               </div>
