@@ -86,6 +86,9 @@ export const getCurrentUserNationalCode = (token?: string | null) => {
   return claimValue;
 };
 
+const propertyFilesResponseCache = new Map<string, ApiResponse>();
+const propertyFilesInFlightRequests = new Map<string, Promise<ApiResponse>>();
+
 export async function fetchCurrentUserPropertyFiles(
   token?: string | null,
 ): Promise<ApiResponse> {
@@ -102,29 +105,49 @@ export async function fetchCurrentUserPropertyFiles(
     throw new Error("Missing national code");
   }
 
-  const response = await dotNet10ApiFetch(
-    `/api/Files/${encodeURIComponent(nationalCode)}`,
-    {
-      method: "GET",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-        Authorization: authToken.startsWith("Bearer ")
-          ? authToken
-          : `Bearer ${authToken}`,
+  const normalizedAuthToken = authToken.startsWith("Bearer ")
+    ? authToken
+    : `Bearer ${authToken}`;
+  const cacheKey = `${nationalCode}|${normalizedAuthToken}`;
+  const cachedResponse = propertyFilesResponseCache.get(cacheKey);
+  if (cachedResponse) return cachedResponse;
+
+  const inFlightRequest = propertyFilesInFlightRequests.get(cacheKey);
+  if (inFlightRequest) return inFlightRequest;
+
+  const request = (async () => {
+    const response = await dotNet10ApiFetch(
+      `/api/Files/${encodeURIComponent(nationalCode)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+          Authorization: normalizedAuthToken,
+        },
       },
-    },
-  );
+    );
 
-  if (response.status === 404) {
-    return { isSuccess: true, isFailure: false, value: [] };
+    if (response.status === 404) {
+      return { isSuccess: true, isFailure: false, value: [] };
+    }
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch property files");
+    }
+
+    return response.json();
+  })();
+
+  propertyFilesInFlightRequests.set(cacheKey, request);
+
+  try {
+    const data = await request;
+    propertyFilesResponseCache.set(cacheKey, data);
+    return data;
+  } finally {
+    propertyFilesInFlightRequests.delete(cacheKey);
   }
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch property files");
-  }
-
-  return response.json();
 }
 
 export const getPropertyFileList = (data: ApiResponse | any): any[] => {

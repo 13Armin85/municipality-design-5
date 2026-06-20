@@ -31,9 +31,13 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
-import { apiFetch, dotNet10ApiFetch } from "../data/api";
+import { apiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem as TreePropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
-import { flattenApiPropertyFiles } from "../data/propertyFiles";
+import {
+  fetchCurrentUserPropertyFiles,
+  flattenApiPropertyFiles,
+  getPropertyFileList,
+} from "../data/propertyFiles";
 
 interface LocalPropertyItem {
   id: string;
@@ -535,25 +539,11 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
       const nationalCode = localStorage.getItem("user-national-code");
       if (!token || !nationalCode) return;
       try {
-        const response = await dotNet10ApiFetch(
-          `/api/Files/${encodeURIComponent(nationalCode)}`,
-          {
-            cache: "no-store",
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-        if (!response.ok) return;
-        const data: ApiResponse = await response.json();
+        const data = await fetchCurrentUserPropertyFiles(token);
 
         if (!isApiSuccess(data)) return;
 
-        const fileValue = getApiValue(data);
-        const rawList = Array.isArray(fileValue)
-          ? fileValue
-          : (fileValue.items ?? fileValue.data ?? fileValue.files ?? []);
+        const rawList = getPropertyFileList(data);
         const mapped: LocalPropertyItem[] = flattenApiPropertyFiles(rawList).map(
           (item: any, index: number) => {
             const cleanedCode = normalizeCode(

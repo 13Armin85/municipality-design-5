@@ -8,9 +8,13 @@ import {
   getApiValue,
   type ApiResponse,
 } from "../utils/apiResponseHandler";
-import { apiFetch, dotNet10ApiFetch } from "../data/api";
+import { apiFetch } from "../data/api";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
-import { flattenApiPropertyFiles } from "../data/propertyFiles";
+import {
+  fetchCurrentUserPropertyFiles,
+  flattenApiPropertyFiles,
+  getPropertyFileList,
+} from "../data/propertyFiles";
 import { GuildFeesHeader } from "./guild-fees/GuildFeesHeader";
 import { GuildFeesHelpModal } from "./guild-fees/GuildFeesHelpModal";
 import {
@@ -705,26 +709,14 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
 
       setIsCasesLoading(true);
       try {
-        const response = await dotNet10ApiFetch(
-          `/api/Files/${encodeURIComponent(nationalCode)}`,
-          {
-            method: "GET",
-            cache: "no-store",
-            headers: getAuthHeaders(token),
-          },
-        );
-
-        if (!response.ok) return;
-
-        const data: ApiResponse = await response.json();
+        const data = await fetchCurrentUserPropertyFiles(token);
 
         if (!isApiSuccess(data)) {
           setError(getApiErrorMessage(data));
           return;
         }
 
-        const fileValue = getApiValue(data);
-        const mapped = flattenApiPropertyFiles(unwrapList(fileValue)).map(mapFileItem);
+        const mapped = flattenApiPropertyFiles(getPropertyFileList(data)).map(mapFileItem);
         setCases(mapped);
         
         if (mapped.length > 0) {
