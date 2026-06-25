@@ -1,29 +1,21 @@
 import {
-  ClipboardEvent as ReactClipboardEvent,
+  ChangeEvent,
   FormEvent,
   KeyboardEvent as ReactKeyboardEvent,
   useEffect,
   useRef,
   useState,
 } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { AlertCircle, CheckCircle2, Loader2, Phone } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
+import { Dialog, DialogContent } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
 import {
-  isApiSuccess,
   getApiErrorMessage,
-  getApiValue,
+  isApiSuccess,
   type ApiResponse,
 } from "../../utils/apiResponseHandler";
-import { apiFetch } from "../../data/api";
+import { dotNet10ApiFetch } from "../../data/api";
 
 interface SahkarVerificationModalProps {
   isOpen: boolean;
@@ -36,6 +28,73 @@ interface SahkarVerificationModalProps {
 
 type VerificationStep = "phone" | "code" | "success";
 
+const REQUEST_OTP_ENDPOINT = "/api/auth/request-otp";
+const VERIFY_OTP_ENDPOINT = "/api/auth/verify-otp";
+const CODE_LENGTH = 6;
+const RESEND_SECONDS = 120;
+
+const EMPTY_CODE = Array(CODE_LENGTH).fill("") as string[];
+
+const MESSAGES = {
+  invalidIdentity: "اطلاعات کد ملی یا شماره تلفن معتبر نیستند.",
+  requestFailed: "خطا در ارسال کد. لطفا دوباره تلاش کنید.",
+  connectionFailed: "خطا در اتصال به سرور. لطفا دوباره تلاش کنید.",
+  invalidCodeLength: "لطفا کد ۶ رقمی دریافت شده را وارد کنید.",
+  verifyFailed: "کد وارد شده اشتباه است. لطفا مجددا تلاش کنید.",
+  verifying: "در حال تایید...",
+  sendButton: "تایید و ارسال کد",
+  verifyButton: "تایید کد",
+  phoneLabel: "شماره تلفن ثبت شده",
+  codeSentPrefix: "کد ۶ رقمی به شماره",
+  codeSentSuffix: "ارسال شده است",
+  resendCountdown: "درخواست دوباره ارسال کد در",
+  resendButton: "ارسال دوباره کد",
+  successTitle: "تایید هویت موفقیت‌آمیز",
+  successDescription: "درحال تکمیل ورود...",
+};
+
+const onlyDigits = (value: string) => value.replace(/\D/g, "");
+
+const parseApiResponse = async (response: Response): Promise<ApiResponse> => {
+  const text = await response.text().catch(() => "");
+  if (!text.trim()) return {};
+
+  try {
+    return JSON.parse(text) as ApiResponse;
+  } catch {
+    return {};
+  }
+};
+
+const isSuccessfulResponse = (data: ApiResponse) => {
+  const isSuccess = data.IsSuccess ?? data.isSuccess;
+  const isFailure = data.IsFailure ?? data.isFailure;
+
+  if (isSuccess === undefined && isFailure === undefined) return true;
+  return isApiSuccess(data);
+};
+
+const getAuthHeader = () => {
+  const token = localStorage.getItem("auth-token")?.trim();
+  if (!token) return {};
+
+  return {
+    Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+  };
+};
+
+const getResponseErrorMessage = (data: ApiResponse, fallback: string) => {
+  if (
+    data.Error?.Description ||
+    data.error?.description ||
+    data.error?.name
+  ) {
+    return getApiErrorMessage(data);
+  }
+
+  return fallback;
+};
+
 export function SahkarVerificationModal({
   isOpen,
   nationalCode,
@@ -45,7 +104,7 @@ export function SahkarVerificationModal({
   onError,
 }: SahkarVerificationModalProps) {
   const [step, setStep] = useState<VerificationStep>("phone");
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [code, setCode] = useState<string[]>(EMPTY_CODE);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
@@ -53,183 +112,26 @@ export function SahkarVerificationModal({
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ─── Validation ──────────────────────────────────────────────────────────
-
-  const validateNationalCode = (code: string): boolean => {
-    const cleaned = code.replace(/\D/g, "").padStart(10, "0");
-    return /^\d{10}$/.test(cleaned);
+  const showError = (message: string) => {
+    setError(message);
+    onError(message);
   };
 
-  const validateMobileNumber = (phone: string): boolean => {
-    return /^(09)\d{9}$/.test(phone.replace(/\D/g, ""));
-  };
+  const validateNationalCode = (value: string) =>
+    /^\d{10}$/.test(onlyDigits(value).padStart(10, "0"));
 
-  const formatNationalCode = (code: string): string => {
-    return code.replace(/\D/g, "").padStart(10, "0");
-  };
+  const validateMobileNumber = (value: string) =>
+    /^(09)\d{9}$/.test(onlyDigits(value));
 
-  const formatMobile = (phone: string): string => {
-    return phone.replace(/\D/g, "");
-  };
+  const formatNationalCode = (value: string) =>
+    onlyDigits(value).padStart(10, "0");
 
-  // ─── Phone verification ──────────────────────────────────────────────────
-
-  const handleVerifyPhone = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError("");
-
-    if (!validateNationalCode(nationalCode) || !validateMobileNumber(mobile)) {
-      setError("اطلاعات کد ملی یا شماره تلفن معتبر نیستند.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const token = localStorage.getItem("auth-token");
-      const formattedNationalCode = formatNationalCode(nationalCode);
-      const formattedMobile = formatMobile(mobile);
-
-      const response = await apiFetch("/api/auth/shahkar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({
-          NationalCode: formattedNationalCode,
-          Mobile: formattedMobile,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData: ApiResponse = await response.json().catch(() => ({}));
-        setError(
-          getApiErrorMessage(errorData) ||
-            "شماره تلفن با کد ملی مطابقت ندارد. لطفا اطلاعات خود را دوباره بررسی کنید.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      const shahkarData: ApiResponse = await response.json();
-      if (!isApiSuccess(shahkarData)) {
-        setError(
-          getApiErrorMessage(shahkarData) ||
-            "شماره تلفن با کد ملی مطابقت ندارد. لطفا اطلاعات خود را دوباره بررسی کنید.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      const sendResponse = await apiFetch("/api/auth/send-code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({
-          NationalCode: formattedNationalCode,
-          Mobile: formattedMobile,
-        }),
-      });
-
-      if (!sendResponse.ok) {
-        setError("خطا در ارسال کد. لطفا دوباره تلاش کنید.");
-        setLoading(false);
-        return;
-      }
-
-      const sendData: ApiResponse = await sendResponse.json();
-      if (!isApiSuccess(sendData)) {
-        setError(
-          getApiErrorMessage(sendData) ||
-            "خطا در ارسال کد. لطفا دوباره تلاش کنید.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      setLoading(false);
-      setStep("code");
-      startResendTimer();
-    } catch (err) {
-      setError("خطا در اتصال به سرور. لطفا دوباره تلاش کنید.");
-      setLoading(false);
-    }
-  };
-
-  // ─── Code verification ──────────────────────────────────────────────────
-
-  const handleVerifyCode = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError("");
-
-    const codeValue = code.join("");
-    if (codeValue.length < 6) {
-      setError("لطفا کد ۶ رقمی دریافت شده را وارد کنید.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const token = localStorage.getItem("auth-token");
-      const formattedNationalCode = formatNationalCode(nationalCode);
-      const formattedMobile = formatMobile(mobile);
-
-      const response = await apiFetch("/api/auth/verify-code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({
-          NationalCode: formattedNationalCode,
-          Mobile: formattedMobile,
-          Code: codeValue,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData: ApiResponse = await response.json().catch(() => ({}));
-        setError(
-          getApiErrorMessage(errorData) ||
-            "کد وارد شده اشتباه است. لطفا مجددا تلاش کنید.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      const verifyData: ApiResponse = await response.json();
-      if (!isApiSuccess(verifyData)) {
-        setError(
-          getApiErrorMessage(verifyData) ||
-            "کد وارد شده اشتباه است. لطفا مجددا تلاش کنید.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      setLoading(false);
-      setStep("success");
-
-      setTimeout(() => {
-        onSuccess();
-      }, 2000);
-    } catch (err) {
-      setError("خطا در تایید کد. لطفا دوباره تلاش کنید.");
-      setLoading(false);
-    }
-  };
-
-  // ─── Timer and resend ────────────────────────────────────────────────────
+  const formatMobile = (value: string) => onlyDigits(value);
 
   const startResendTimer = () => {
-    setResendTimer(120);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    setResendTimer(RESEND_SECONDS);
     timerRef.current = setInterval(() => {
       setResendTimer((prev) => {
         if (prev <= 1) {
@@ -241,88 +143,133 @@ export function SahkarVerificationModal({
     }, 1000);
   };
 
-  const handleResendCode = async () => {
-    if (resendTimer > 0) return;
+  const requestOtp = async () => {
+    const formattedNationalCode = formatNationalCode(nationalCode);
+    const formattedMobile = formatMobile(mobile);
 
-    setCode(["", "", "", "", "", ""]);
+    const response = await dotNet10ApiFetch(REQUEST_OTP_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "*/*",
+      },
+      body: JSON.stringify({
+        nationalCode: formattedNationalCode,
+        mobile: formattedMobile,
+      }),
+    });
+
+    const data = await parseApiResponse(response);
+    if (!response.ok || !isSuccessfulResponse(data)) {
+      throw new Error(getResponseErrorMessage(data, MESSAGES.requestFailed));
+    }
+  };
+
+  const handleVerifyPhone = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError("");
+
+    if (!validateNationalCode(nationalCode) || !validateMobileNumber(mobile)) {
+      showError(MESSAGES.invalidIdentity);
+      return;
+    }
+
     setLoading(true);
-
     try {
-      const token = localStorage.getItem("auth-token");
-      const formattedNationalCode = formatNationalCode(nationalCode);
-      const formattedMobile = formatMobile(mobile);
-
-      const response = await apiFetch("/api/auth/send-code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({
-          NationalCode: formattedNationalCode,
-          Mobile: formattedMobile,
-        }),
-      });
-
-      if (!response.ok) {
-        setError("خطا در ارسال کد. لطفا دوباره تلاش کنید.");
-        setLoading(false);
-        return;
-      }
-
-      const resendData: ApiResponse = await response.json();
-      if (!isApiSuccess(resendData)) {
-        setError(
-          getApiErrorMessage(resendData) ||
-            "خطا در ارسال کد. لطفا دوباره تلاش کنید.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      setLoading(false);
+      await requestOtp();
+      setStep("code");
       startResendTimer();
     } catch (err) {
-      setError("خطا در اتصال به سرور. لطفا دوباره تلاش کنید.");
+      showError(err instanceof Error ? err.message : MESSAGES.connectionFailed);
+    } finally {
       setLoading(false);
     }
   };
 
-  // ─── Hidden input handler (single source of truth for keyboard input) ────
+  const handleVerifyCode = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+
+    const otp = code.join("");
+    if (otp.length < CODE_LENGTH) {
+      showError(MESSAGES.invalidCodeLength);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await dotNet10ApiFetch(VERIFY_OTP_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "*/*",
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({
+          nationalCode: formatNationalCode(nationalCode),
+          mobile: formatMobile(mobile),
+          otp,
+        }),
+      });
+
+      const data = await parseApiResponse(response);
+      if (!response.ok || !isSuccessfulResponse(data)) {
+        throw new Error(getResponseErrorMessage(data, MESSAGES.verifyFailed));
+      }
+
+      setStep("success");
+      window.setTimeout(onSuccess, 1200);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : MESSAGES.verifyFailed);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendTimer > 0) return;
+
+    setCode([...EMPTY_CODE]);
+    setError("");
+    setLoading(true);
+    try {
+      await requestOtp();
+      startResendTimer();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : MESSAGES.connectionFailed);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const focusHiddenInput = () => {
     hiddenInputRef.current?.focus();
   };
 
-  const handleHiddenInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
+  const handleHiddenInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const digits = onlyDigits(event.target.value).slice(0, CODE_LENGTH);
+    const nextCode = [...EMPTY_CODE];
+    for (let i = 0; i < digits.length; i++) nextCode[i] = digits[i];
+    setCode(nextCode);
+  };
+
+  const handleHiddenKeyDown = (
+    event: ReactKeyboardEvent<HTMLInputElement>,
   ) => {
-    const digits = event.target.value.replace(/\D/g, "").slice(0, 6);
-    const newCode = ["", "", "", "", "", ""];
-    for (let i = 0; i < digits.length; i++) newCode[i] = digits[i];
-    setCode(newCode);
-  };
+    if (event.key !== "Backspace") return;
 
-  const handleHiddenKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Backspace") {
-      setCode((prev) => {
-        const newCode = [...prev];
-        // آخرین سلول پر رو پاک کن
-        for (let i = 5; i >= 0; i--) {
-          if (newCode[i]) {
-            newCode[i] = "";
-            break;
-          }
+    setCode((prev) => {
+      const nextCode = [...prev];
+      for (let i = CODE_LENGTH - 1; i >= 0; i--) {
+        if (nextCode[i]) {
+          nextCode[i] = "";
+          break;
         }
-        return newCode;
-      });
-      event.preventDefault();
-    }
+      }
+      return nextCode;
+    });
+    event.preventDefault();
   };
-
-  // ─── Effects ────────────────────────────────────────────────────────────
 
   useEffect(() => {
     return () => {
@@ -331,39 +278,43 @@ export function SahkarVerificationModal({
   }, []);
 
   useEffect(() => {
-    if (!isOpen) {
-      setStep("phone");
-      setCode(["", "", "", "", "", ""]);
-      setError("");
-      setLoading(false);
-      setResendTimer(0);
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
+    if (isOpen) return;
+
+    setStep("phone");
+    setCode([...EMPTY_CODE]);
+    setError("");
+    setLoading(false);
+    setResendTimer(0);
+    if (timerRef.current) clearInterval(timerRef.current);
   }, [isOpen]);
 
   useEffect(() => {
-    if (step === "code") {
-      setTimeout(() => {
-        hiddenInputRef.current?.focus();
-      }, 100);
-    }
+    if (step !== "code") return;
+
+    const timeoutId = window.setTimeout(() => {
+      hiddenInputRef.current?.focus();
+    }, 100);
+
+    return () => window.clearTimeout(timeoutId);
   }, [step]);
 
-  // ─── Format phone for display ────────────────────────────────────────────
-
-  const formatPhoneDisplay = (phone: string) => {
-    const cleaned = phone.replace(/\D/g, "");
+  const formatPhoneDisplay = (value: string) => {
+    const cleaned = onlyDigits(value);
     return `${cleaned.slice(0, 4)}****${cleaned.slice(-2)}`;
   };
 
-  // ─── Render ──────────────────────────────────────────────────────────────
+  const enteredCode = code.join("");
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="w-full max-w-md">
-        <div className="py-6">
+        <div className="py-6" dir="rtl">
           <AnimatePresence mode="wait">
-            {/* Phone verification step */}
             {step === "phone" && (
               <motion.form
                 key="phone"
@@ -375,7 +326,7 @@ export function SahkarVerificationModal({
               >
                 <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
                   <p className="text-sm text-muted-foreground">
-                    شماره تلفن ثبت شده
+                    {MESSAGES.phoneLabel}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
                     <Phone className="h-4 w-4 text-primary" />
@@ -383,16 +334,7 @@ export function SahkarVerificationModal({
                   </div>
                 </div>
 
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-3"
-                  >
-                    <AlertCircle className="h-4 w-4 flex-shrink-0 text-destructive" />
-                    <p className="text-sm text-destructive">{error}</p>
-                  </motion.div>
-                )}
+                {error && <ErrorMessage message={error} />}
 
                 <Button
                   type="submit"
@@ -402,17 +344,16 @@ export function SahkarVerificationModal({
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      در حال تایید...
+                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      {MESSAGES.verifying}
                     </>
                   ) : (
-                    "تایید و ارسال کد"
+                    MESSAGES.sendButton
                   )}
                 </Button>
               </motion.form>
             )}
 
-            {/* Code verification step */}
             {step === "code" && (
               <motion.form
                 key="code"
@@ -424,56 +365,46 @@ export function SahkarVerificationModal({
               >
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
-                    کد ۶ رقمی به شماره
+                    {MESSAGES.codeSentPrefix}
                   </p>
                   <p className="mt-1 font-medium">
                     {formatPhoneDisplay(mobile)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    ارسال شده است
+                    {MESSAGES.codeSentSuffix}
                   </p>
                 </div>
 
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-3"
-                  >
-                    <AlertCircle className="h-4 w-4 flex-shrink-0 text-destructive" />
-                    <p className="text-sm text-destructive">{error}</p>
-                  </motion.div>
-                )}
+                {error && <ErrorMessage message={error} />}
 
-                {/* hidden input که همه keyboard events رو می‌گیره */}
                 <input
                   ref={hiddenInputRef}
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  value={code.join("")}
+                  value={enteredCode}
                   onChange={handleHiddenInputChange}
                   onKeyDown={handleHiddenKeyDown}
                   className="sr-only"
-                  maxLength={6}
+                  maxLength={CODE_LENGTH}
                   aria-label="کد تایید"
                 />
 
-                {/* سلول‌های نمایشی — کلیک روی هر کدوم hidden input رو focus می‌کنه */}
                 <div
-                  className="flex justify-center gap-2 cursor-text"
+                  className="flex cursor-text justify-center gap-2"
                   dir="ltr"
                   onClick={focusHiddenInput}
                 >
                   {code.map((digit, index) => {
                     const isCaret =
                       index === code.filter(Boolean).length &&
-                      code.join("").length < 6;
+                      enteredCode.length < CODE_LENGTH;
+
                     return (
                       <div
                         key={index}
                         className={[
-                          "h-12 w-10 flex items-center justify-center rounded-md border text-xl font-bold transition-all select-none",
+                          "flex h-12 w-10 select-none items-center justify-center rounded-md border text-xl font-bold transition-all",
                           digit
                             ? "border-primary bg-primary/5 text-foreground"
                             : "border-input bg-background text-muted-foreground",
@@ -482,7 +413,7 @@ export function SahkarVerificationModal({
                       >
                         {digit ||
                           (isCaret ? (
-                            <span className="animate-pulse text-primary text-base">
+                            <span className="animate-pulse text-base text-primary">
                               |
                             </span>
                           ) : (
@@ -495,24 +426,24 @@ export function SahkarVerificationModal({
 
                 <Button
                   type="submit"
-                  disabled={loading || code.join("").length < 6}
+                  disabled={loading || enteredCode.length < CODE_LENGTH}
                   className="w-full"
                   size="lg"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      در حال تایید...
+                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      {MESSAGES.verifying}
                     </>
                   ) : (
-                    "تایید کد"
+                    MESSAGES.verifyButton
                   )}
                 </Button>
 
                 <div className="text-center">
                   {resendTimer > 0 ? (
                     <p className="text-xs text-muted-foreground">
-                      درخواست دوباره ارسال کد در {resendTimer} ثانیه
+                      {MESSAGES.resendCountdown} {resendTimer} ثانیه
                     </p>
                   ) : (
                     <button
@@ -521,14 +452,13 @@ export function SahkarVerificationModal({
                       disabled={loading}
                       className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
                     >
-                      ارسال دوباره کد
+                      {MESSAGES.resendButton}
                     </button>
                   )}
                 </div>
               </motion.form>
             )}
 
-            {/* Success step */}
             {step === "success" && (
               <motion.div
                 key="success"
@@ -545,10 +475,10 @@ export function SahkarVerificationModal({
                 </motion.div>
                 <div className="text-center">
                   <p className="text-lg font-semibold">
-                    تایید هویت موفقیت‌آمیز
+                    {MESSAGES.successTitle}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    درحال تکمیل ورود...
+                    {MESSAGES.successDescription}
                   </p>
                 </div>
               </motion.div>
@@ -557,5 +487,18 @@ export function SahkarVerificationModal({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ErrorMessage({ message }: { message: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-3"
+    >
+      <AlertCircle className="h-4 w-4 flex-shrink-0 text-destructive" />
+      <p className="text-sm text-destructive">{message}</p>
+    </motion.div>
   );
 }

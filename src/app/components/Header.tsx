@@ -27,7 +27,7 @@ import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
 import { useAuthModal } from "./AuthContext";
-import { apiFetch, dotNet10ApiFetch } from "../data/api";
+import { dotNet10ApiFetch } from "../data/api";
 import { serviceItems } from "../data/services";
 import {
   AUTH_STORAGE_KEY,
@@ -66,6 +66,11 @@ const ForgotPasswordModal = lazy(() =>
  *   })),
  * );
  */
+const SahkarVerificationModal = lazy(() =>
+  import("../pages/header/SahkarVerificationModal").then((module) => ({
+    default: module.SahkarVerificationModal,
+  })),
+);
 const MobileMenu = lazy(() =>
   import("../pages/header/MobileMenu").then((module) => ({
     default: module.MobileMenu,
@@ -209,6 +214,13 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
    * const [sahkarMobile, setSahkarMobile] = useState("");
    * const [sahkarLoginType, setSahkarLoginType] = useState<"user" | "admin">("user");
    */
+  const [isSahkarOpen, setIsSahkarOpen] = useState(false);
+  const [sahkarNationalCode, setSahkarNationalCode] = useState("");
+  const [sahkarMobile, setSahkarMobile] = useState("");
+  const [sahkarLoginType, setSahkarLoginType] = useState<"user" | "admin">(
+    "user",
+  );
+
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -371,14 +383,13 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
       localStorage.setItem(AUTH_TOKEN_KEY, token);
 
       const authenticatedUserType = adminStatus ? "admin" : "user";
-      localStorage.setItem(AUTH_STORAGE_KEY, "true");
-      localStorage.setItem(AUTH_TYPE_KEY, authenticatedUserType);
-      setIsAuthenticated(true);
-      setLoginType(authenticatedUserType);
+      setSahkarNationalCode(String(nationalCode));
+      setSahkarMobile(String(mobile));
+      setSahkarLoginType(authenticatedUserType);
       setIsLoginOpen(false);
       setUsername("");
       setPassword("");
-      navigate(adminStatus ? "/admin" : "/my-property");
+      setIsSahkarOpen(true);
 
       /*
        * روند قبلی ارسال کد SMS برای ورود (ساهکار) موقتاً غیرفعال است:
@@ -522,6 +533,15 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     for (let i = 0; i < pasted.length; i++) newOtp[i] = pasted[i];
     setForgotOtp(newOtp);
     otpRefs.current[Math.min(pasted.length, 4)]?.focus();
+  };
+
+  const handleSahkarSuccess = () => {
+    localStorage.setItem(AUTH_STORAGE_KEY, "true");
+    localStorage.setItem(AUTH_TYPE_KEY, sahkarLoginType);
+    setIsAuthenticated(true);
+    setLoginType(sahkarLoginType);
+    setIsSahkarOpen(false);
+    navigate(sahkarLoginType === "admin" ? "/admin" : "/my-property");
   };
 
   // ─── Sahkar verification handlers ────────────────────────────────────────
@@ -864,6 +884,20 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
             onError={setLoginError}
           />
         */}
+
+        <SahkarVerificationModal
+          isOpen={isSahkarOpen}
+          nationalCode={sahkarNationalCode}
+          mobile={sahkarMobile}
+          onClose={() => {
+            setIsSahkarOpen(false);
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+            localStorage.removeItem(AUTH_TYPE_KEY);
+          }}
+          onSuccess={handleSahkarSuccess}
+          onError={setLoginError}
+        />
       </Suspense>
 
       <Suspense fallback={null}>
