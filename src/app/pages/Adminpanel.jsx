@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   Building2,
+  ChevronDown,
   ChevronLeft,
   LogOut,
   Menu,
@@ -12,6 +13,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { Dashboard } from "./adminpanel/AdminDashboard";
 import { AdminNewsPage } from "./adminpanel/AdminNewsPage";
 import { AdminNewsGroupsPage } from "./adminpanel/AdminNewsGroupsPage";
+import {
+  AdminShahkarPage,
+  AdminSmsPage,
+} from "./adminpanel/AdminIntegrationSettingsPage";
 import { SettingsPage } from "./adminpanel/AdminSettingsPage";
 import { UserManagement } from "./adminpanel/UserManagement";
 import { navItems } from "./adminpanel/adminData";
@@ -26,6 +31,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [openNavTrees, setOpenNavTrees] = useState({ "news-root": false });
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
@@ -49,8 +55,44 @@ export default function AdminPanel({ isDark, toggleTheme }) {
     dashboard: <Dashboard />,
     news: <AdminNewsPage />,
     "news-groups": <AdminNewsGroupsPage />,
+    shahkar: <AdminShahkarPage />,
+    sms: <AdminSmsPage />,
     users: <UserManagement />,
     settings: <SettingsPage />,
+  };
+
+  const findNavLabel = (items, pageId) => {
+    for (const item of items) {
+      if (item.id === pageId) return item.label;
+      const childLabel = item.children
+        ? findNavLabel(item.children, pageId)
+        : null;
+      if (childLabel) return childLabel;
+    }
+
+    return "";
+  };
+
+  const handleNavClick = (item) => {
+    if (item.children?.length) {
+      toggleNavTree(item.id);
+      return;
+    }
+
+    setActivePage(item.id);
+    setMobileSidebarOpen(false);
+  };
+
+  const toggleNavTree = (itemId) => {
+    setOpenNavTrees((current) => ({
+      ...current,
+      [itemId]: !current[itemId],
+    }));
+  };
+
+  const handleChildNavClick = (childId) => {
+    setActivePage(childId);
+    setMobileSidebarOpen(false);
   };
 
   const cssVars = isDark
@@ -127,27 +169,99 @@ export default function AdminPanel({ isDark, toggleTheme }) {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActivePage(item.id);
-                setMobileSidebarOpen(false);
-              }}
-              className={`relative w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${activePage === item.id ? "text-white" : "text-muted-foreground hover:bg-muted"}`}
-            >
-              {activePage === item.id && (
-                <motion.span
-                  layoutId="active-bg"
-                  className="absolute inset-0 rounded-xl bg-gradient-to-l from-primary to-secondary shadow-lg shadow-primary/20"
-                />
-              )}
-              <item.icon className="relative z-10 h-5 w-5 shrink-0" />
-              {sidebarOpen && (
-                <span className="relative z-10">{item.label}</span>
-              )}
-            </button>
-          ))}
+          {navItems.map((item) => {
+            const isTreeOpen = openNavTrees[item.id];
+            const isParentOfActive = item.children?.some(
+              (child) => child.id === activePage,
+            );
+            const isActive = activePage === item.id;
+
+            return (
+              <div key={item.id} className="space-y-1">
+                <div
+                  className={`relative w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                    isActive
+                      ? "text-white"
+                      : isParentOfActive
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="active-bg"
+                      className="absolute inset-0 rounded-xl bg-gradient-to-l from-primary to-secondary shadow-lg shadow-primary/20"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleNavClick(item)}
+                    className="relative z-10 flex min-w-0 flex-1 items-center gap-3 text-right"
+                  >
+                    <item.icon className="h-5 w-5 shrink-0" />
+                    {sidebarOpen && (
+                      <span className="min-w-0 flex-1 truncate">
+                        {item.label}
+                      </span>
+                    )}
+                  </button>
+                  {sidebarOpen && item.children?.length ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleNavTree(item.id)}
+                      className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-black/10"
+                      aria-label={
+                        isTreeOpen
+                          ? `بستن زیرمنوی ${item.label}`
+                          : `باز کردن زیرمنوی ${item.label}`
+                      }
+                      title={isTreeOpen ? "بستن زیرمنو" : "باز کردن زیرمنو"}
+                    >
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${
+                            isTreeOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                    </button>
+                  ) : null}
+                </div>
+
+                {sidebarOpen && item.children?.length ? (
+                  <AnimatePresence initial={false}>
+                    {isTreeOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mr-5 border-r border-border/70 pr-2">
+                          {item.children.map((child) => {
+                            const childActive = activePage === child.id;
+
+                            return (
+                              <button
+                                key={child.id}
+                                onClick={() => handleChildNavClick(child.id)}
+                                className={`relative mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                                  childActive
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-muted-foreground hover:bg-muted"
+                                }`}
+                              >
+                                <child.icon className="h-4 w-4 shrink-0" />
+                                <span>{child.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                ) : null}
+              </div>
+            );
+          })}
         </nav>
 
         {/* LOGOUT BUTTON - FIXED AT BOTTOM */}
@@ -186,7 +300,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
               <Menu className="h-5 w-5" />
             </button>
             <h1 className="text-sm font-bold">
-              {navItems.find((n) => n.id === activePage)?.label}
+              {findNavLabel(navItems, activePage)}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -215,7 +329,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {pageComponents[activePage]}
+              {pageComponents[activePage] ?? pageComponents.dashboard}
             </motion.div>
           </AnimatePresence>
         </main>

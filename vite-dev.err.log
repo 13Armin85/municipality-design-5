@@ -1,0 +1,12 @@
+[2m10:16:33 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/News[39m
+Error: read ECONNRESET
+    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[2m10:20:32 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/request-otp[39m
+Error: connect ETIMEDOUT 192.168.10.3:6500
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m10:20:40 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/News[39m
+Error: connect ETIMEDOUT 192.168.10.3:6500
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+[2m10:20:40 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/NewsGroups[39m
+Error: connect ETIMEDOUT 192.168.10.3:6500
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)

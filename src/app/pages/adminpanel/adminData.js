@@ -1,8 +1,10 @@
 import {
   AlignLeft,
+  KeyRound,
   Layout,
   LayoutDashboard,
   Newspaper,
+  Send,
   Settings,
   Tags,
   TrendingUp,
@@ -115,12 +117,25 @@ export const settingsTabs = [
 
 export const navItems = [
   { id: "dashboard", label: "داشبورد", icon: LayoutDashboard },
-  { id: "news", label: "اخبار", icon: Newspaper },
   {
-    id: "news-groups",
-    label: "مدیریت دسته‌بندی‌های اخبار",
-    icon: Tags,
+    id: "news-root",
+    label: "خبر",
+    icon: Newspaper,
+    children: [
+      {
+        id: "news",
+        label: "اخبار",
+        icon: Newspaper,
+      },
+      {
+        id: "news-groups",
+        label: "دسته‌بندی‌های اخبار",
+        icon: Tags,
+      },
+    ],
   },
+  { id: "shahkar", label: "پنل شاهکار", icon: KeyRound },
+  { id: "sms", label: "پنل پیامکی", icon: Send },
   { id: "users", label: "مدیریت کاربران", icon: Users },
   { id: "settings", label: "تنظیمات", icon: Settings },
 ];

@@ -620,7 +620,7 @@ function Field({
 }) {
   return (
     <label
-      className={`flex flex-col gap-1.5 ${span === 2 ? "lg:col-span-2" : span === 3 ? "lg:col-span-3" : ""}`}
+      className={`flex min-w-0 flex-col gap-1.5 ${span >= 2 ? "md:col-span-2" : ""}`}
     >
       <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
         {label}
@@ -885,9 +885,9 @@ export function AdminNewsPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-5">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Row 1: title + category */}
-            <Field label="عنوان خبر" span={2}>
+            <Field label="عنوان خبر">
               <input
                 value={form.title}
                 onChange={(e) =>
@@ -928,7 +928,7 @@ export function AdminNewsPage() {
             </Field>
 
             {/* Row 2: excerpt full width */}
-            <Field label="خلاصه خبر" span={3}>
+            <Field label="خلاصه خبر" span={2}>
               <input
                 value={form.excerpt}
                 onChange={(e) =>
@@ -953,7 +953,7 @@ export function AdminNewsPage() {
             </Field>
 
             {/* Sidebar: date + image */}
-            <div className="flex flex-col gap-4">
+            <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
               <Field label="تاریخ انتشار">
                 <PersianDatePicker
                   value={form.publishAt}
@@ -975,7 +975,7 @@ export function AdminNewsPage() {
                 )}
               </Field>
 
-              <div className="flex flex-col gap-1.5 flex-1">
+              <div className="flex min-w-0 flex-col gap-1.5">
                 <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                   تصویر خبر
                 </span>
