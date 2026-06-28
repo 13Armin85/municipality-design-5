@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { KeyRound, RefreshCw, UserCircle2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { apiFetch } from "../../data/api";
@@ -35,12 +35,17 @@ interface LoginModalProps {
   loginType: "user" | "admin";
   username: string;
   password: string;
+  nationalCode: string;
+  mobile: string;
   loginError: string;
   loginLoading: boolean;
   onClose: () => void;
   onUsernameChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onNationalCodeChange: (value: string) => void;
+  onMobileChange: (value: string) => void;
+  onSmsSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onPasswordSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onForgotPassword: () => void;
 }
 
@@ -49,15 +54,21 @@ export function LoginModal({
   loginType,
   username,
   password,
+  nationalCode,
+  mobile,
   loginError,
   loginLoading,
   onClose,
   onUsernameChange,
   onPasswordChange,
-  onSubmit,
+  onNationalCodeChange,
+  onMobileChange,
+  onSmsSubmit,
+  onPasswordSubmit,
   onForgotPassword,
 }: LoginModalProps) {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [authMode, setAuthMode] = useState<"sms" | "password">("sms");
   const [regUsername, setRegUsername] = useState("");
   const [regNationalCode, setRegNationalCode] = useState("");
   const [regPhone, setRegPhone] = useState("");
@@ -69,6 +80,13 @@ export function LoginModal({
   const [regError, setRegError] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [regSuccess, setRegSuccess] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setAuthMode("sms");
+    setIsRegistering(false);
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -127,44 +145,108 @@ export function LoginModal({
             </div>
 
             {!isRegistering ? (
-              <form onSubmit={onSubmit} className="space-y-3">
-                <div className="space-y-1">
-                  <label className="pr-1 text-[11px] font-medium text-muted-foreground">
+              <form
+                onSubmit={
+                  authMode === "sms" ? onSmsSubmit : onPasswordSubmit
+                }
+                className="space-y-3"
+              >
+                <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/50 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode("sms")}
+                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                      authMode === "sms"
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    کد ملی
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode("password")}
+                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                      authMode === "password"
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
                     نام کاربری
-                  </label>
-                  <input
-                    value={username}
-                    onChange={(e) => onUsernameChange(e.target.value)}
-                    placeholder="مثال: 0012345678"
-                    disabled={loginLoading}
-                    className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
-                  />
+                  </button>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between px-1">
-                    <label className="text-[11px] font-medium text-muted-foreground">
-                      رمز عبور
-                    </label>
-                    {/*
-                    <button
-                      type="button"
-                      onClick={onForgotPassword}
-                      className="text-[11px] font-semibold text-primary hover:underline"
-                    >
-                      فراموشی رمز عبور؟
-                    </button>
-                    */}
-                  </div>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => onPasswordChange(e.target.value)}
-                    placeholder="••••••••"
-                    disabled={loginLoading}
-                    className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
-                  />
-                </div>
+                {authMode === "sms" ? (
+                  <>
+                    <div className="space-y-1">
+                      <label className="pr-1 text-[11px] font-medium text-muted-foreground">
+                        کد ملی
+                      </label>
+                      <input
+                        value={nationalCode}
+                        onChange={(e) => onNationalCodeChange(e.target.value)}
+                        placeholder="مثال: 0012345678"
+                        inputMode="numeric"
+                        disabled={loginLoading}
+                        className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="pr-1 text-[11px] font-medium text-muted-foreground">
+                        شماره موبایل
+                      </label>
+                      <input
+                        value={mobile}
+                        onChange={(e) => onMobileChange(e.target.value)}
+                        placeholder="09xxxxxxxxx"
+                        inputMode="tel"
+                        disabled={loginLoading}
+                        className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-1">
+                      <label className="pr-1 text-[11px] font-medium text-muted-foreground">
+                        نام کاربری
+                      </label>
+                      <input
+                        value={username}
+                        onChange={(e) => onUsernameChange(e.target.value)}
+                        placeholder="مثال: Armin"
+                        disabled={loginLoading}
+                        className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between px-1">
+                        <label className="text-[11px] font-medium text-muted-foreground">
+                          رمز عبور
+                        </label>
+                        {/*
+                        <button
+                          type="button"
+                          onClick={onForgotPassword}
+                          className="text-[11px] font-semibold text-primary hover:underline"
+                        >
+                          فراموشی رمز عبور؟
+                        </button>
+                        */}
+                      </div>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => onPasswordChange(e.target.value)}
+                        placeholder="••••••••"
+                        disabled={loginLoading}
+                        className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                      />
+                    </div>
+                  </>
+                )}
 
                 {loginError ? (
                   <motion.p
@@ -186,10 +268,30 @@ export function LoginModal({
                       <RefreshCw className="h-4 w-4 animate-spin" />
                       در حال ورود...
                     </>
+                  ) : authMode === "sms" ? (
+                    "دریافت کد ورود"
                   ) : (
-                    "ورود به حساب کاربری"
+                    "ورود با نام کاربری"
                   )}
                 </button>
+
+                {authMode === "sms" ? (
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode("password")}
+                    className="w-full text-center text-xs font-semibold text-primary hover:underline"
+                  >
+                    ورود با نام کاربری و رمز عبور
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode("sms")}
+                    className="w-full text-center text-xs font-semibold text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    بازگشت به ورود با کد ملی
+                  </button>
+                )}
               </form>
             ) : (
               <form

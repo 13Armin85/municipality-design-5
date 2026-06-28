@@ -22,7 +22,7 @@ interface SahkarVerificationModalProps {
   nationalCode: string;
   mobile: string;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (data?: ApiResponse) => void;
   onError: (error: string) => void;
 }
 
@@ -81,6 +81,21 @@ const getAuthHeader = () => {
   return {
     Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
   };
+};
+
+const getAuthTokenFromResponse = (data: ApiResponse) => {
+  const value = data.value ?? data.Value;
+
+  return (
+    value?.token ??
+    value?.Token ??
+    data.value?.token ??
+    data.Value?.token ??
+    (data as any).token ??
+    (data as any).Token ??
+    (data as any).access_token ??
+    (data as any).AccessToken
+  );
 };
 
 const getResponseErrorMessage = (data: ApiResponse, fallback: string) => {
@@ -217,8 +232,16 @@ export function SahkarVerificationModal({
         throw new Error(getResponseErrorMessage(data, MESSAGES.verifyFailed));
       }
 
+      const token = getAuthTokenFromResponse(data);
+      if (token) {
+        localStorage.setItem(
+          "auth-token",
+          String(token).replace(/^Bearer\s+/i, ""),
+        );
+      }
+
       setStep("success");
-      window.setTimeout(onSuccess, 1200);
+      window.setTimeout(() => onSuccess(data), 1200);
     } catch (err) {
       showError(err instanceof Error ? err.message : MESSAGES.verifyFailed);
     } finally {

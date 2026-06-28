@@ -175,6 +175,44 @@ const getIsAdminFromAuthPayload = (data: any, token: string) => {
   return candidates.some(isAdminRoleValue);
 };
 
+const parseApiResponse = async (response: Response) => {
+  const text = await response.text().catch(() => "");
+  if (!text.trim()) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
+};
+
+const getAuthTokenFromPayload = (data: any) =>
+  data.value?.token ??
+  data.Value?.token ??
+  data.token ??
+  data.Token ??
+  data.access_token ??
+  data.AccessToken;
+
+const getNationalCodeFromAuthPayload = (data: any) =>
+  data.value?.nationalCode ??
+  data.Value?.nationalCode ??
+  data.Value?.user?.nationalCode ??
+  data.Value?.user?.NationalCode ??
+  data.user?.nationalCode ??
+  data.user?.NationalCode ??
+  data.nationalCode ??
+  data.NationalCode;
+
+const getResponseErrorMessage = (data: any, fallback: string) =>
+  data?.error?.name ||
+  data?.error?.description ||
+  data?.Error?.Description ||
+  data?.Error?.name ||
+  data?.message ||
+  data?.Message ||
+  fallback;
+
 export function Header({ isDark, toggleTheme }: HeaderProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -194,6 +232,8 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [nationalCode, setNationalCode] = useState("");
+  const [mobile, setMobile] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -275,7 +315,62 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     setIsLoginOpen(true);
   };
 
-  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+  const completeAuthenticatedLogin = (
+    data: any,
+    token: string | null | undefined,
+    fallbackType?: "user" | "admin",
+  ) => {
+    const resolvedToken = token ?? getAuthTokenFromPayload(data);
+    const adminStatus = resolvedToken
+      ? getIsAdminFromAuthPayload(data, resolvedToken)
+      : fallbackType === "admin";
+    const authenticatedUserType = adminStatus ? "admin" : "user";
+    const resolvedNationalCode =
+      getNationalCodeFromAuthPayload(data) || sahkarNationalCode;
+
+    if (resolvedToken) {
+      localStorage.setItem(AUTH_TOKEN_KEY, String(resolvedToken));
+    }
+    if (resolvedNationalCode) {
+      localStorage.setItem(USER_NATIONAL_CODE_KEY, String(resolvedNationalCode));
+    }
+
+    localStorage.setItem(AUTH_STORAGE_KEY, "true");
+    localStorage.setItem(AUTH_TYPE_KEY, authenticatedUserType);
+    setIsAuthenticated(true);
+    setLoginType(authenticatedUserType);
+    setIsLoginOpen(false);
+    setIsSahkarOpen(false);
+    setUsername("");
+    setPassword("");
+    setNationalCode("");
+    setMobile("");
+    navigate(authenticatedUserType === "admin" ? "/admin" : "/my-property");
+  };
+
+  const handleSmsLogin = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanedNationalCode = nationalCode.replace(/\D/g, "").padStart(10, "0");
+    const cleanedMobile = mobile.replace(/\D/g, "");
+
+    if (!/^\d{10}$/.test(cleanedNationalCode)) {
+      setLoginError("لطفا کد ملی ۱۰ رقمی را وارد کنید.");
+      return;
+    }
+    if (!/^(09)\d{9}$/.test(cleanedMobile)) {
+      setLoginError("شماره موبایل وارد شده معتبر نیست.");
+      return;
+    }
+
+    setLoginError("");
+    setSahkarNationalCode(cleanedNationalCode);
+    setSahkarMobile(cleanedMobile);
+    setSahkarLoginType("user");
+    setIsLoginOpen(false);
+    setIsSahkarOpen(true);
+  };
+
+  const handlePasswordLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!username.trim() || !password.trim()) {
       setLoginError("لطفا نام کاربری و رمز عبور را وارد کنید.");
@@ -286,30 +381,33 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     setLoginError("");
 
     try {
-      const response = await dotNet10ApiFetch("/api/Auth/login", {
+      const response = await dotNet10ApiFetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
+          Accept: "text/plain",
         },
-        body: JSON.stringify({ UserName: username, Password: password }),
+        body: JSON.stringify({
+          userName: username.trim(),
+          password,
+        }),
       });
 
+      const data = await parseApiResponse(response);
+
       if (!response.ok) {
-        setLoginError("نام کاربری یا رمز عبور اشتباه است.");
+        setLoginError(
+          getResponseErrorMessage(data, "نام کاربری یا رمز عبور اشتباه است."),
+        );
         return;
       }
-
-      const data = await response.json();
 
       // بررسی IsSuccess flag از API
       const isSuccess = data.isSuccess ?? data.IsSuccess;
       const isFailure = data.isFailure ?? data.IsFailure;
-      if (isFailure || !isSuccess) {
+      if (isFailure === true || isSuccess === false) {
         setLoginError(
-          data.error?.name ||
-            data.Error?.Description ||
-            "نام کاربری یا رمز عبور اشتباه است.",
+          getResponseErrorMessage(data, "نام کاربری یا رمز عبور اشتباه است."),
         );
         return;
       }
@@ -327,69 +425,14 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
         return;
       }
 
-      const token =
-        data.value?.token ??
-        data.Value?.token ??
-        data.token ??
-        data.Token ??
-        data.access_token ??
-        data.AccessToken;
+      const token = getAuthTokenFromPayload(data);
 
       if (!token) {
         setLoginError("خطا در دریافت توکن. لطفا دوباره تلاش کنید.");
         return;
       }
 
-      const adminStatus = getIsAdminFromAuthPayload(data, token);
-
-      // دریافت کد ملی از response
-      const nationalCode =
-        data.value?.nationalCode ??
-        data.Value?.user?.nationalCode ??
-        data.Value?.user?.NationalCode ??
-        data.user?.nationalCode ??
-        data.user?.NationalCode ??
-        data.nationalCode ??
-        data.NationalCode;
-
-      // دریافت شماره تلفن از response
-      const mobile =
-        data.value?.phoneNumber ??
-        data.Value?.user?.phoneNumber ??
-        data.Value?.user?.PhoneNumber ??
-        data.Value?.user?.mobile ??
-        data.Value?.user?.Mobile ??
-        data.user?.phoneNumber ??
-        data.user?.PhoneNumber ??
-        data.user?.mobile ??
-        data.user?.Mobile ??
-        data.phoneNumber ??
-        data.PhoneNumber ??
-        data.mobile ??
-        data.Mobile;
-
-      // بررسی اینکه هر دوی کد ملی و شماره تلفن موجود هستند
-      if (!nationalCode || !mobile) {
-        setLoginError(
-          "خطا: اطلاعات کاربر ناقص است. لطفا با پشتیبانی تماس بگیرید.",
-        );
-        return;
-      }
-
-      if (nationalCode) {
-        localStorage.setItem(USER_NATIONAL_CODE_KEY, String(nationalCode));
-      }
-
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
-
-      const authenticatedUserType = adminStatus ? "admin" : "user";
-      setSahkarNationalCode(String(nationalCode));
-      setSahkarMobile(String(mobile));
-      setSahkarLoginType(authenticatedUserType);
-      setIsLoginOpen(false);
-      setUsername("");
-      setPassword("");
-      setIsSahkarOpen(true);
+      completeAuthenticatedLogin(data, token);
 
       /*
        * روند قبلی ارسال کد SMS برای ورود (ساهکار) موقتاً غیرفعال است:
@@ -535,13 +578,12 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     otpRefs.current[Math.min(pasted.length, 4)]?.focus();
   };
 
-  const handleSahkarSuccess = () => {
-    localStorage.setItem(AUTH_STORAGE_KEY, "true");
-    localStorage.setItem(AUTH_TYPE_KEY, sahkarLoginType);
-    setIsAuthenticated(true);
-    setLoginType(sahkarLoginType);
-    setIsSahkarOpen(false);
-    navigate(sahkarLoginType === "admin" ? "/admin" : "/my-property");
+  const handleSahkarSuccess = (data?: any) => {
+    completeAuthenticatedLogin(
+      data ?? {},
+      getAuthTokenFromPayload(data ?? {}),
+      sahkarLoginType,
+    );
   };
 
   // ─── Sahkar verification handlers ────────────────────────────────────────
@@ -827,12 +869,17 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
           loginType={loginType}
           username={username}
           password={password}
+          nationalCode={nationalCode}
+          mobile={mobile}
           loginError={loginError}
           loginLoading={loginLoading}
           onClose={() => setIsLoginOpen(false)}
           onUsernameChange={setUsername}
           onPasswordChange={setPassword}
-          onSubmit={handleLogin}
+          onNationalCodeChange={setNationalCode}
+          onMobileChange={setMobile}
+          onSmsSubmit={handleSmsLogin}
+          onPasswordSubmit={handlePasswordLogin}
           onForgotPassword={openForgotPassword}
         />
 
