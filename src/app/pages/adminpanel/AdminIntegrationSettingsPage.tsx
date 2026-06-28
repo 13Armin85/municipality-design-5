@@ -11,9 +11,11 @@ import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
   fetchShahkarSettings,
+  fetchSmsPanelTypes,
   fetchSmsSettings,
   saveShahkarSettings,
   saveSmsSettings,
+  type SmsPanelType,
   type ShahkarSettings,
   type SmsSettings,
 } from "../../data/adminIntegrations";
@@ -301,6 +303,9 @@ export function AdminSmsPage() {
     null,
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [panelTypes, setPanelTypes] = useState<SmsPanelType[]>([]);
+  const [arePanelTypesLoading, setArePanelTypesLoading] = useState(false);
+  const [didLoadPanelTypes, setDidLoadPanelTypes] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<Message>(null);
 
@@ -329,6 +334,26 @@ export function AdminSmsPage() {
     return () => controller.abort();
   }, [loadSettings]);
 
+  const loadPanelTypes = useCallback(async () => {
+    if (didLoadPanelTypes || arePanelTypesLoading) return;
+
+    setArePanelTypesLoading(true);
+    try {
+      setPanelTypes(await fetchSmsPanelTypes());
+      setDidLoadPanelTypes(true);
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "دریافت نوع پنل پیامکی ناموفق بود.",
+      });
+    } finally {
+      setArePanelTypesLoading(false);
+    }
+  }, [arePanelTypesLoading, didLoadPanelTypes]);
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -356,6 +381,10 @@ export function AdminSmsPage() {
     }
   };
 
+  const currentPanelTypeLabel =
+    panelTypes.find((panelType) => panelType.id === currentSettings?.type)
+      ?.name ?? currentSettings?.type;
+
   return (
     <div className="space-y-6" dir="rtl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -382,7 +411,7 @@ export function AdminSmsPage() {
         isLoading={isLoading}
         emptyText="اطلاعاتی برای پنل پیامکی دریافت نشد."
         rows={[
-          { label: "نوع پنل", value: currentSettings?.type },
+          { label: "نوع پنل", value: currentPanelTypeLabel },
           { label: "نام کاربری", value: currentSettings?.userName },
           { label: "رمز عبور", value: currentSettings?.password },
           { label: "شماره سیستمی", value: currentSettings?.systemNumber },
@@ -400,18 +429,31 @@ export function AdminSmsPage() {
         <form onSubmit={handleSubmit} className="p-5">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="نوع پنل">
-                <input
-                  type="number"
+                <select
                   value={form.type}
+                  onFocus={() => void loadPanelTypes()}
+                  onClick={() => void loadPanelTypes()}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
                       type: event.target.value,
                     }))
                   }
-                  className={inputClass}
+                  className={`${inputClass} appearance-none disabled:cursor-not-allowed disabled:opacity-60`}
                   dir="ltr"
-                />
+                  disabled={arePanelTypesLoading}
+                >
+                  <option value="">
+                    {arePanelTypesLoading
+                      ? "در حال دریافت نوع پنل..."
+                      : "انتخاب نوع پنل"}
+                  </option>
+                  {panelTypes.map((panelType) => (
+                    <option key={panelType.id} value={String(panelType.id)}>
+                      {panelType.name}
+                    </option>
+                  ))}
+                </select>
               </Field>
               <Field label="نام کاربری">
                 <input

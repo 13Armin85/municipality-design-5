@@ -26,8 +26,14 @@ export interface SmsSettings {
   systemNumber: string;
 }
 
+export interface SmsPanelType {
+  id: number;
+  name: string;
+}
+
 const SHAHKAR_ENDPOINT = "/api/admin/shahkar";
 const SMS_ENDPOINT = "/api/admin/sms";
+const SMS_PANEL_TYPE_ENDPOINT = `${SMS_ENDPOINT}/panelType`;
 
 function getAuthHeaders(): HeadersInit {
   const token =
@@ -127,6 +133,31 @@ export async function fetchSmsSettings(
     data.value ??
     data.Value ?? { id: "", type: null, userName: "", password: "", systemNumber: "" }
   );
+}
+
+export async function fetchSmsPanelTypes(
+  signal?: AbortSignal,
+): Promise<SmsPanelType[]> {
+  const response = await dotNet10ApiFetch(SMS_PANEL_TYPE_ENDPOINT, {
+    method: "GET",
+    headers: getAuthHeaders(),
+    signal,
+  });
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(text || "دریافت نوع پنل پیامکی ناموفق بود.");
+  }
+
+  if (!text) return [];
+
+  try {
+    const data = JSON.parse(text) as SmsPanelType[] | ApiEnvelope<SmsPanelType[]>;
+    if (Array.isArray(data)) return data;
+    return data.value ?? data.Value ?? [];
+  } catch {
+    throw new Error("دریافت نوع پنل پیامکی ناموفق بود.");
+  }
 }
 
 export async function saveSmsSettings(

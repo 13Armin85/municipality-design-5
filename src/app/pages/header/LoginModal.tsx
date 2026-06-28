@@ -146,6 +146,7 @@ export function LoginModal({
                     <label className="text-[11px] font-medium text-muted-foreground">
                       رمز عبور
                     </label>
+                    {/*
                     <button
                       type="button"
                       onClick={onForgotPassword}
@@ -153,6 +154,7 @@ export function LoginModal({
                     >
                       فراموشی رمز عبور؟
                     </button>
+                    */}
                   </div>
                   <input
                     type="password"
@@ -426,6 +428,7 @@ export function LoginModal({
             ) : null}
 
             <div className="mt-3 text-center text-[13px]">
+              {/*
               {!isRegistering ? (
                 <button
                   type="button"
@@ -447,6 +450,7 @@ export function LoginModal({
                   بازگشت به ورود
                 </button>
               )}
+              */}
             </div>
           </motion.section>
         </>
