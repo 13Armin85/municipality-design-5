@@ -17,6 +17,10 @@ import {
   AdminShahkarPage,
   AdminSmsPage,
 } from "./adminpanel/AdminIntegrationSettingsPage";
+import {
+  AdminShahkarLogsPage,
+  AdminSmsLogsPage,
+} from "./adminpanel/AdminIntegrationLogsPage";
 import { SettingsPage } from "./adminpanel/AdminSettingsPage";
 import { UserManagement } from "./adminpanel/UserManagement";
 import { navItems } from "./adminpanel/adminData";
@@ -31,7 +35,10 @@ export default function AdminPanel({ isDark, toggleTheme }) {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [openNavTrees, setOpenNavTrees] = useState({ "news-root": false });
+  const [openNavTrees, setOpenNavTrees] = useState({
+    "news-root": false,
+    "settings-root": false,
+  });
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
@@ -57,6 +64,8 @@ export default function AdminPanel({ isDark, toggleTheme }) {
     "news-groups": <AdminNewsGroupsPage />,
     shahkar: <AdminShahkarPage />,
     sms: <AdminSmsPage />,
+    "shahkar-logs": <AdminShahkarLogsPage />,
+    "sms-logs": <AdminSmsLogsPage />,
     users: <UserManagement />,
     settings: <SettingsPage />,
   };

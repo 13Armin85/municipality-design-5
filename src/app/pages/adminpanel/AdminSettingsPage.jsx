@@ -308,7 +308,7 @@ export function SettingsPage() {
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-bold text-foreground sm:text-xl">
-          تنظیمات
+          تنظیمات عمومی
         </h2>
         <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
           مدیریت محتوا و ظاهر پرتال

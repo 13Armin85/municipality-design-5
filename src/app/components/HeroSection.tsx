@@ -5,21 +5,21 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 const heroSlides = [
   {
     id: "slide-1",
-    imageSrc: "/images/Gemini_Generated_Image_a6500ga6500ga650.png",
+    imageSrc: "/images/shahrvandyar1.png",
     alt: "Hero slide 1",
     width: 1376,
     height: 768,
   },
   {
     id: "slide-2",
-    imageSrc: "/images/ChatGPT%20Image%20May%2011,%202026,%2001_36_30%20AM.png",
+    imageSrc: "/images/shahrvandyar2.png",
     alt: "Hero slide 2",
     width: 1774,
     height: 887,
   },
   {
     id: "slide-3",
-    imageSrc: "/images/Gemini_Generated_Image_hbitsmhbitsmhbit.png",
+    imageSrc: "/images/shahrvandyar3.png",
     alt: "Hero slide 3",
     width: 1376,
     height: 768,
@@ -193,7 +193,6 @@ export function HeroSection() {
             </button>
           </div>
         </div>
-
       </div>
     </section>
   );

@@ -31,8 +31,27 @@ export interface SmsPanelType {
   name: string;
 }
 
+export interface ShahkarLog {
+  id: string;
+  mobile: string;
+  nationalCode: string;
+  isMatched: string;
+  errorMessage: string;
+}
+
+export interface SmsLog {
+  id: string;
+  mobile: string;
+  message: string;
+  sendDate: string;
+  status: string;
+  errorMessage: string;
+}
+
 const SHAHKAR_ENDPOINT = "/api/admin/shahkar";
 const SMS_ENDPOINT = "/api/admin/sms";
+const SHAHKAR_LOGS_ENDPOINT = `${SHAHKAR_ENDPOINT}/logs`;
+const SMS_LOGS_ENDPOINT = `${SMS_ENDPOINT}/logs`;
 const SMS_PANEL_TYPE_ENDPOINT = `${SMS_ENDPOINT}/panelType`;
 
 function getAuthHeaders(): HeadersInit {
@@ -106,6 +125,19 @@ export async function fetchShahkarSettings(
   return data.value ?? data.Value ?? { id: "", url: "", token: "" };
 }
 
+export async function fetchShahkarLogs(
+  signal?: AbortSignal,
+): Promise<ShahkarLog[]> {
+  const data = (await requestAdminSettings<ShahkarLog[]>(
+    SHAHKAR_LOGS_ENDPOINT,
+    { method: "GET", signal },
+    "دریافت گزارشات شاهکار ناموفق بود.",
+  )) as ApiEnvelope<ShahkarLog[]> | ShahkarLog[];
+
+  if (Array.isArray(data)) return data;
+  return data.value ?? data.Value ?? [];
+}
+
 export async function saveShahkarSettings(
   settings: ShahkarSettings,
 ): Promise<void> {
@@ -158,6 +190,17 @@ export async function fetchSmsPanelTypes(
   } catch {
     throw new Error("دریافت نوع پنل پیامکی ناموفق بود.");
   }
+}
+
+export async function fetchSmsLogs(signal?: AbortSignal): Promise<SmsLog[]> {
+  const data = (await requestAdminSettings<SmsLog[]>(
+    SMS_LOGS_ENDPOINT,
+    { method: "GET", signal },
+    "دریافت گزارشات پنل پیامکی ناموفق بود.",
+  )) as ApiEnvelope<SmsLog[]> | SmsLog[];
+
+  if (Array.isArray(data)) return data;
+  return data.value ?? data.Value ?? [];
 }
 
 export async function saveSmsSettings(

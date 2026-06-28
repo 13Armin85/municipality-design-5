@@ -1,5 +1,6 @@
 import {
   AlignLeft,
+  FileText,
   KeyRound,
   Layout,
   LayoutDashboard,
@@ -134,10 +135,39 @@ export const navItems = [
       },
     ],
   },
-  { id: "shahkar", label: "پنل شاهکار", icon: KeyRound },
-  { id: "sms", label: "پنل پیامکی", icon: Send },
   { id: "users", label: "مدیریت کاربران", icon: Users },
-  { id: "settings", label: "تنظیمات", icon: Settings },
+  {
+    id: "settings-root",
+    label: "تنظیمات",
+    icon: Settings,
+    children: [
+      {
+        id: "settings",
+        label: "تنظیمات عمومی",
+        icon: Settings,
+      },
+      {
+        id: "shahkar",
+        label: "پنل شاهکار",
+        icon: KeyRound,
+      },
+      {
+        id: "sms",
+        label: "پنل پیامکی",
+        icon: Send,
+      },
+      {
+        id: "shahkar-logs",
+        label: "گزارشات پنل شاهکار",
+        icon: FileText,
+      },
+      {
+        id: "sms-logs",
+        label: "گزارشات پنل SMS",
+        icon: FileText,
+      },
+    ],
+  },
 ];
 
 export const initialContentForm = {
