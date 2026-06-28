@@ -275,23 +275,7 @@ export function LoginModal({
                   )}
                 </button>
 
-                {authMode === "sms" ? (
-                  <button
-                    type="button"
-                    onClick={() => setAuthMode("password")}
-                    className="w-full text-center text-xs font-semibold text-primary hover:underline"
-                  >
-                    ورود با نام کاربری و رمز عبور
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setAuthMode("sms")}
-                    className="w-full text-center text-xs font-semibold text-muted-foreground hover:text-primary hover:underline"
-                  >
-                    بازگشت به ورود با کد ملی
-                  </button>
-                )}
+                
               </form>
             ) : (
               <form
