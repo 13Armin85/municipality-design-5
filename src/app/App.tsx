@@ -102,6 +102,28 @@ export default function App() {
             }
           />
           <Route
+            path="/guide"
+            element={
+              <GuidePage isDark={isDark} toggleTheme={toggleTheme} />
+            }
+          />
+          <Route
+            path="/faq"
+            element={<FaqPage isDark={isDark} toggleTheme={toggleTheme} />}
+          />
+          <Route
+            path="/support"
+            element={
+              <SupportPage isDark={isDark} toggleTheme={toggleTheme} />
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <ContactPage isDark={isDark} toggleTheme={toggleTheme} />
+            }
+          />
+          <Route
             path="/profile"
             element={
               <main>
@@ -211,6 +233,26 @@ export default function App() {
 }
 const AboutPage = lazy(() =>
   import("./pages/AboutPage").then((module) => ({ default: module.AboutPage })),
+);
+const GuidePage = lazy(() =>
+  import("./pages/SupportPages").then((module) => ({
+    default: module.GuidePage,
+  })),
+);
+const FaqPage = lazy(() =>
+  import("./pages/SupportPages").then((module) => ({
+    default: module.FaqPage,
+  })),
+);
+const SupportPage = lazy(() =>
+  import("./pages/SupportPages").then((module) => ({
+    default: module.SupportPage,
+  })),
+);
+const ContactPage = lazy(() =>
+  import("./pages/SupportPages").then((module) => ({
+    default: module.ContactPage,
+  })),
 );
 const ProfilePage = lazy(() =>
   import("./pages/ProfilePage").then((module) => ({

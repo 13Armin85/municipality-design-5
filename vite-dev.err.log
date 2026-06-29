@@ -1,3 +1,0 @@
-[2m11:38:37 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/News[39m
-Error: read ECONNRESET
-    at TCP.onStreamRead (node:internal/stream_base_commons:216:20)

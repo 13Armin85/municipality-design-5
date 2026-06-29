@@ -14,7 +14,12 @@ const enamadLogoSrc = "/images/enamad-logo.svg";
 
 export function Footer() {
   const footerLinks = {
-    support: ["راهنما", "سوالات متداول", "پشتیبانی", "تماس با ما"],
+    support: [
+      { label: "راهنما", href: "/guide" },
+      { label: "سوالات متداول", href: "/faq" },
+      { label: "پشتیبانی", href: "/support" },
+      { label: "تماس با ما", href: "/contact" },
+    ],
     legal: ["قوانین و مقررات", "حریم خصوصی", "شرایط استفاده", "درباره ما"],
   };
 
@@ -85,13 +90,13 @@ export function Footer() {
             <h4 className="mb-4 font-bold md:mb-6">پشتیبانی</h4>
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
-                <li key={link}>
-                  <a
-                    href="#"
+                <li key={link.href}>
+                  <Link
+                    to={link.href}
                     className="text-sm text-white/85 transition-colors hover:text-white"
                   >
-                    {link}
-                  </a>
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>
