@@ -1,19 +1,35 @@
 const DEFAULT_DOTNET48_API_BASE_URL = "http://192.168.10.3:6300";
 const DEFAULT_DOTNET10_API_BASE_URL = "http://192.168.10.3:6500";
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.DEV ? "" : DEFAULT_DOTNET48_API_BASE_URL)
-)
-  .trim()
-  .replace(/\/+$/, "");
+const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, "");
 
-const DOTNET10_API_BASE_URL = (
-  import.meta.env.VITE_DOTNET10_API_URL ??
-  (import.meta.env.DEV ? "/dotnet10-api" : DEFAULT_DOTNET10_API_BASE_URL)
-)
-  .trim()
-  .replace(/\/+$/, "");
+const firstEnvUrl = (...values: Array<string | undefined>) => {
+  for (const value of values) {
+    const normalizedValue = normalizeBaseUrl(value ?? "");
+    if (normalizedValue) return normalizedValue;
+  }
+
+  return "";
+};
+
+const API_BASE_URL = import.meta.env.DEV
+  ? firstEnvUrl(import.meta.env.VITE_DEV_API_BASE_URL, "")
+  : firstEnvUrl(
+      import.meta.env.VITE_API_BASE_URL,
+      import.meta.env.VITE_API_URL,
+      DEFAULT_DOTNET48_API_BASE_URL,
+    );
+
+const DOTNET10_API_BASE_URL = import.meta.env.DEV
+  ? firstEnvUrl(
+      import.meta.env.VITE_DEV_DOTNET10_API_BASE_URL,
+      "/dotnet10-api",
+    )
+  : firstEnvUrl(
+      import.meta.env.VITE_DOTNET10_API_BASE_URL,
+      import.meta.env.VITE_DOTNET10_API_URL,
+      DEFAULT_DOTNET10_API_BASE_URL,
+    );
 
 const DOTNET48_ACCEPT_HEADER = "text/plain";
 

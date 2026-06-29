@@ -16,7 +16,6 @@ import {
   fetchJsonWithCache,
   propertyFileCacheKey,
 } from "../utils/requestCache";
-import { dotNet10ApiFetch } from "../data/api";
 import {
   fetchCurrentUserPropertyFiles,
   getCurrentUserNationalCode,
@@ -80,30 +79,8 @@ const getInitialExpandedTreeIds = (items: PropertyTreeItem[]) => {
   return ids;
 };
 
-const fetchPropertyFile = async (token: string): Promise<ApiResponse> => {
-  return fetchCurrentUserPropertyFiles(token);
-  const response = await dotNet10ApiFetch(
-    `/api/Files/${encodeURIComponent(getCurrentUserNationalCode(token))}`,
-    {
-      method: "GET",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-
-  if (response.status === 404) {
-    return { isSuccess: true, isFailure: false, value: [] };
-  }
-
-  if (!response.ok) {
-    throw new Error("خطا در دریافت اطلاعات املاک.");
-  }
-
-  return response.json();
-};
+const fetchPropertyFile = async (token: string): Promise<ApiResponse> =>
+  fetchCurrentUserPropertyFiles(token);
 
 interface PropertyTreeListProps {
   onPropertySelect?: (
@@ -186,33 +163,6 @@ export function PropertyTreeList({
         const data = await fetchJsonWithCache<ApiResponse>(
           propertyFileCacheKey(nationalCode ?? "current-user"),
           () => fetchPropertyFile(token),
-          /*
-            const response = await fetch(
-          `/api/file?nationalCode=${encodeURIComponent(nationalCode)}`,
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            setError("دسترسی غیرمجاز. لطفا دوباره وارد شوید.");
-          } else if (response.status === 404) {
-            setPropertyItems([]);
-          } else {
-            setError("خطا در دریافت اطلاعات. لطفا دوباره تلاش کنید.");
-          }
-          setLoading(false);
-          return;
-        }
-
-            return response.json();
-          },
-          */
           { force: true },
         );
 
