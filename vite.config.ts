@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from "vite";
 import path from "path";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 const DEFAULT_API_BASE_URL = "http://192.168.10.3:6300";
 const DEFAULT_DOTNET10_API_BASE_URL = "http://192.168.10.3:6500";
@@ -51,7 +52,100 @@ export default defineConfig(({ mode }) => {
   );
 
   return {
-    plugins: [figmaAssetResolver(), react(), tailwindcss()],
+    plugins: [
+      figmaAssetResolver(),
+      react(),
+      tailwindcss(),
+      VitePWA({
+        injectRegister: "auto",
+        registerType: "autoUpdate",
+        includeAssets: [
+          "pwa/apple-touch-icon.png",
+          "pwa/icon-192.png",
+          "pwa/icon-512.png",
+        ],
+        manifest: {
+          name: "شهروندیار آمل",
+          short_name: "شهروندیار",
+          description: "پرتال خدمات شهری شهرداری آمل",
+          id: "/",
+          lang: "fa",
+          dir: "rtl",
+          start_url: "/",
+          scope: "/",
+          display: "standalone",
+          display_override: ["standalone", "minimal-ui"],
+          orientation: "portrait-primary",
+          background_color: "#ffffff",
+          theme_color: "#14532d",
+          categories: ["government", "utilities", "productivity"],
+          icons: [
+            {
+              src: "/pwa/icon-192.png",
+              sizes: "192x192",
+              type: "image/png",
+              purpose: "any",
+            },
+            {
+              src: "/pwa/icon-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "any",
+            },
+            {
+              src: "/pwa/icon-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "any maskable",
+            },
+          ],
+        },
+        devOptions: {
+          enabled: true,
+          suppressWarnings: true,
+          navigateFallback: "index.html",
+        },
+        workbox: {
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+          globPatterns: [
+            "**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}",
+          ],
+          navigateFallback: "/index.html",
+          navigateFallbackDenylist: [
+            /^\/api(?:\/|$)/,
+            /^\/dotnet10-api(?:\/|$)/,
+          ],
+          runtimeCaching: [
+            {
+              urlPattern: ({ url }) =>
+                url.pathname === "/api" ||
+                url.pathname.startsWith("/api/") ||
+                url.pathname === "/dotnet10-api" ||
+                url.pathname.startsWith("/dotnet10-api/"),
+              handler: "NetworkOnly",
+              method: "GET",
+              options: {
+                cacheName: "api-network-only",
+              },
+            },
+            {
+              urlPattern: ({ request, sameOrigin }) =>
+                sameOrigin && request.destination === "image",
+              handler: "CacheFirst",
+              options: {
+                cacheName: "local-images",
+                expiration: {
+                  maxEntries: 80,
+                  maxAgeSeconds: 60 * 60 * 24 * 30,
+                },
+              },
+            },
+          ],
+        },
+      }),
+    ],
 
     resolve: {
       alias: {
