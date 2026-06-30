@@ -63,6 +63,23 @@ type ApiEnvelope<T = unknown> = {
   Value?: T;
 };
 
+type RawAdminUser = Partial<AdminUser> & {
+  Id?: string;
+  Name?: string;
+  Family?: string;
+  NationalCode?: string;
+  PhoneNumber?: string;
+  UserName?: string;
+  IsActive?: boolean;
+  RoleId?: string;
+  RoleName?: string;
+};
+
+type RawAdminRole = Partial<AdminRole> & {
+  Id?: string;
+  Name?: string;
+};
+
 const USERS_ENDPOINT = "/api/Users";
 const USER_ROLES_ENDPOINT = "/api/Users/roles";
 
@@ -107,6 +124,27 @@ function getErrorMessage(data: ApiEnvelope, fallback: string) {
   return messages.length > 0 ? messages.join(" ") : fallback;
 }
 
+function normalizeAdminUser(user: RawAdminUser): AdminUser {
+  return {
+    id: user.id ?? user.Id ?? "",
+    name: user.name ?? user.Name ?? "",
+    family: user.family ?? user.Family ?? "",
+    nationalCode: user.nationalCode ?? user.NationalCode ?? "",
+    phoneNumber: user.phoneNumber ?? user.PhoneNumber ?? "",
+    userName: user.userName ?? user.UserName ?? "",
+    isActive: user.isActive ?? user.IsActive ?? false,
+    roleId: user.roleId ?? user.RoleId ?? "",
+    roleName: user.roleName ?? user.RoleName ?? "",
+  };
+}
+
+function normalizeAdminRole(role: RawAdminRole): AdminRole {
+  return {
+    id: role.id ?? role.Id ?? "",
+    name: role.name ?? role.Name ?? "",
+  };
+}
+
 async function parseResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
   const text = await response.text();
   let data: ApiEnvelope<T> = {};
@@ -123,7 +161,7 @@ async function parseResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
 
   const isSuccess = data.isSuccess ?? data.IsSuccess;
   const isFailure = data.isFailure ?? data.IsFailure;
-  if (!response.ok || isFailure === true || isSuccess === false) {
+  if (!response.ok || isSuccess === false || (isSuccess !== true && isFailure === true)) {
     throw new Error(getErrorMessage(data, "انجام عملیات کاربران با خطا مواجه شد."));
   }
 
@@ -151,6 +189,19 @@ function createAdminUserPayload(user: CreateAdminUser) {
   };
 }
 
+function updateAdminUserPayload(user: UpdateAdminUser) {
+  return {
+    id: user.id,
+    name: user.name,
+    family: user.family,
+    phoneNumber: user.phoneNumber,
+    nationalCode: user.nationalCode,
+    userName: user.userName,
+    roleId: user.roleId,
+    RoleId: user.roleId,
+  };
+}
+
 async function responseHasErrorCode(response: Response, code: string) {
   const data = await response.json().catch(() => null);
   const errors = data?.errors ?? data?.Errors;
@@ -168,8 +219,8 @@ export async function fetchAdminUsers(
     headers: getAuthHeaders(),
     signal,
   });
-  const data = await parseResponse<AdminUser[]>(response);
-  return data.value ?? data.Value ?? [];
+  const data = await parseResponse<RawAdminUser[]>(response);
+  return (data.value ?? data.Value ?? []).map(normalizeAdminUser);
 }
 
 export async function fetchAdminRoles(
@@ -180,8 +231,8 @@ export async function fetchAdminRoles(
     headers: getAuthHeaders(),
     signal,
   });
-  const data = await parseResponse<AdminRole[]>(response);
-  return data.value ?? data.Value ?? [];
+  const data = await parseResponse<RawAdminRole[]>(response);
+  return (data.value ?? data.Value ?? []).map(normalizeAdminRole);
 }
 
 export async function createAdminUser(
@@ -216,21 +267,14 @@ export async function createAdminUser(
 export async function updateAdminUser(
   user: UpdateAdminUser,
 ): Promise<void> {
+  const payload = updateAdminUserPayload(user);
   const response = await dotNet10ApiFetch(USERS_ENDPOINT, {
     method: "PUT",
     headers: {
       ...getAuthHeaders(),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      id: user.id,
-      name: user.name,
-      family: user.family,
-      phoneNumber: user.phoneNumber,
-      nationalCode: user.nationalCode,
-      userName: user.userName,
-      roleId: user.roleId,
-    }),
+    body: JSON.stringify(payload),
   });
   await parseResponse(response);
 }
