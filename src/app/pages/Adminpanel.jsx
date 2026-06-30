@@ -38,6 +38,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
   const [openNavTrees, setOpenNavTrees] = useState({
     "news-root": false,
     "settings-root": false,
+    "reports-root": false,
   });
 
   useEffect(() => {

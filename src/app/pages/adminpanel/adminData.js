@@ -156,14 +156,21 @@ export const navItems = [
         label: "پنل پیامکی",
         icon: Send,
       },
+    ],
+  },
+  {
+    id: "reports-root",
+    label: "گزارشات",
+    icon: FileText,
+    children: [
       {
         id: "shahkar-logs",
-        label: "گزارشات پنل شاهکار",
+        label: "گزارشات شاهکار",
         icon: FileText,
       },
       {
         id: "sms-logs",
-        label: "گزارشات پنل SMS",
+        label: "گزارشات پنل پیامکی",
         icon: FileText,
       },
     ],
