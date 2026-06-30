@@ -789,7 +789,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
                     <motion.div whileTap={{ scale: 0.95 }}>
                       <Link
                         to="/admin"
-                        className="header-action-btn hidden items-center justify-center sm:inline-flex"
+                        className="header-action-btn inline-flex items-center justify-center"
                       >
                         <ShieldCheck className="h-5 w-5" />
                       </Link>
@@ -801,7 +801,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
               <Link
                 to="/profile"
                 onClick={handleProfileClick}
-                className="header-action-btn hidden sm:inline-flex items-center gap-2 px-3"
+                className="header-action-btn hidden items-center gap-2 px-3 min-[1281px]:inline-flex"
                 aria-label="پروفایل کاربر"
               >
                 <UserCircle2 className="h-5 w-5" />
