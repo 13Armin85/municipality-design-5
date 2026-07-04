@@ -5,6 +5,7 @@ import { AuthProvider } from "./app/components/AuthContext";
 import App from "./app/App.tsx";
 import { installRequestFetchCache } from "./app/utils/requestCache";
 import "./styles/index.css";
+import "@arcgis/core/assets/esri/themes/light/main.css";
 
 installRequestFetchCache();
 registerSW({ immediate: true });

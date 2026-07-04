@@ -3,6 +3,7 @@ import { ClipboardList, Home, Info, Minus, Plus } from "lucide-react";
 import type { PropertyRecord } from "../../data/properties";
 import type { RegisteredRequestRow } from "../Sabtdarkhastpage";
 import { HelpButton } from "./FormControls";
+import Map from "@/app/components/Map";
 
 export function SabtdarkhastFormSecondary({
   activeProperty,
@@ -75,7 +76,7 @@ export function SabtdarkhastFormSecondary({
         viewport={{ once: true }}
         className="soft-card mesh-panel group relative h-64 overflow-hidden sm:h-80 md:h-[400px]"
       >
-        {onOpenHelp && (
+        {/* {onOpenHelp && (
           <button
             type="button"
             onClick={() =>
@@ -88,14 +89,16 @@ export function SabtdarkhastFormSecondary({
           >
             <Info className="h-3.5 w-3.5" /> راهنما
           </button>
-        )}
-=        <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-          <img
+        )} */}
+        {/* <div className="absolute inset-0 flex items-center justify-center bg-slate-800"> */}
+        <div className="absolute inset-0 bg-slate-800">
+          <Map />
+          {/* <img
             src="/map-placeholder.jpg"
             alt="Map"
             className="h-full w-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
-          />
-          {activeProperty && (
+          /> */}
+          {/* {activeProperty && (
             <div className="absolute bottom-4 left-1/2 w-56 -translate-x-1/2 space-y-1.5 rounded-2xl border border-border bg-card/95 p-3 text-xs shadow-xl backdrop-blur-md sm:bottom-8 sm:w-64 sm:space-y-2 sm:p-4">
               <div className="mb-2 flex justify-between border-b border-border/50 pb-2">
                 <span className="text-sm font-bold text-foreground">
@@ -121,7 +124,6 @@ export function SabtdarkhastFormSecondary({
                 </span>
               </div>
             </div>
-          )}
         </div>
         <div className="absolute left-3 top-3 flex flex-col gap-2 sm:left-4 sm:top-4">
           <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
@@ -133,6 +135,7 @@ export function SabtdarkhastFormSecondary({
           <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
             <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
+        )} */}
         </div>
       </motion.article>
     </>
