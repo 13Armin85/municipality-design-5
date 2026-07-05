@@ -1,5 +1,6 @@
 import {
   AlignLeft,
+  CircleHelp,
   FileText,
   KeyRound,
   Layout,
@@ -135,6 +136,7 @@ export const navItems = [
       },
     ],
   },
+  { id: "faq", label: "سوالات متداول", icon: CircleHelp },
   { id: "users", label: "مدیریت کاربران", icon: Users },
   {
     id: "settings-root",
@@ -145,6 +147,11 @@ export const navItems = [
         id: "settings",
         label: "تنظیمات عمومی",
         icon: Settings,
+      },
+      {
+        id: "site-content",
+        label: "محتوای سایت",
+        icon: Layout,
       },
       {
         id: "shahkar",
