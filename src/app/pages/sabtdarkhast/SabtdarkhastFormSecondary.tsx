@@ -3,8 +3,13 @@ import { ClipboardList, Home, Info, Minus, Plus } from "lucide-react";
 import type { PropertyRecord } from "../../data/properties";
 import type { RegisteredRequestRow } from "../Sabtdarkhastpage";
 import { HelpButton } from "./FormControls";
-import Map from "@/app/components/Map";
 
+import { useRef } from "react";
+//import Map from "@/app/components/Map";
+import Map from "../../components/Map";
+//import { MapHandle } from "@/app/components/Map/types";
+import { MapHandle } from "../../components/Map/types";
+  
 export function SabtdarkhastFormSecondary({
   activeProperty,
   requests,
@@ -18,6 +23,7 @@ export function SabtdarkhastFormSecondary({
   error: string;
   onOpenHelp?: (title: string, description: string) => void;
 }) {
+  const mapRef = useRef<MapHandle>(null);
   return (
     <>
       <motion.article
@@ -30,7 +36,7 @@ export function SabtdarkhastFormSecondary({
           <div className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold">درخواست های ثبت شده</h2>
-          </div>
+          </div>          
           {onOpenHelp && (
             <HelpButton
               title="درخواست های ثبت شده"
@@ -92,7 +98,7 @@ export function SabtdarkhastFormSecondary({
         )} */}
         {/* <div className="absolute inset-0 flex items-center justify-center bg-slate-800"> */}
         <div className="absolute inset-0 bg-slate-800">
-          <Map />
+          <Map ref={mapRef} />         
           {/* <img
             src="/map-placeholder.jpg"
             alt="Map"
@@ -123,10 +129,10 @@ export function SabtdarkhastFormSecondary({
                   {activeProperty.registration.map.area}
                 </span>
               </div>
-            </div>
+            </div>*/}
         </div>
         <div className="absolute left-3 top-3 flex flex-col gap-2 sm:left-4 sm:top-4">
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
+          {/* <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
             <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
           <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
@@ -134,8 +140,17 @@ export function SabtdarkhastFormSecondary({
           </button>
           <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
             <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button> */}
+          <button 
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+          >
+            <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
-        )} */}
+          <button 
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+          onClick={() => {mapRef.current?.selectMelkByCodeNosazi("1-404-21-64-0-0-0");}}>
+            <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
         </div>
       </motion.article>
     </>

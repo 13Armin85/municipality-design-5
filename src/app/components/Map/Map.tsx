@@ -1,28 +1,46 @@
-import { useEffect, useRef } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from "react";
 
-import { ArcGISMap } from "@/app/gis/ArcGISMap";
+//import { GISMap } from "@/app/gis/GISMap";
+import { GISMap } from "../../gis/GISMap";
+import { MapHandle } from "./types";
 
-export default function Map() {
+const Map = forwardRef<MapHandle>((props, ref) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const arcgisMap = useRef<GISMap | null>(null);
 
-    const mapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!mapRef.current) return;
 
-    useEffect(() => {
+    arcgisMap.current = new GISMap();
+    arcgisMap.current.initialize(mapRef.current);
 
-        if (!mapRef.current) return;
+    return () => {
+      arcgisMap.current?.destroy();
+    };
+  }, []);
 
-        const map = new ArcGISMap(mapRef.current);
+//   useImperativeHandle(ref, () => ({
+//     async findParcel(code: string) {
+//         console.log("Map.tsx ->", code);
+//         return await arcgisMap.current?.findParcel(code);
+//     },
+//   }));
+   useImperativeHandle(ref, () => ({
+        async selectMelkByCodeNosazi(code: string) {            
+            return await arcgisMap.current?.selectMelkByCodeNosazi(code);
+        },
 
-        return () => {
-            map.destroy();
-        };
+        async highlightMelkByCodeNosazi(codes: string[]) {
+            return await arcgisMap.current?.highlightMelkByCodeNosazi(codes);
+        },
+    }));
 
-    }, []);
+  return <div ref={mapRef} className="w-full h-full" />;
+});
 
-    return (
-        <div
-            ref={mapRef}
-            className="w-full h-full"
-        />
-    );
-
-}
+export default Map;
