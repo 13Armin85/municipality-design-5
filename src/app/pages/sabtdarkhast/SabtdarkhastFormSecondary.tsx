@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ClipboardList, Home, Info, Minus, Plus } from "lucide-react";
+import { ClipboardList, Delete, Home, Info, Minus, Plus, Trash2 } from "lucide-react";
 import type { PropertyRecord } from "../../data/properties";
 import type { RegisteredRequestRow } from "../Sabtdarkhastpage";
 import { HelpButton } from "./FormControls";
@@ -131,27 +131,25 @@ export function SabtdarkhastFormSecondary({
               </div>
             </div>*/}
         </div>
-        <div className="absolute left-3 top-3 flex flex-col gap-2 sm:left-4 sm:top-4">
+        <div className="absolute right-3 top-3 flex flex-col gap-2 sm:left-4 sm:top-4">
           {/* <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
             <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
-            <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </button>
+          
           <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
             <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </button> */}
-          <button 
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
-          >
-            <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </button>
+          </button> */}                   
           <button 
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
           onClick={() => {mapRef.current?.selectMelkByCodeNosazi("1-404-21-64-0-0-0");}}>
             <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
-        </div>
+          <button 
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/90 shadow-lg sm:h-9 sm:w-9 hover:bg-destructive transition-colors"
+          onClick={() => mapRef.current?.clearGraphics()}>
+            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>          
+        </div>       
       </motion.article>
     </>
   );

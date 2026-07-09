@@ -24,12 +24,6 @@ const Map = forwardRef<MapHandle>((props, ref) => {
     };
   }, []);
 
-//   useImperativeHandle(ref, () => ({
-//     async findParcel(code: string) {
-//         console.log("Map.tsx ->", code);
-//         return await arcgisMap.current?.findParcel(code);
-//     },
-//   }));
    useImperativeHandle(ref, () => ({
         async selectMelkByCodeNosazi(code: string) {            
             return await arcgisMap.current?.selectMelkByCodeNosazi(code);
@@ -38,6 +32,9 @@ const Map = forwardRef<MapHandle>((props, ref) => {
         async highlightMelkByCodeNosazi(codes: string[]) {
             return await arcgisMap.current?.highlightMelkByCodeNosazi(codes);
         },
+        clearGraphics(){
+            return arcgisMap.current?.clearGraphics();
+        }
     }));
 
   return <div ref={mapRef} className="w-full h-full" />;

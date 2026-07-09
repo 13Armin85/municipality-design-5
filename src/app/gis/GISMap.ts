@@ -199,12 +199,7 @@ export class GISMap {
   //       attributes: feature.attributes,
   //       geometry: feature.geometry
   //   };
-  // }
-
-  clear(){
-    this.view.closePopup();
-    this.graphicsLayer?.removeAll();
-  }
+  // }  
 
   private removeGraphics(
     geometryType: string,
@@ -536,6 +531,10 @@ export class GISMap {
     }
   }
 
+  public clearGraphics(){
+    this.view.closePopup();
+    this.graphicsLayer?.removeAll();
+  }
 
 
   destroy() {
