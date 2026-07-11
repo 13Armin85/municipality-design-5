@@ -24,6 +24,8 @@ export function SabtdarkhastFormSecondary({
   onOpenHelp?: (title: string, description: string) => void;
 }) {
   const mapRef = useRef<MapHandle>(null);
+  const fullCode: string = activeProperty?.fullCode ?? "";
+
   return (
     <>
       <motion.article
@@ -76,13 +78,13 @@ export function SabtdarkhastFormSecondary({
         </div>
       </motion.article>
 
+          {/* نقشه */}
       <motion.article
         initial={{ opacity: 0, scale: 0.98 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
-        className="soft-card mesh-panel group relative h-64 overflow-hidden sm:h-80 md:h-[400px]"
-      >
-        {/* {onOpenHelp && (
+        className="soft-card mesh-panel group relative h-64 overflow-hidden sm:h-80 md:h-[400px]">
+        {onOpenHelp && (
           <button
             type="button"
             onClick={() =>
@@ -95,15 +97,9 @@ export function SabtdarkhastFormSecondary({
           >
             <Info className="h-3.5 w-3.5" /> راهنما
           </button>
-        )} */}
-        {/* <div className="absolute inset-0 flex items-center justify-center bg-slate-800"> */}
+        )}       
         <div className="absolute inset-0 bg-slate-800">
-          <Map ref={mapRef} />         
-          {/* <img
-            src="/map-placeholder.jpg"
-            alt="Map"
-            className="h-full w-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
-          /> */}
+          <Map ref={mapRef} />                   
           {/* {activeProperty && (
             <div className="absolute bottom-4 left-1/2 w-56 -translate-x-1/2 space-y-1.5 rounded-2xl border border-border bg-card/95 p-3 text-xs shadow-xl backdrop-blur-md sm:bottom-8 sm:w-64 sm:space-y-2 sm:p-4">
               <div className="mb-2 flex justify-between border-b border-border/50 pb-2">
@@ -131,17 +127,10 @@ export function SabtdarkhastFormSecondary({
               </div>
             </div>*/}
         </div>
-        <div className="absolute right-3 top-3 flex flex-col gap-2 sm:left-4 sm:top-4">
-          {/* <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
-            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </button>
-          
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9">
-            <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </button> */}                   
+        <div className="absolute right-3 top-12 flex flex-col gap-2 sm:left-4 sm:top-12">             
           <button 
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
-          onClick={() => {mapRef.current?.selectMelkByCodeNosazi("1-404-21-64-0-0-0");}}>
+          onClick={() => {mapRef.current?.selectMelkByCodeNosazi(fullCode);}}>
             <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
           <button 
