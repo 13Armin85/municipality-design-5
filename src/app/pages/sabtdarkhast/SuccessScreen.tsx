@@ -20,12 +20,6 @@ export function SuccessScreen({ onReset }: { onReset: () => void }) {
         <h2 className="mb-2 text-xl font-bold text-foreground">
           درخواست با موفقیت ثبت شد
         </h2>
-        <p className="text-sm text-muted-foreground">
-          کد پیگیری:{" "}
-          <span className="font-bold text-primary">
-            REQ-{Math.floor(Math.random() * 90000) + 10000}
-          </span>
-        </p>
       </div>
       <button
         onClick={onReset}

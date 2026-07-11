@@ -2,6 +2,7 @@ import {
   AlignLeft,
   CircleHelp,
   FileText,
+  ImagePlus,
   KeyRound,
   Layout,
   LayoutDashboard,
@@ -152,6 +153,11 @@ export const navItems = [
         id: "site-content",
         label: "محتوای سایت",
         icon: Layout,
+      },
+      {
+        id: "sliders",
+        label: "تنظیمات اسلایدر",
+        icon: ImagePlus,
       },
       {
         id: "shahkar",

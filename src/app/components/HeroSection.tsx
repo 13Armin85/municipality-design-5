@@ -1,38 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft } from "lucide-react";
-
-const heroSlides = [
-  {
-    id: "slide-1",
-    imageSrc: "/images/shahrvandyar1.png",
-    alt: "Hero slide 1",
-    width: 1376,
-    height: 768,
-  },
-  {
-    id: "slide-2",
-    imageSrc: "/images/shahrvandyar2.png",
-    alt: "Hero slide 2",
-    width: 1774,
-    height: 887,
-  },
-  {
-    id: "slide-3",
-    imageSrc: "/images/shahrvandyar3.png",
-    alt: "Hero slide 3",
-    width: 1376,
-    height: 768,
-  },
-];
+import { fetchSliders, type SliderItem } from "../data/sliders";
 
 // استفاده از Set برای ذخیره عکس‌های preload شده
 const preloadedImages = new Set<string>();
 const requestedImages = new Set<string>();
 
 // Preload تمام تصاویر هنگام load کردن صفحه - فقط یک‌بار
-const preloadImages = () => {
-  heroSlides.forEach((slide) => {
+const preloadImages = (slides: HeroSlide[]) => {
+  slides.forEach((slide) => {
     // اگر قبلاً درخواست شده، دوباره نکن
     if (requestedImages.has(slide.imageSrc)) {
       return;
@@ -50,6 +27,20 @@ const preloadImages = () => {
     };
   });
 };
+
+type HeroSlide = {
+  id: string;
+  imageSrc: string;
+  alt: string;
+  width?: number;
+  height?: number;
+};
+
+const toHeroSlide = (item: SliderItem, index: number): HeroSlide => ({
+  id: item.id || `api-slide-${index}`,
+  imageSrc: item.imageUrl,
+  alt: `اسلاید ${index + 1}`,
+});
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -69,20 +60,37 @@ const slideVariants = {
 };
 
 export function HeroSection() {
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(true);
 
-  const currentSlide = heroSlides[activeSlide];
+  const currentSlide = heroSlides[activeSlide] ?? null;
 
-  // Preload images on mount
   useEffect(() => {
-    preloadImages();
+    const controller = new AbortController();
+
+    fetchSliders(controller.signal)
+      .then((items) => {
+        const activeSlides = items.map(toHeroSlide).filter((item) => item.imageSrc);
+        setHeroSlides(activeSlides);
+        setActiveSlide(0);
+      })
+      .catch(() => setHeroSlides([]));
+
+    return () => controller.abort();
   }, []);
 
-  // Auto-play slides
   useEffect(() => {
-    if (!isAutoPlay) return;
+    preloadImages(heroSlides);
+  }, [heroSlides]);
+
+  useEffect(() => {
+    if (activeSlide >= heroSlides.length) setActiveSlide(0);
+  }, [activeSlide, heroSlides.length]);
+
+  useEffect(() => {
+    if (!isAutoPlay || heroSlides.length < 2) return;
 
     const interval = setInterval(() => {
       setDirection(1);
@@ -90,7 +98,7 @@ export function HeroSection() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isAutoPlay]);
+  }, [heroSlides.length, isAutoPlay]);
 
   const goToSlide = useCallback(
     (index: number) => {
@@ -105,7 +113,7 @@ export function HeroSection() {
     setDirection(1);
     setActiveSlide((prev) => (prev + 1) % heroSlides.length);
     setIsAutoPlay(false);
-  }, []);
+  }, [heroSlides.length]);
 
   const goPrev = useCallback(() => {
     setDirection(-1);
@@ -113,7 +121,7 @@ export function HeroSection() {
       (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
     );
     setIsAutoPlay(false);
-  }, []);
+  }, [heroSlides.length]);
 
   return (
     <section
@@ -121,23 +129,24 @@ export function HeroSection() {
       className="relative px-3 pb-8 pt-24 sm:px-4 sm:pt-28 lg:px-6"
     >
       <div className="relative mx-auto aspect-[16/9] w-full max-w-[92rem] overflow-hidden rounded-[1.25rem] border border-white/25 bg-[#102620] sm:h-[clamp(18rem,52svh,40rem)] sm:aspect-auto sm:rounded-[1.5rem] lg:rounded-[1.75rem]">
-        <AnimatePresence initial={false} custom={direction} mode="wait">
-          <motion.article
-            key={currentSlide.id}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            className="absolute inset-0 overflow-hidden"
-          >
-            {heroSlides.map((slide, index) => (
+        {currentSlide ? (
+          <AnimatePresence initial={false} custom={direction} mode="wait">
+            <motion.article
+              key={currentSlide.id}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="absolute inset-0 overflow-hidden"
+            >
+              {heroSlides.map((slide, index) => (
               <img
                 key={slide.id}
                 src={slide.imageSrc}
                 alt={slide.alt}
-                width={slide.width}
-                height={slide.height}
+                width={slide.width ?? 1376}
+                height={slide.height ?? 768}
                 sizes="(max-width: 640px) 94vw, (max-width: 1024px) 92vw, 1280px"
                 className={`absolute inset-0 h-full w-full object-contain object-center transition-opacity duration-500 sm:object-cover ${
                   index === activeSlide ? "opacity-100" : "opacity-0"
@@ -151,13 +160,17 @@ export function HeroSection() {
                 }}
               />
             ))}
-            <div className="absolute inset-0 bg-black/20" />
-          </motion.article>
-        </AnimatePresence>
+              <div className="absolute inset-0 bg-black/20" />
+            </motion.article>
+          </AnimatePresence>
+        ) : (
+          <div className="absolute inset-0 bg-[#102620]" />
+        )}
 
         {/* ناوبری */}
         <div className="absolute inset-x-0 bottom-3 z-20 px-2 sm:bottom-6 sm:px-5 lg:px-6">
           <div className="mx-auto flex w-fit max-w-full items-center justify-center gap-1.5 rounded-2xl border border-white/30 bg-white/10 px-2.5 py-1.5 backdrop-blur-sm sm:gap-3 sm:px-4 sm:py-3">
+            {heroSlides.length > 1 && (
             <button
               type="button"
               aria-label="Previous slide"
@@ -166,6 +179,7 @@ export function HeroSection() {
             >
               <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
+            )}
 
             <div className="flex items-center gap-1.5 sm:gap-2">
               {heroSlides.map((slide, index) => (
@@ -183,6 +197,7 @@ export function HeroSection() {
               ))}
             </div>
 
+            {heroSlides.length > 1 && (
             <button
               type="button"
               aria-label="Next slide"
@@ -191,6 +206,7 @@ export function HeroSection() {
             >
               <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
+            )}
           </div>
         </div>
       </div>

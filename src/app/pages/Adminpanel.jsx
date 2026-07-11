@@ -26,6 +26,7 @@ import {
   SettingsPage,
   SiteContentPage,
 } from "./adminpanel/AdminSettingsPage";
+import { AdminSlidersPage } from "./adminpanel/AdminSlidersPage";
 import { UserManagement } from "./adminpanel/UserManagement";
 import { navItems } from "./adminpanel/adminData";
 import {
@@ -75,6 +76,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
     users: <UserManagement />,
     settings: <SettingsPage />,
     "site-content": <SiteContentPage />,
+    sliders: <AdminSlidersPage />,
   };
 
   const findNavLabel = (items, pageId) => {

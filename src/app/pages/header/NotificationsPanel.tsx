@@ -5,7 +5,9 @@ import { RefObject } from "react";
 interface Notification {
   id: string;
   title: string;
+  description?: string;
   time: string;
+  isRead?: boolean;
 }
 
 interface NotificationsPanelProps {
@@ -67,14 +69,19 @@ export function NotificationsPanel({
                 isMobile ? "max-h-[56vh]" : "max-h-72"
               }`}
             >
-              {notifications.map((item) => {
-                const isUnread = !readNotificationIds.includes(item.id);
+              {notifications.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-background/60 px-4 py-8 text-center text-sm text-muted-foreground">
+                  اعلانی برای نمایش وجود ندارد.
+                </div>
+              ) : notifications.map((item) => {
+                const isUnread =
+                  !item.isRead && !readNotificationIds.includes(item.id);
                 return (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => {
-                      onMarkAsRead(item.id);
+                      void onMarkAsRead(item.id);
                       onClose();
                     }}
                     className={`w-full rounded-xl px-3 py-3 text-right mb-[5px] transition-colors hover:bg-[var(--primary-soft)] ${
@@ -87,6 +94,11 @@ export function NotificationsPanel({
                         <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
                       )}
                     </div>
+                    {item.description ? (
+                      <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
+                        {item.description}
+                      </p>
+                    ) : null}
                     <p className="text-xs text-muted-foreground">{item.time}</p>
                   </button>
                 );

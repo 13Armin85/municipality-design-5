@@ -28,6 +28,11 @@ import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
 import { useAuthModal } from "./AuthContext";
 import { dotNet10ApiFetch } from "../data/api";
+import {
+  fetchNotifications,
+  markNotificationRead,
+  type NotificationItem,
+} from "../data/notifications";
 import { serviceItems } from "../data/services";
 import {
   fetchHeaderInformation,
@@ -110,20 +115,6 @@ const menuItems = [
   { title: "سوالات متداول", href: "#faq" },
   { title: "پشتیبانی", href: "#support" },
 ] satisfies HeaderMenuItem[];
-
-const notifications = [
-  {
-    id: "n1",
-    title: "وضعیت پرونده PR-22318 به‌روزرسانی شد",
-    time: "5 دقیقه پیش",
-  },
-  {
-    id: "n2",
-    title: "قبض عوارض نوسازی شما آماده پرداخت است",
-    time: "1 ساعت پیش",
-  },
-  { id: "n3", title: "پاسخ تیکت #TK-1082 ثبت شد", time: "امروز، 10:15" },
-];
 
 const defaultHeaderTitle = "شهرداری مراغه";
 const defaultLogoSrc = "/images/Amard Logo 01.JPG";
@@ -228,6 +219,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [scrolled, setScrolled] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState(menuItems[0].href);
@@ -289,7 +281,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   } = useAuthModal();
 
   const unreadCount = notifications.filter(
-    (item) => !readNotificationIds.includes(item.id),
+    (item) => !item.isRead && !readNotificationIds.includes(item.id),
   ).length;
   const headerLogoSrc = resolveInformationImageSrc(
     siteHeader.logo,
@@ -325,15 +317,51 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      setReadNotificationIds([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    fetchNotifications(controller.signal)
+      .then(setNotifications)
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, [isAuthenticated]);
+
   // ─── Notification handlers ───────────────────────────────────────────────
 
-  const markNotificationAsRead = (id: string) =>
+  const markNotificationAsRead = async (id: string) => {
     setReadNotificationIds((prev) =>
       prev.includes(id) ? prev : [...prev, id],
     );
+    setNotifications((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, isRead: true } : item)),
+    );
 
-  const markAllNotificationsAsRead = () =>
+    try {
+      await markNotificationRead(id);
+    } catch {
+      fetchNotifications()
+        .then(setNotifications)
+        .catch(() => undefined);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    const unreadIds = notifications
+      .filter((item) => !item.isRead && !readNotificationIds.includes(item.id))
+      .map((item) => item.id);
+
     setReadNotificationIds(notifications.map((item) => item.id));
+    setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+
+    await Promise.allSettled(unreadIds.map((id) => markNotificationRead(id)));
+  };
 
   // ─── Login handlers ──────────────────────────────────────────────────────
 

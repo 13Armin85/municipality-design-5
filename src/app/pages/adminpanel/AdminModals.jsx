@@ -43,6 +43,9 @@ const cleanUserForm = (form) => ({
   nationalCode: onlyDigits(form.nationalCode),
   phoneNumber: onlyDigits(form.phoneNumber),
   roleId: form.roleId.trim(),
+  email: form.email.trim(),
+  address: form.address.trim(),
+  birthDay: form.birthDay.trim(),
 });
 
 function Field({
@@ -55,6 +58,7 @@ function Field({
   dir,
   inputMode,
   maxLength,
+  required = true,
   normalizeValue = (value) => value,
 }) {
   return (
@@ -63,7 +67,7 @@ function Field({
         {label}
       </label>
       <input
-        required
+        required={required}
         name={name}
         type={type}
         dir={dir}
@@ -78,6 +82,27 @@ function Field({
           }))
         }
         className={inputClassName}
+      />
+    </div>
+  );
+}
+
+function FileField({ label, name, setForm }) {
+  return (
+    <div className="space-y-1">
+      <label className="text-[11px] font-medium text-muted-foreground">
+        {label}
+      </label>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(event) =>
+          setForm((current) => ({
+            ...current,
+            [name]: event.target.files?.[0] ?? null,
+          }))
+        }
+        className={`${inputClassName} h-fit file:ml-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground`}
       />
     </div>
   );
@@ -352,6 +377,10 @@ export function AddUserModal({
     password: "",
     repeatPassword: "",
     roleId: "",
+    email: "",
+    address: "",
+    picture: null,
+    birthDay: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -450,6 +479,36 @@ export function AddUserModal({
             onReloadRoles={onReloadRoles}
           />
           <Field
+            label="ایمیل"
+            name="email"
+            type="email"
+            form={form}
+            setForm={setForm}
+            dir="ltr"
+            required={false}
+          />
+          <Field
+            label="تاریخ تولد"
+            name="birthDay"
+            form={form}
+            setForm={setForm}
+            placeholder="1400/01/01"
+            dir="ltr"
+            required={false}
+          />
+          <div className="sm:col-span-2">
+            <Field
+              label="آدرس"
+              name="address"
+              form={form}
+              setForm={setForm}
+              required={false}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <FileField label="تصویر کاربر" name="picture" setForm={setForm} />
+          </div>
+          <Field
             label="رمز عبور"
             name="password"
             type="password"
@@ -500,6 +559,10 @@ export function EditUserModal({
     nationalCode: user.nationalCode,
     phoneNumber: user.phoneNumber,
     roleId: user.roleId,
+    email: user.email || "",
+    address: user.address || "",
+    picture: null,
+    birthDay: user.birthDay || "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -585,6 +648,36 @@ export function EditUserModal({
             rolesError={rolesError}
             onReloadRoles={onReloadRoles}
           />
+          <Field
+            label="ایمیل"
+            name="email"
+            type="email"
+            form={form}
+            setForm={setForm}
+            dir="ltr"
+            required={false}
+          />
+          <Field
+            label="تاریخ تولد"
+            name="birthDay"
+            form={form}
+            setForm={setForm}
+            placeholder="1400/01/01"
+            dir="ltr"
+            required={false}
+          />
+          <div className="sm:col-span-2">
+            <Field
+              label="آدرس"
+              name="address"
+              form={form}
+              setForm={setForm}
+              required={false}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <FileField label="تصویر کاربر" name="picture" setForm={setForm} />
+          </div>
         </div>
         {error && <p className="text-xs text-destructive">{error}</p>}
         <div className="flex gap-2 pt-2">
