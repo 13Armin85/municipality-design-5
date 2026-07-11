@@ -34,7 +34,17 @@ const Map = forwardRef<MapHandle>((props, ref) => {
         },
         clearGraphics(){
             return arcgisMap.current?.clearGraphics();
+        },
+        goHome(){
+          return arcgisMap.current?.goHome();
+        },
+        zoomIn(){
+          return arcgisMap.current?.zoomIn();
+        },
+        zoomOut(){
+          return arcgisMap.current?.zoomOut();
         }
+
     }));
 
   return <div ref={mapRef} className="w-full h-full" />;

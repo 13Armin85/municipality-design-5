@@ -12,6 +12,7 @@ import ImageryLayer from "@arcgis/core/layers/ImageryLayer.js";
 //import VectorTileLayer from "@arcgis/core/layers/VectorTileLayer.js";
 import LayerView from "@arcgis/core/views/layers/FeatureLayerView";
 //import Handle from "@arcgis/core/core/Handles";
+import Viewpoint from "@arcgis/core/Viewpoint";
 
 import { ownerService } from "../services/OwnerService";
 
@@ -27,6 +28,7 @@ export class GISMap {
   private highlightHandle: __esri.Handle | null = null;
   private customSatelliteBasemap!: Basemap;
   private basemapToggle!: BasemapToggle;
+  private homeViewpoint: Viewpoint | null = null;
 
   // private parcelService!: ParcelService;
   private readonly cNosaziField = "Code_nosazi";
@@ -89,7 +91,7 @@ export class GISMap {
               }
           }
       }
-  };
+  };  
 
   async initialize(container: HTMLDivElement) {
    this.melkLayer = new FeatureLayer({
@@ -158,9 +160,14 @@ export class GISMap {
       this.view.constraints = {
         geometry: extent,
         minZoom: 14,
+        maxZoom: 22,
         rotationEnabled: false,
       };
     }
+    
+    this.homeViewpoint = new Viewpoint({
+      targetGeometry: extent.clone()
+    });
 
     this.home = new Home({
       view: this.view,
@@ -168,7 +175,8 @@ export class GISMap {
           targetGeometry: extent
       }
     });
-    this.view.ui.add(this.home, "top-left");
+    //this.view.ui.add(this.home, "top-left");
+    this.view.ui.remove("zoom");
 
     this.basemapToggle = new BasemapToggle({
       view: this.view,
@@ -428,11 +436,11 @@ export class GISMap {
           );
 
           const rows = [
-              { label: "کد نوسازی", value: cNosazi || null },
-              { label: "نام مالک", value: nameMalek || null },
+              { label: "کد نوسازی", value: cNosazi || "نامشخص" },
+              { label: "نام مالک", value: nameMalek || "نامشخص" },
               {
                   label: "مساحت",
-                   value: area != null ? Number(area).toFixed(2) : null,
+                   value: area != null ? Number(area).toFixed(2) : "نامشخص",
               }
           ];
 
@@ -515,6 +523,40 @@ export class GISMap {
   public clearGraphics(){
     this.view.closePopup();
     this.graphicsLayer?.removeAll();
+  }
+
+  public goHome() {
+    if (!this.homeViewpoint) return;
+
+    this.view.goTo(this.homeViewpoint, {
+      duration: 1000
+    });
+  }
+
+  public zoomIn() {
+    if (!this.view) return;
+
+    const maxZoom = this.view.constraints.maxZoom ?? 0;
+    if (this.view.zoom >= maxZoom) {
+      return;
+    }
+
+    this.view.goTo({
+      zoom: this.view.zoom + 1,
+    });
+  }
+
+  public zoomOut() {
+    if (!this.view) return;
+
+    const minZoom = this.view.constraints.minZoom ?? 0;
+    if (this.view.zoom <= minZoom) {
+        return;
+      }
+      
+    this.view.goTo({
+      zoom: this.view.zoom - 1,
+    });
   }
 
 

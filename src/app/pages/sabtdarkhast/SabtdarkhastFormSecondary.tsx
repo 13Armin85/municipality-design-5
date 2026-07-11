@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ClipboardList, Delete, Home, Info, Minus, Plus, Trash2 } from "lucide-react";
+import { ClipboardList, Home, Info, Minus, Plus, Trash2, MapPinHouse } from "lucide-react";
 import type { PropertyRecord } from "../../data/properties";
 import type { RegisteredRequestRow } from "../Sabtdarkhastpage";
 import { HelpButton } from "./FormControls";
@@ -127,11 +127,29 @@ export function SabtdarkhastFormSecondary({
               </div>
             </div>*/}
         </div>
-        <div className="absolute right-3 top-12 flex flex-col gap-2 sm:left-4 sm:top-12">             
+         <div className="absolute left-3 top-2 flex flex-col gap-2">
+          <button 
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+            onClick={() => mapRef.current?.zoomIn()}>
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
+          <button 
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+            onClick={() => mapRef.current?.zoomOut()}>
+              <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
+          <button 
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+            onClick={() => mapRef.current?.goHome()}>
+              <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
+        </div>
+        <div className="absolute right-3 top-12 flex flex-col gap-2">
+        {/*<div className="absolute right-3 top-12 flex flex-col gap-2 sm:left-4 sm:top-12">*/}
           <button 
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
           onClick={() => {mapRef.current?.selectMelkByCodeNosazi(fullCode);}}>
-            <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <MapPinHouse className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
           <button 
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/90 shadow-lg sm:h-9 sm:w-9 hover:bg-destructive transition-colors"
