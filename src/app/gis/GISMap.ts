@@ -14,6 +14,7 @@ import LayerView from "@arcgis/core/views/layers/FeatureLayerView";
 //import Handle from "@arcgis/core/core/Handles";
 import Viewpoint from "@arcgis/core/Viewpoint";
 
+
 import { ownerService } from "../services/OwnerService";
 
 export class GISMap {
@@ -27,6 +28,7 @@ export class GISMap {
   //private highlightHandle: IHandle | null = null;
   private highlightHandle: __esri.Handle | null = null;
   private customSatelliteBasemap!: Basemap;
+  private defaultBasemap!: Basemap;
   private basemapToggle!: BasemapToggle;
   private homeViewpoint: Viewpoint | null = null;
 
@@ -117,6 +119,7 @@ export class GISMap {
       basemap: "osm",
       layers: [this.melkLayer, this.graphicsLayer ],
     });
+    this.defaultBasemap = this.map.basemap;
 
     this.view = new MapView({
       container,
@@ -182,7 +185,7 @@ export class GISMap {
       view: this.view,
       nextBasemap: this.customSatelliteBasemap,
     });
-    this.view.ui.add(this.basemapToggle, "bottom-right");
+    //this.view.ui.add(this.basemapToggle, "bottom-right");
 
     this.registerEvents();
   }
@@ -558,6 +561,13 @@ export class GISMap {
       zoom: this.view.zoom - 1,
     });
   }
+
+  public toggleBasemap() {
+  this.map.basemap =
+    this.map.basemap === this.customSatelliteBasemap
+      ? this.defaultBasemap
+      : this.customSatelliteBasemap;
+}
 
 
   destroy() {

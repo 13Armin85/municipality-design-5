@@ -43,8 +43,10 @@ const Map = forwardRef<MapHandle>((props, ref) => {
         },
         zoomOut(){
           return arcgisMap.current?.zoomOut();
+        },
+        toggleBasemap(){
+          return arcgisMap.current?.toggleBasemap();
         }
-
     }));
 
   return <div ref={mapRef} className="w-full h-full" />;

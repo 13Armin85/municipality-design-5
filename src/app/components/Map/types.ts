@@ -6,4 +6,5 @@ export interface MapHandle {
     goHome(): void;
     zoomIn(): void;
     zoomOut(): void;
+    toggleBasemap(): void;
 }
