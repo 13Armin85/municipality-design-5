@@ -13,7 +13,7 @@ import ImageryLayer from "@arcgis/core/layers/ImageryLayer.js";
 import LayerView from "@arcgis/core/views/layers/FeatureLayerView";
 //import Handle from "@arcgis/core/core/Handles";
 
-//import { ParcelService } from "./ParcelService";
+import { ownerService } from "../services/OwnerService";
 
 export class GISMap {
   private map!: EsriMap;
@@ -413,45 +413,26 @@ export class GISMap {
           this.removeGraphics(geoMelk.type, "select");
           this.addManagedGraphic(geoMelk, "select", attMelk);
 
-          // 4. Get Name Malk from Shahrsazi
-          //let nameMalek = null;
-          let nameMalek = "Test";
-          var cNosazi = attMelk[this.cNosaziField];
-
-          // // Construct the URL with the query parameter
-          // const apiUrl = `../Request/MyProperty/GetDataForLayer?codN=${encodeURIComponent(cNosazi)}`;
-
-          // const response = await fetch(apiUrl, {
-          //     method: 'GET', // Explicitly GET as per your controller
-          //     credentials: 'same-origin', // As you had it
-          // });
-
-          // // Check if the request was successful
-          // if (!response.ok) {
-          //     // If response is not ok (e.g., 404, 500), throw an error
-          //     console.warn(`HTTP error! status: ${response.status}`);
-          // }
-
-          // // Parse the JSON response from the server
-          // const result = await response.json();
-
-          // // Display the nameFamily from the result
-          // // The controller returns { success: true, nameFamily: "..." }
-          // if (result.success && result.nameFamily) {
-          //     nameMalek = result.nameFamily;
-          // } else {
-          //     console.warn("اطلاعات مالک یافت نشد یا مشکلی در دریافت اطلاعات وجود داشت.");
-          // }
-          // --- End of new fetch call integration ---
+          // 4. Get Name Malk from Shahrsazi                    
+          var cNosazi = attMelk[this.cNosaziField];          
+          const nameMalek = await ownerService.getOwnerName(cNosazi);
+          const area = this.firstValue(
+            attMelk["SHAPE.STArea()"],
+            attMelk["Shape.STArea()"],
+            attMelk["SHAPE_Area"],
+            attMelk["Shape_Area"],
+            attMelk["Shape__Area"],
+            attMelk["AREA"],
+            attMelk["Area"],
+            attMelk["area"],
+          );
 
           const rows = [
-              { label: "کد نوسازی", value: attMelk[this.cNosaziField] || null },
+              { label: "کد نوسازی", value: cNosazi || null },
               { label: "نام مالک", value: nameMalek || null },
               {
                   label: "مساحت",
-                  value: attMelk["SHAPE.STArea()"] != null
-                      ? Number(attMelk["SHAPE.STArea()"]).toFixed(2)
-                      : null
+                   value: area != null ? Number(area).toFixed(2) : null,
               }
           ];
 
@@ -466,21 +447,21 @@ export class GISMap {
           });
 
           // 6. Export Data
-          // if (cNosazi) {
-          //     var splitCodeNosazi = cNosazi.split("-");
-          //     $("#txtMantaghe").val(splitCodeNosazi[0]);
-          //     $("#txtHoze").val(splitCodeNosazi[1]);
-          //     $("#txtBlok").val(splitCodeNosazi[2]);
-          //     $("#txtMelk").val(splitCodeNosazi[3]);
-          //     $("#txtSakh").val(splitCodeNosazi[4]);
-          //     $("#txtApar").val(splitCodeNosazi[5]);
-          //     $("#txtSenfi").val(splitCodeNosazi[6].trim());
-          //     localStorage.setItem("CodeNosazi", cNosazi);
-          // }
+          
       } catch (err) {
           console.error(`${err}`, "error");
       }
   }
+
+  private firstValue = (...values: unknown[]) => {
+    for (const value of values) {
+      if (value !== null && value !== undefined && value !== "") {
+        return value;
+      }
+    }
+
+    return null;
+  };
 
   public async selectMelkByCodeNosazi(cNosazi:any){
     try {
