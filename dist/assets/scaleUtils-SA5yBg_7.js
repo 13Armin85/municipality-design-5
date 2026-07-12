@@ -1,1 +1,0 @@
-import{b8 as o,b9 as u,ba as c}from"./Map-BQV1nhx9.js";const e=96;function b(n,t){const r=n.extent,i=n.width,a=o(r==null?void 0:r.spatialReference);return r&&i?r.width/i*a*u*e:0}function d(n,t){return n/(o(t)*u*e)}function h(n,t,r){return f(n,t)&&s(n,r)}function f(n,t){return t===0||c(n,t)||n<t}function s(n,t){return t===0||c(n,t)||n>t}export{h as d,b as i,d as o};
