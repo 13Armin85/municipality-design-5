@@ -1045,10 +1045,45 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 </div>*/}
             </div>
             <div className="absolute left-3 top-2 flex flex-col gap-2">
-             
+              <button 
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.zoomIn()}
+                title="بزرگ‌نمایی">
+                  <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button 
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.zoomOut()}
+                title="کوچک‌نمایی">
+                  <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button 
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.goHome()}
+                title="بازگشت به نمای اصلی">
+                  <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button          
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.toggleBasemap()}
+                title="تغییر نقشه زمینه">
+                <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4"/>
+              </button>
             </div>
             <div className="absolute right-3 top-12 flex flex-col gap-2">
             {/*<div className="absolute right-3 top-12 flex flex-col gap-2 sm:left-4 sm:top-12">*/}
+              <button 
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+              onClick={() => {mapRef.current?.selectMelkByCodeNosazi(fullCode);}}
+              title="موقعیت من">
+                <MapPinHouse className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button 
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/90 shadow-lg sm:h-9 sm:w-9 hover:bg-destructive transition-colors"
+              onClick={() => mapRef.current?.clearGraphics()}
+              title="پاک کردن انتخاب">
+                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>          
             </div>       
           </motion.article>                          
         </div>
