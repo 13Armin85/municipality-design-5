@@ -1,0 +1,1 @@
+function l(t){return t&&typeof t.highlight=="function"}function n(t,u,c){return t==null||t>=c&&(u===0||t<=u)}function e(t,u){if(u&&t){const{minScale:c,maxScale:i}=t;if(r(c,i))return n(u,c,i)}return!0}function r(t,u){return t!=null&&t>0||u!=null&&u>0}function a(t){return!(t!=null&&t.minScale)||!t.maxScale||t.minScale>=t.maxScale}export{e as c,a as i,l as n};

@@ -5,7 +5,7 @@ import {
   ImagePlus,
   KeyRound,
   Layout,
-  LayoutDashboard,
+  // LayoutDashboard,
   Newspaper,
   Send,
   Settings,
@@ -119,7 +119,7 @@ export const settingsTabs = [
 ];
 
 export const navItems = [
-  { id: "dashboard", label: "داشبورد", icon: LayoutDashboard },
+  // { id: "dashboard", label: "داشبورد", icon: LayoutDashboard },
   {
     id: "news-root",
     label: "خبر",

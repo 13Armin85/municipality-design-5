@@ -1,12 +1,16 @@
 import { FormEvent, useEffect, useState } from "react";
-import { KeyRound, RefreshCw, UserCircle2, X } from "lucide-react";
+import { CalendarDays, KeyRound, RefreshCw, UserCircle2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { apiFetch } from "../../data/api";
+import { dotNet10ApiFetch } from "../../data/api";
+import { AUTH_TOKEN_KEY } from "../../utils/authStorage";
+import {
+  getCurrentJalaliDateString,
+  PersianDatePicker,
+} from "../sabtdarkhast/PersianDatePicker";
 
-const REGISTER_ENDPOINT = "/api/auth/register";
-const DEFAULT_REGISTER_ROLE = "User";
+const REGISTER_ENDPOINT = "/api/auth";
 const MODAL_PANEL_CLASS =
-  "fixed inset-x-2 top-[calc(env(safe-area-inset-top)_+_4.75rem)] z-[90] mx-auto flex max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_env(safe-area-inset-bottom)_-_5.75rem)] w-[calc(100vw_-_1rem)] max-w-md flex-col overflow-y-auto overscroll-contain rounded-2xl border border-border/70 bg-card/95 p-4 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl sm:inset-x-4 sm:top-[calc(env(safe-area-inset-top)_+_5.25rem)] sm:max-h-none sm:w-[calc(100vw_-_2rem)] sm:overflow-visible sm:rounded-3xl sm:p-6";
+  "fixed inset-x-2 bottom-[max(.5rem,env(safe-area-inset-bottom))] top-[max(.5rem,env(safe-area-inset-top))] z-[90] mx-auto flex w-[calc(100vw_-_1rem)] flex-col overflow-y-auto overscroll-contain rounded-2xl border border-border/70 bg-card/95 p-3 shadow-[0_30px_80px_rgba(6,31,27,0.32)] backdrop-blur-xl sm:inset-x-4 sm:bottom-auto sm:top-[max(1rem,env(safe-area-inset-top))] sm:max-h-[calc(100dvh_-_2rem)] sm:w-[calc(100vw_-_2rem)] sm:rounded-3xl sm:p-5 lg:p-6";
 
 const extractRegisterError = (data: any) => {
   if (!data) return "";
@@ -75,6 +79,9 @@ export function LoginModal({
   const [regEmail, setRegEmail] = useState("");
   const [regFirstName, setRegFirstName] = useState("");
   const [regLastName, setRegLastName] = useState("");
+  const [regAddress, setRegAddress] = useState("");
+  const [regBirthDay, setRegBirthDay] = useState(getCurrentJalaliDateString);
+  const [isBirthDateOpen, setIsBirthDateOpen] = useState(false);
   const [regPassword, setRegPassword] = useState("");
   const [regConfirmPassword, setRegConfirmPassword] = useState("");
   const [regError, setRegError] = useState("");
@@ -108,7 +115,7 @@ export function LoginModal({
             initial={{ opacity: 0, y: -10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            className={MODAL_PANEL_CLASS}
+            className={`${MODAL_PANEL_CLASS} ${isRegistering ? "max-w-2xl" : "max-w-md"}`}
           >
             <div className="mb-4 flex shrink-0 items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -311,6 +318,10 @@ export function LoginModal({
                     setRegError("نام و نام خانوادگی را وارد کنید.");
                     return;
                   }
+                  if (!/^\d{4}\/\d{2}\/\d{2}$/.test(regBirthDay)) {
+                    setRegError("تاریخ تولد شمسی را انتخاب کنید.");
+                    return;
+                  }
                   if (regPassword.length < 8) {
                     setRegError("رمز عبور باید حداقل ۸ کاراکتر باشد.");
                     return;
@@ -324,26 +335,39 @@ export function LoginModal({
                   try {
                     const registerUsername = regUsername.trim();
                     const registerPassword = regPassword;
-                    const response = await apiFetch(REGISTER_ENDPOINT, {
+                    const authToken = localStorage
+                      .getItem(AUTH_TOKEN_KEY)
+                      ?.replace(/^Bearer\s+/i, "");
+                    const response = await dotNet10ApiFetch(REGISTER_ENDPOINT, {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
-                        Accept: "application/json",
+                        Accept: "*/*",
+                        ...(authToken
+                          ? { Authorization: `Bearer ${authToken}` }
+                          : {}),
                       },
                       body: JSON.stringify({
-                        Name: regFirstName.trim(),
-                        Family: regLastName.trim(),
-                        NationalCode: regNationalCode.trim(),
-                        PhoneNumber: regPhone.trim(),
-                        Email: regEmail.trim(),
-                        UserName: registerUsername,
-                        Password: registerPassword,
-                        RepeatPassword: regConfirmPassword,
-                        Roles: [DEFAULT_REGISTER_ROLE],
+                        name: regFirstName.trim(),
+                        family: regLastName.trim(),
+                        userName: registerUsername,
+                        nationalCode: regNationalCode.trim(),
+                        phoneNumber: regPhone.trim(),
+                        password: registerPassword,
+                        repeatPassword: regConfirmPassword,
+                        email: regEmail.trim(),
+                        address: regAddress.trim(),
+                        birthDay: regBirthDay,
                       }),
                     });
 
-                    if (response.ok) {
+                    const data = await response.json().catch(() => null);
+                    const registrationSucceeded =
+                      response.ok &&
+                      data?.isSuccess !== false &&
+                      data?.isFailure !== true;
+
+                    if (registrationSucceeded) {
                       setRegSuccess(
                         "ثبت نام با موفقیت انجام شد. لطفا وارد شوید.",
                       );
@@ -355,14 +379,17 @@ export function LoginModal({
                       setRegEmail("");
                       setRegFirstName("");
                       setRegLastName("");
+                      setRegAddress("");
+                      setRegBirthDay(getCurrentJalaliDateString());
                       setRegPassword("");
                       setRegConfirmPassword("");
                       setIsRegistering(false);
                     } else {
-                      const data = await response.json().catch(() => null);
                       setRegError(
                         extractRegisterError(data) ||
-                          "خطا در ثبت نام. لطفا مجددا تلاش کنید.",
+                          (response.status === 401
+                            ? "مجوز ثبت‌نام معتبر نیست. لطفاً با حساب مدیر وارد شوید یا تنظیمات دسترسی API را بررسی کنید."
+                            : "خطا در ثبت نام. لطفا مجددا تلاش کنید."),
                       );
                     }
                   } catch (err) {
@@ -371,7 +398,7 @@ export function LoginModal({
                     setRegLoading(false);
                   }
                 }}
-                className="space-y-3"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
               >
                 <div className="space-y-1">
                   <label className="pr-1 text-[11px] font-medium text-muted-foreground">
@@ -426,7 +453,7 @@ export function LoginModal({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 sm:col-span-2">
                   <div className="space-y-1">
                     <label className="pr-1 text-[11px] font-medium text-muted-foreground">
                       نام
@@ -449,6 +476,46 @@ export function LoginModal({
                       className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="pr-1 text-[11px] font-medium text-muted-foreground">
+                    آدرس
+                  </label>
+                  <input
+                    value={regAddress}
+                    onChange={(e) => setRegAddress(e.target.value)}
+                    placeholder="نشانی محل سکونت"
+                    disabled={regLoading}
+                    className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                  />
+                </div>
+
+                <div className="relative space-y-1 sm:col-span-2">
+                  <label className="pr-1 text-[11px] font-medium text-muted-foreground">
+                    تاریخ تولد
+                  </label>
+                  <button
+                    type="button"
+                    dir="ltr"
+                    onClick={() => setIsBirthDateOpen((open) => !open)}
+                    disabled={regLoading}
+                    className="flex w-full items-center justify-between rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+                  >
+                    <span>{regBirthDay}</span>
+                    <CalendarDays className="h-4 w-4 text-primary" />
+                  </button>
+                  <AnimatePresence>
+                    {isBirthDateOpen && (
+                      <div className="relative z-20 pt-1 sm:absolute sm:inset-x-0 sm:top-full">
+                        <PersianDatePicker
+                          value={regBirthDay}
+                          onChange={setRegBirthDay}
+                          onClose={() => setIsBirthDateOpen(false)}
+                        />
+                      </div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <div className="space-y-1">
@@ -479,13 +546,13 @@ export function LoginModal({
                 </div>
 
                 {regError ? (
-                  <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive sm:col-span-2">
                     {regError}
                   </p>
                 ) : null}
 
                 {regSuccess ? (
-                  <p className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
+                  <p className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success sm:col-span-2">
                     {regSuccess}
                   </p>
                 ) : null}
@@ -493,7 +560,7 @@ export function LoginModal({
                 <button
                   type="submit"
                   disabled={regLoading}
-                  className="btn-gradient flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:opacity-60"
+                  className="btn-gradient flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:opacity-60 sm:col-span-2"
                 >
                   {regLoading ? (
                     <>
@@ -514,7 +581,6 @@ export function LoginModal({
             ) : null}
 
             <div className="mt-3 text-center text-[13px]">
-              {/*
               {!isRegistering ? (
                 <button
                   type="button"
@@ -536,7 +602,6 @@ export function LoginModal({
                   بازگشت به ورود
                 </button>
               )}
-              */}
             </div>
           </motion.section>
         </>

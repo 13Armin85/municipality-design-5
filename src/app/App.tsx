@@ -5,10 +5,10 @@ import { Header } from "./components/Header";
 import { HeroSection } from "./components/HeroSection";
 import { ServicesSection } from "./components/ServicesSection";
 import { NewsSection } from "./components/NewsSection";
-import { StatsSection } from "./components/StatsSection";
+// import { StatsSection } from "./components/StatsSection";
 import { QuickAccessSection } from "./components/QuickAccessSection";
 import { RecentActivitiesSection } from "./components/RecentActivitiesSection";
-import { SupportSection } from "./components/SupportSection";
+// import { SupportSection } from "./components/SupportSection";
 import { FaqSection } from "./components/FaqSection";
 import { Footer } from "./components/Footer";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -23,10 +23,14 @@ function HomePageContent() {
       <HeroSection />
       {isAuthenticated && <ServicesSection />}
       {isAuthenticated && <RecentActivitiesSection />}
+      {/* بخش آمار و ارقام موقتاً غیرفعال شده است.
       <StatsSection />
+      */}
       <NewsSection />
       <FaqSection />
+      {/* بخش پشتیبانی و ثبت تیکت موقتاً غیرفعال شده است.
       {isAuthenticated && <SupportSection />}
+      */}
       <QuickAccessSection />
     </>
   );
