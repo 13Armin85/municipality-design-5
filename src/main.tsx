@@ -7,11 +7,24 @@ import { installRequestFetchCache } from "./app/utils/requestCache";
 import "./styles/index.css";
 import "@arcgis/core/assets/esri/themes/light/main.css";
 
+const normalizeRouterBasename = (value?: string) => {
+  const trimmedValue = value?.trim();
+  if (!trimmedValue || trimmedValue === "/" || trimmedValue === "./") {
+    return undefined;
+  }
+
+  return `/${trimmedValue.replace(/^\/+|\/+$/g, "")}`;
+};
+
+const routerBasename =
+  normalizeRouterBasename(import.meta.env.VITE_ROUTER_BASENAME) ??
+  normalizeRouterBasename(import.meta.env.BASE_URL);
+
 installRequestFetchCache();
 registerSW({ immediate: true });
 
 createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
+  <BrowserRouter basename={routerBasename}>
     <AuthProvider>
       <App />
     </AuthProvider>

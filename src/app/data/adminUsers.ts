@@ -1,4 +1,5 @@
 import { dotNet10ApiFetch } from "./api";
+import { AUTH_TOKEN_KEY } from "../utils/authStorage";
 
 export interface AdminUser {
   id: string;
@@ -10,6 +11,10 @@ export interface AdminUser {
   isActive: boolean;
   roleId: string;
   roleName: string;
+  email: string;
+  address: string;
+  picture: string;
+  birthDay: string;
 }
 
 export interface AdminRole {
@@ -26,6 +31,10 @@ export interface CreateAdminUser {
   password: string;
   repeatPassword: string;
   roleId: string;
+  email?: string;
+  address?: string;
+  picture?: File | null;
+  birthDay?: string;
 }
 
 export interface UpdateAdminUser {
@@ -36,6 +45,10 @@ export interface UpdateAdminUser {
   nationalCode: string;
   userName: string;
   roleId: string;
+  email?: string;
+  address?: string;
+  picture?: File | null;
+  birthDay?: string;
 }
 
 export interface ChangeAdminUserPassword {
@@ -73,6 +86,10 @@ type RawAdminUser = Partial<AdminUser> & {
   IsActive?: boolean;
   RoleId?: string;
   RoleName?: string;
+  Email?: string | null;
+  Address?: string | null;
+  Picture?: string | null;
+  BirthDay?: string | null;
 };
 
 type RawAdminRole = Partial<AdminRole> & {
@@ -80,11 +97,11 @@ type RawAdminRole = Partial<AdminRole> & {
   Name?: string;
 };
 
-const USERS_ENDPOINT = "/api/Users";
-const USER_ROLES_ENDPOINT = "/api/Users/roles";
+const USERS_ENDPOINT = "/api/admin/users";
+const USER_ROLES_ENDPOINT = "/api/admin/users/roles";
 
 function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("auth-token")?.replace(/^Bearer\s+/i, "");
+  const token = localStorage.getItem(AUTH_TOKEN_KEY)?.replace(/^Bearer\s+/i, "");
 
   return {
     Accept: "application/json, text/plain, */*",
@@ -135,6 +152,10 @@ function normalizeAdminUser(user: RawAdminUser): AdminUser {
     isActive: user.isActive ?? user.IsActive ?? false,
     roleId: user.roleId ?? user.RoleId ?? "",
     roleName: user.roleName ?? user.RoleName ?? "",
+    email: user.email ?? user.Email ?? "",
+    address: user.address ?? user.Address ?? "",
+    picture: user.picture ?? user.Picture ?? "",
+    birthDay: user.birthDay ?? user.BirthDay ?? "",
   };
 }
 
@@ -168,47 +189,56 @@ async function parseResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
   return data;
 }
 
-function appendFields(
+function appendFormValue(
   formData: FormData,
-  fields: Record<string, string>,
-): FormData {
-  Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
+  key: string,
+  value: string | File | null | undefined,
+) {
+  if (typeof File !== "undefined" && value instanceof File) {
+    if (value.size > 0) formData.append(key, value, value.name);
+    return;
+  }
+
+  if (value !== undefined && value !== null) {
+    formData.append(key, String(value));
+  }
+}
+
+function toCreateAdminUserFormData(user: CreateAdminUser) {
+  const formData = new FormData();
+
+  appendFormValue(formData, "Name", user.name);
+  appendFormValue(formData, "Family", user.family);
+  appendFormValue(formData, "UserName", user.userName);
+  appendFormValue(formData, "NationalCode", user.nationalCode);
+  appendFormValue(formData, "PhoneNumber", user.phoneNumber);
+  appendFormValue(formData, "Password", user.password);
+  appendFormValue(formData, "RepeatPassword", user.repeatPassword);
+  appendFormValue(formData, "RoleId", user.roleId);
+  appendFormValue(formData, "Email", user.email);
+  appendFormValue(formData, "Address", user.address);
+  appendFormValue(formData, "Picture", user.picture);
+  appendFormValue(formData, "BirthDay", user.birthDay);
+
   return formData;
 }
 
-function createAdminUserPayload(user: CreateAdminUser) {
-  return {
-    Name: user.name,
-    Family: user.family,
-    UserName: user.userName,
-    NationalCode: user.nationalCode,
-    PhoneNumber: user.phoneNumber,
-    Password: user.password,
-    RepeatPassword: user.repeatPassword,
-    RoleId: user.roleId,
-  };
-}
+function toUpdateAdminUserFormData(user: UpdateAdminUser) {
+  const formData = new FormData();
 
-function updateAdminUserPayload(user: UpdateAdminUser) {
-  return {
-    id: user.id,
-    name: user.name,
-    family: user.family,
-    phoneNumber: user.phoneNumber,
-    nationalCode: user.nationalCode,
-    userName: user.userName,
-    roleId: user.roleId,
-    RoleId: user.roleId,
-  };
-}
+  appendFormValue(formData, "Id", user.id);
+  appendFormValue(formData, "Name", user.name);
+  appendFormValue(formData, "Family", user.family);
+  appendFormValue(formData, "PhoneNumber", user.phoneNumber);
+  appendFormValue(formData, "NationalCode", user.nationalCode);
+  appendFormValue(formData, "UserName", user.userName);
+  appendFormValue(formData, "RoleId", user.roleId);
+  appendFormValue(formData, "Email", user.email);
+  appendFormValue(formData, "Address", user.address);
+  appendFormValue(formData, "Picture", user.picture);
+  appendFormValue(formData, "BirthDay", user.birthDay);
 
-async function responseHasErrorCode(response: Response, code: string) {
-  const data = await response.json().catch(() => null);
-  const errors = data?.errors ?? data?.Errors;
-
-  return Array.isArray(errors)
-    ? errors.some((error) => error?.code === code || error?.Code === code)
-    : false;
+  return formData;
 }
 
 export async function fetchAdminUsers(
@@ -238,43 +268,21 @@ export async function fetchAdminRoles(
 export async function createAdminUser(
   user: CreateAdminUser,
 ): Promise<void> {
-  const payload = createAdminUserPayload(user);
   const response = await dotNet10ApiFetch(USERS_ENDPOINT, {
     method: "POST",
-    headers: {
-      ...getAuthHeaders(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+    headers: getAuthHeaders(),
+    body: toCreateAdminUserFormData(user),
   });
-
-  if (
-    !response.ok &&
-    (await responseHasErrorCode(response.clone(), "ExactLengthValidator"))
-  ) {
-    const formResponse = await dotNet10ApiFetch(USERS_ENDPOINT, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: appendFields(new FormData(), payload),
-    });
-    await parseResponse(formResponse);
-    return;
-  }
-
   await parseResponse(response);
 }
 
 export async function updateAdminUser(
   user: UpdateAdminUser,
 ): Promise<void> {
-  const payload = updateAdminUserPayload(user);
   const response = await dotNet10ApiFetch(USERS_ENDPOINT, {
     method: "PUT",
-    headers: {
-      ...getAuthHeaders(),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+    headers: getAuthHeaders(),
+    body: toUpdateAdminUserFormData(user),
   });
   await parseResponse(response);
 }
@@ -309,7 +317,11 @@ export async function changeAdminUserStatus(user: AdminUser): Promise<void> {
     `${USERS_ENDPOINT}/${encodeURIComponent(user.id)}/status`,
     {
       method: "PATCH",
-      headers: getAuthHeaders(),
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: "{}",
     },
   );
   await parseResponse(response);

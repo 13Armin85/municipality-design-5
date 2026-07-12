@@ -4,7 +4,9 @@ import { AnimatePresence, motion } from "motion/react";
 interface Notification {
   id: string;
   title: string;
+  description?: string;
   time: string;
+  isRead?: boolean;
 }
 
 interface AllNotificationsModalProps {
@@ -84,21 +86,16 @@ export function AllNotificationsModal({
                 <Bell className="h-3.5 w-3.5" />
                 لیست کامل اعلان‌ها
               </span>
-
-              <button
-                type="button"
-                onClick={onMarkAllAsRead}
-                disabled={unreadCount === 0}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-[var(--primary-soft)] disabled:pointer-events-none disabled:opacity-45"
-              >
-                <CheckCheck className="h-3.5 w-3.5" />
-                علامت‌گذاری همه
-              </button>
             </div>
 
             <div className="grid flex-1 gap-3 overflow-y-auto p-3 sm:p-4">
-              {notifications.map((item) => {
-                const isUnread = !readNotificationIds.includes(item.id);
+              {notifications.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-background/60 px-4 py-10 text-center text-sm text-muted-foreground">
+                  اعلانی برای نمایش وجود ندارد.
+                </div>
+              ) : notifications.map((item) => {
+                const isUnread =
+                  !item.isRead && !readNotificationIds.includes(item.id);
                 return (
                   <article
                     key={item.id}
@@ -120,6 +117,11 @@ export function AllNotificationsModal({
                         }`}
                       />
                     </div>
+                    {item.description ? (
+                      <p className="mb-2 line-clamp-2 text-xs leading-6 text-muted-foreground">
+                        {item.description}
+                      </p>
+                    ) : null}
 
                     <div className="flex items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -128,7 +130,7 @@ export function AllNotificationsModal({
                       </span>
                       <button
                         type="button"
-                        onClick={() => onMarkAsRead(item.id)}
+                        onClick={() => void onMarkAsRead(item.id)}
                         className="rounded-lg px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-background/80"
                       >
                         علامت گذاری به عنوان خوانده شده

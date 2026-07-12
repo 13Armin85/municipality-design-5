@@ -1,18 +1,58 @@
+import { useEffect, useState } from "react";
 import {
   Facebook,
   Instagram,
   Mail,
+  Mailbox,
   MapPin,
   Phone,
   Twitter,
 } from "lucide-react";
 import { Link } from "react-router";
 import { serviceItems } from "../data/services";
+import {
+  emptySiteInformation,
+  fetchFooterInformation,
+  resolveInformationImageSrc,
+  type SiteInformation,
+} from "../data/siteInformation";
 
-const municipalityLogoSrc = "/images/Amard Logo 01.JPG";
-const enamadLogoSrc = "/images/enamad-logo.svg";
+const fallbackLogoSrc = "/images/Amard Logo 01.JPG";
+const fallbackEnamadLogoSrc = "/images/enamad-logo.svg";
+
+const fallbackFooterInformation: SiteInformation = {
+  ...emptySiteInformation,
+  title: "شرکت تحلیلگران آمارد",
+  tel: "011-43270941-3",
+  email: "info@amardco.com",
+  address: "مازندران، آمل، بلوار آزادگان، نبش آزادگان 12، ساختمان آمارد",
+  postalCode: "4613673420",
+  description:
+    "شرکت نرم افزاری تحلیلگران آمارد با هدف فعالیت در زمینه طراحی و تولید نرم افزار بنیان گذاشته شد و طراحی و تولید نرم افزارهای کاربردی را به عنوان فعالیت اصلی خود دنبال نموده است.",
+};
 
 export function Footer() {
+  const [information, setInformation] = useState<SiteInformation>(
+    fallbackFooterInformation,
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchFooterInformation(controller.signal)
+      .then((data) => {
+        setInformation({
+          ...fallbackFooterInformation,
+          ...data,
+          title: data.title || fallbackFooterInformation.title,
+          logo: data.logo ?? null,
+        });
+      })
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, []);
+
   const footerLinks = {
     support: [
       { label: "راهنما", href: "/guide" },
@@ -23,6 +63,12 @@ export function Footer() {
     legal: ["قوانین و مقررات", "حریم خصوصی", "شرایط استفاده", "درباره ما"],
   };
 
+  const logoSrc = resolveInformationImageSrc(information.logo, fallbackLogoSrc);
+  const enamadSrc = resolveInformationImageSrc(
+    information.enamad,
+    fallbackEnamadLogoSrc,
+  );
+
   return (
     <footer
       id="contact"
@@ -32,18 +78,20 @@ export function Footer() {
       <div className="container relative z-10 mx-auto px-4 py-12 md:px-6 md:py-16 lg:px-8">
         <div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-12 lg:grid-cols-4">
           <div>
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden ">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden p-2">
                 <img
-                  src={municipalityLogoSrc}
-                  alt="لوگوی شهرداری مراغه"
+                  src={logoSrc}
+                  alt={information.title}
                   className="h-full w-full object-contain"
                 />
               </div>
+              <h3 className="text-base font-bold leading-7">
+                {information.title}
+              </h3>
             </div>
-            <p className="mb-6 text-sm leading-relaxed text-white/90">
-              ارائه خدمات الکترونیک شهری با هدف تسهیل دسترسی شهروندان و ارتقای
-              کیفیت خدمات اداری
+            <p className="mb-6 text-sm leading-7 text-white/90">
+              {information.description}
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -108,23 +156,26 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <Phone className="mt-0.5 h-5 w-5 shrink-0" />
                 <p className="text-sm text-white/90" dir="ltr">
-                  137 - 09140077804
+                  {information.tel}
                 </p>
               </li>
               <li className="flex items-start gap-3">
                 <Mail className="mt-0.5 h-5 w-5 shrink-0" />
-                <p className="text-sm text-white/90">info@maragheh.ir</p>
+                <p className="text-sm text-white/90">{information.email}</p>
               </li>
               <li className="flex items-start gap-3">
                 <MapPin className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
-                  <p className="text-sm text-white/90">
-                    مراغه، بلوار شهید بهشتی
-                  </p>
-                  <p className="mt-1 text-sm text-white/70">
-                    کدپستی: 918377804
+                  <p className="text-sm leading-7 text-white/90">
+                    {information.address}
                   </p>
                 </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <Mailbox className="mt-0.5 h-5 w-5 shrink-0" />
+                <p className="text-sm text-white/90" dir="ltr">
+                  {information.postalCode}
+                </p>
               </li>
             </ul>
           </div>
@@ -133,18 +184,20 @@ export function Footer() {
         <div className="border-t border-white/16 pt-8">
           <div className="flex flex-col-reverse items-center justify-between gap-6 md:flex-row">
             <div className="flex w-full flex-col items-center gap-4 md:w-auto md:items-start">
-              <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl border border-white/24 bg-white p-3 shadow-xl shadow-black/15 md:h-36 md:w-36">
-                <img
-                  src={enamadLogoSrc}
-                  alt="نماد اعتماد الکترونیکی"
-                  className="h-full w-full object-contain"
-                />
-              </div>
+              {(information.enamad || fallbackEnamadLogoSrc) && (
+                <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl border border-white/24 bg-white p-3 shadow-xl shadow-black/15 md:h-36 md:w-36">
+                  <img
+                    src={enamadSrc}
+                    alt="نماد اعتماد الکترونیکی"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex flex-1 flex-col items-center gap-4 md:items-end">
               <p className="text-center text-sm text-white/80 md:text-right">
-                © 1405 شهرداری مراغه. تمامی حقوق محفوظ است.
+                © 1405 {information.title}. تمامی حقوق محفوظ است.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/80 md:justify-end">
                 {footerLinks.legal.map((item) => (

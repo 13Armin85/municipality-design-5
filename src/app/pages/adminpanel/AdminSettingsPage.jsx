@@ -1,309 +1,331 @@
-import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import {
-  Bell,
-  Clock,
+  Building2,
+  Eye,
+  FileImage,
   FileText,
-  Globe,
-  Instagram,
-  Link,
   Mail,
+  Mailbox,
   MapPin,
-  MessageSquare,
   Phone,
+  RefreshCw,
   Save,
-  Sparkles,
-  Twitter,
 } from "lucide-react";
 import {
-  initialContentForm,
-  initialFooterForm,
-  settingsTabs,
-} from "./adminData";
+  emptySiteInformation,
+  fetchAdminInformation,
+  resolveInformationImageSrc,
+  saveAdminInformation,
+} from "../../data/siteInformation";
 
-function ContentSettingsForm({ contentForm, setContentForm }) {
+const fallbackLogoSrc = "/images/Amard Logo 01.JPG";
+
+function toFormState(data) {
+  return {
+    ...emptySiteInformation,
+    ...data,
+    logo: data.logo ?? null,
+    logoFile: null,
+  };
+}
+
+function Field({ label, icon: Icon, children }) {
   return (
-    <motion.div
-      key="content"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      className="space-y-6 rounded-2xl border border-border/70 bg-card p-4 sm:p-6"
-    >
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <FileText className="h-3.5 w-3.5" /> عنوان اصلی هیرو
-          </label>
-          <input
-            value={contentForm.heroTitle}
-            onChange={(event) =>
-              setContentForm({ ...contentForm, heroTitle: event.target.value })
-            }
-            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5" /> زیرعنوان هیرو
-          </label>
-          <input
-            value={contentForm.heroSubtitle}
-            onChange={(event) =>
-              setContentForm({
-                ...contentForm,
-                heroSubtitle: event.target.value,
-              })
-            }
-            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" /> سرعت اسلایدر (میلی‌ثانیه)
-          </label>
-          <input
-            type="number"
-            value={contentForm.sliderSpeed}
-            onChange={(event) =>
-              setContentForm({
-                ...contentForm,
-                sliderSpeed: event.target.value,
-              })
-            }
-            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Globe className="h-3.5 w-3.5" /> رنگ سازمانی اصلی
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="color"
-              value={contentForm.primaryColor}
-              onChange={(event) =>
-                setContentForm({
-                  ...contentForm,
-                  primaryColor: event.target.value,
-                })
-              }
-              className="h-10 w-16 rounded-lg border border-border bg-background p-1"
-            />
-            <input
-              value={contentForm.primaryColor}
-              onChange={(event) =>
-                setContentForm({
-                  ...contentForm,
-                  primaryColor: event.target.value,
-                })
-              }
-              className="flex-1 rounded-xl border border-border/70 bg-background px-3 py-2.5 font-mono text-sm outline-none transition-all focus:border-primary"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">
-          متن درباره ما (معرفی کوتاه)
-        </label>
-        <textarea
-          rows={3}
-          value={contentForm.aboutText}
-          onChange={(event) =>
-            setContentForm({ ...contentForm, aboutText: event.target.value })
-          }
-          className="w-full resize-none rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary"
-        />
-      </div>
-
-      <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bell className="h-4 w-4 text-primary" />
-            <span className="text-sm font-bold">نوار اطلاعیه سایت</span>
-          </div>
-          <button
-            onClick={() =>
-              setContentForm({
-                ...contentForm,
-                showAnnouncement: !contentForm.showAnnouncement,
-              })
-            }
-            className={`relative h-5 w-10 rounded-full transition-colors ${contentForm.showAnnouncement ? "bg-primary" : "bg-muted"}`}
-          >
-            <div
-              className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-all ${contentForm.showAnnouncement ? "right-6" : "right-1"}`}
-            />
-          </button>
-        </div>
-
-        {contentForm.showAnnouncement && (
-          <input
-            value={contentForm.announcementText}
-            onChange={(event) =>
-              setContentForm({
-                ...contentForm,
-                announcementText: event.target.value,
-              })
-            }
-            placeholder="متن اطلاعیه را وارد کنید..."
-            className="w-full rounded-lg border border-border/70 bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-        )}
-      </div>
-    </motion.div>
+    <label className="space-y-1.5">
+      <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </span>
+      {children}
+    </label>
   );
 }
 
-function FooterSettingsForm({ footerForm, setFooterForm }) {
+function TextInput({ dir, value, onChange, placeholder }) {
   return (
-    <motion.div
-      key="footer"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      className="space-y-6 rounded-2xl border border-border/70 bg-card p-4 sm:p-6"
-    >
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5" /> آدرس دقیق ساختمان
-          </label>
-          <input
-            value={footerForm.address}
-            onChange={(event) =>
-              setFooterForm({ ...footerForm, address: event.target.value })
-            }
-            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary"
-          />
-        </div>
+    <input
+      dir={dir}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary"
+    />
+  );
+}
 
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" /> ساعات پاسخگویی
-          </label>
-          <input
-            value={footerForm.workingHours}
-            onChange={(event) =>
-              setFooterForm({
-                ...footerForm,
-                workingHours: event.target.value,
-              })
-            }
-            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary"
-          />
-        </div>
+function InformationPreview({ information, loading, onRefresh }) {
+  const logoSrc = resolveInformationImageSrc(information.logo, fallbackLogoSrc);
+  const items = [
+    { label: "عنوان", value: information.title },
+    { label: "تلفن", value: information.tel, dir: "ltr" },
+    { label: "ایمیل", value: information.email, dir: "ltr" },
+    {
+      label: "کد پستی",
+      value: information.postalCode,
+      dir: "ltr",
+      icon: Mailbox,
+    },
+    { label: "آدرس", value: information.address },
+    { label: "نماد اعتماد", value: information.enamad || "ثبت نشده" },
+  ];
 
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Phone className="h-3.5 w-3.5" /> شماره تماس مستقیم
-          </label>
-          <input
-            dir="ltr"
-            value={footerForm.phone}
-            onChange={(event) =>
-              setFooterForm({ ...footerForm, phone: event.target.value })
-            }
-            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 font-mono text-sm outline-none transition-all focus:border-primary"
-          />
+  return (
+    <section className="rounded-2xl border border-border/70 bg-card p-4 sm:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Eye className="h-5 w-5 text-primary" />
+          <h3 className="text-base font-bold">مشاهده اطلاعات سازمان</h3>
         </div>
-
-        <div className="space-y-1.5">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Mail className="h-3.5 w-3.5" /> پست الکترونیک
-          </label>
-          <input
-            dir="ltr"
-            value={footerForm.email}
-            onChange={(event) =>
-              setFooterForm({ ...footerForm, email: event.target.value })
-            }
-            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 font-mono text-sm outline-none transition-all focus:border-primary"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted disabled:opacity-60"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          بروزرسانی
+        </button>
       </div>
 
-      <div className="space-y-4 border-t border-border/50 pt-5">
-        <h4 className="flex items-center gap-2 text-sm font-bold">
-          <Link className="h-4 w-4 text-primary" /> شبکه‌های اجتماعی
-        </h4>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            {
-              key: "instagram",
-              icon: Instagram,
-              className: "text-pink-600",
-              placeholder: "Instagram ID",
-            },
-            {
-              key: "twitter",
-              icon: Twitter,
-              className: "text-blue-400",
-              placeholder: "Twitter (X) ID",
-            },
-            {
-              key: "telegram",
-              icon: MessageSquare,
-              className: "text-blue-500",
-              placeholder: "Telegram ID",
-            },
-          ].map((item) => (
+      <div className="grid gap-5 lg:grid-cols-[180px_1fr]">
+        <div className="flex h-36 w-full items-center justify-center rounded-2xl border border-border/70 bg-background p-4">
+          <img
+            src={logoSrc}
+            alt={information.title || "لوگوی سازمان"}
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {items.map((item) => (
             <div
-              key={item.key}
-              className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted/20 p-2"
+              key={item.label}
+              className="rounded-xl border border-border/60 bg-background/70 p-3"
             >
-              <item.icon className={`h-4 w-4 ${item.className}`} />
-              <input
-                value={footerForm[item.key]}
-                onChange={(event) =>
-                  setFooterForm({
-                    ...footerForm,
-                    [item.key]: event.target.value,
-                  })
-                }
-                placeholder={item.placeholder}
-                className="w-full border-none bg-transparent text-xs outline-none"
-              />
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {item.icon ? <item.icon className="h-3.5 w-3.5" /> : null}
+                {item.label}
+              </p>
+              <p
+                dir={item.dir}
+                className="mt-1 break-words text-sm font-semibold leading-7"
+              >
+                {item.value || "-"}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="space-y-1.5 pt-2">
-        <label className="text-xs font-medium text-muted-foreground">
-          متن کپی‌رایت (انتهای صفحه)
-        </label>
-        <input
-          value={footerForm.copyrightText}
-          onChange={(event) =>
-            setFooterForm({
-              ...footerForm,
-              copyrightText: event.target.value,
-            })
-          }
-          className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary"
-        />
+      <div className="mt-4 rounded-xl border border-border/60 bg-background/70 p-3">
+        <p className="text-xs text-muted-foreground">توضیحات</p>
+        <p className="mt-1 text-sm leading-7">
+          {information.description || "-"}
+        </p>
       </div>
-    </motion.div>
+    </section>
+  );
+}
+
+export function SiteContentPage() {
+  const [information, setInformation] = useState(emptySiteInformation);
+  const [form, setForm] = useState(() => toFormState(emptySiteInformation));
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [logoPreview, setLogoPreview] = useState("");
+
+  const loadInformation = async (signal) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const data = await fetchAdminInformation(signal);
+      setInformation(data);
+      setForm(toFormState(data));
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setError(error.message || "دریافت اطلاعات سازمان ناموفق بود.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadInformation(controller.signal);
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!(form.logoFile instanceof File)) {
+      setLogoPreview(resolveInformationImageSrc(form.logo, fallbackLogoSrc));
+      return undefined;
+    }
+
+    const objectUrl = URL.createObjectURL(form.logoFile);
+    setLogoPreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [form.logo, form.logoFile]);
+
+  const updateForm = (key, value) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await saveAdminInformation(form);
+      const data = await fetchAdminInformation(undefined);
+      setInformation(data);
+      setForm(toFormState(data));
+      setMessage("اطلاعات سایت با موفقیت ذخیره شد.");
+    } catch (error) {
+      setError(error.message || "ذخیره اطلاعات سایت ناموفق بود.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-bold text-foreground sm:text-xl">
+          محتوای سایت
+        </h2>
+        <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+          مدیریت اطلاعات هدر، فوتر و مشخصات سازمان
+        </p>
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600">
+          {error}
+        </div>
+      )}
+      {message && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-600"
+        >
+          {message}
+        </motion.div>
+      )}
+
+      <section className="rounded-2xl border border-border/70 bg-card p-4 sm:p-6">
+        <div className="mb-5 flex items-center gap-2">
+          <Building2 className="h-5 w-5 text-primary" />
+          <h3 className="text-base font-bold">ویرایش اطلاعات سایت</h3>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="عنوان سازمان" icon={Building2}>
+              <TextInput
+                value={form.title}
+                onChange={(value) => updateForm("title", value)}
+              />
+            </Field>
+            <Field label="تلفن" icon={Phone}>
+              <TextInput
+                dir="ltr"
+                value={form.tel}
+                onChange={(value) => updateForm("tel", value)}
+              />
+            </Field>
+            <Field label="ایمیل" icon={Mail}>
+              <TextInput
+                dir="ltr"
+                value={form.email}
+                onChange={(value) => updateForm("email", value)}
+              />
+            </Field>
+            <Field label="کد پستی" icon={Mailbox}>
+              <TextInput
+                dir="ltr"
+                value={form.postalCode}
+                onChange={(value) => updateForm("postalCode", value)}
+              />
+            </Field>
+            <Field label="آدرس" icon={MapPin}>
+              <TextInput
+                value={form.address}
+                onChange={(value) => updateForm("address", value)}
+              />
+            </Field>
+            <Field label="نماد اعتماد" icon={FileText}>
+              <TextInput
+                value={form.enamad}
+                onChange={(value) => updateForm("enamad", value)}
+                placeholder="آدرس تصویر، base64 یا کد ثبت‌شده"
+              />
+            </Field>
+          </div>
+
+          <Field label="توضیحات" icon={FileText}>
+            <textarea
+              rows={4}
+              value={form.description}
+              onChange={(event) =>
+                updateForm("description", event.target.value)
+              }
+              className="w-full resize-none rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm leading-7 outline-none transition-all focus:border-primary"
+            />
+          </Field>
+
+          <Field label="لوگو" icon={FileImage}>
+            <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
+              <div className="flex h-24 w-full items-center justify-center rounded-xl border border-border/70 bg-background p-3">
+                <img
+                  src={logoPreview || fallbackLogoSrc}
+                  alt={form.title || "لوگو"}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) =>
+                  updateForm("logoFile", event.target.files?.[0] ?? null)
+                }
+                className="h-fit w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none file:ml-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground"
+              />
+            </div>
+          </Field>
+
+          <button
+            type="submit"
+            disabled={saving || loading}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-primary to-secondary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-60"
+          >
+            {saving ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            ذخیره تغییرات
+          </button>
+        </form>
+      </section>
+
+      <InformationPreview
+        information={information}
+        loading={loading}
+        onRefresh={() => loadInformation(undefined)}
+      />
+    </div>
   );
 }
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("content");
-  const [contentForm, setContentForm] = useState(initialContentForm);
-  const [footerForm, setFooterForm] = useState(initialFooterForm);
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
-
   return (
     <div className="space-y-5">
       <div>
@@ -311,59 +333,11 @@ export function SettingsPage() {
           تنظیمات عمومی
         </h2>
         <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-          مدیریت محتوا و ظاهر پرتال
+          سایر تنظیمات مدیریتی از زیرمنوهای تنظیمات در دسترس هستند.
         </p>
       </div>
-
-      <div className="flex w-fit gap-2 rounded-2xl border border-border/70 bg-card p-1.5">
-        {settingsTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all sm:px-4 ${activeTab === tab.id ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            {activeTab === tab.id && (
-              <motion.span
-                layoutId="settings-tab"
-                className="absolute inset-0 rounded-xl bg-gradient-to-l from-primary to-secondary shadow-lg shadow-primary/20"
-              />
-            )}
-            <tab.icon className="relative z-10 h-4 w-4" />
-            <span className="relative z-10">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <AnimatePresence mode="wait">
-        {activeTab === "content" ? (
-          <ContentSettingsForm
-            contentForm={contentForm}
-            setContentForm={setContentForm}
-          />
-        ) : (
-          <FooterSettingsForm
-            footerForm={footerForm}
-            setFooterForm={setFooterForm}
-          />
-        )}
-      </AnimatePresence>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-primary to-secondary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
-        >
-          <Save className="h-4 w-4" /> ذخیره تغییرات
-        </button>
-        {saved && (
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-sm font-medium text-emerald-600"
-          >
-            تغییرات با موفقیت ذخیره شد
-          </motion.span>
-        )}
+      <div className="rounded-2xl border border-border/70 bg-card p-6 text-sm leading-7 text-muted-foreground">
+        برای ویرایش اطلاعات هدر و فوتر، از زیرمنوی «محتوای سایت» استفاده کنید.
       </div>
     </div>
   );

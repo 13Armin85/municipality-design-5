@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Dashboard } from "./adminpanel/AdminDashboard";
+import { AdminFaqPage } from "./adminpanel/AdminFaqPage";
 import { AdminNewsPage } from "./adminpanel/AdminNewsPage";
 import { AdminNewsGroupsPage } from "./adminpanel/AdminNewsGroupsPage";
 import {
@@ -21,7 +22,11 @@ import {
   AdminShahkarLogsPage,
   AdminSmsLogsPage,
 } from "./adminpanel/AdminIntegrationLogsPage";
-import { SettingsPage } from "./adminpanel/AdminSettingsPage";
+import {
+  SettingsPage,
+  SiteContentPage,
+} from "./adminpanel/AdminSettingsPage";
+import { AdminSlidersPage } from "./adminpanel/AdminSlidersPage";
 import { UserManagement } from "./adminpanel/UserManagement";
 import { navItems } from "./adminpanel/adminData";
 import {
@@ -61,6 +66,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
 
   const pageComponents = {
     dashboard: <Dashboard />,
+    faq: <AdminFaqPage />,
     news: <AdminNewsPage />,
     "news-groups": <AdminNewsGroupsPage />,
     shahkar: <AdminShahkarPage />,
@@ -69,6 +75,8 @@ export default function AdminPanel({ isDark, toggleTheme }) {
     "sms-logs": <AdminSmsLogsPage />,
     users: <UserManagement />,
     settings: <SettingsPage />,
+    "site-content": <SiteContentPage />,
+    sliders: <AdminSlidersPage />,
   };
 
   const findNavLabel = (items, pageId) => {

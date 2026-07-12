@@ -80,11 +80,11 @@ define(['./workbox-63ab604a'], (function (workbox) { 'use strict';
     "url": "suppress-warnings.js",
     "revision": "d41d8cd98f00b204e9800998ecf8427e"
   }, {
-    "url": "/index.html",
-    "revision": "0.arklapi67i4"
+    "url": "index.html",
+    "revision": "0.9gqcrs4c7lo"
   }], {});
   workbox.cleanupOutdatedCaches();
-  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
+  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/],
     denylist: [/^\/api(?:\/|$)/, /^\/dotnet10-api(?:\/|$)/]
   }));

@@ -361,6 +361,36 @@ const mapApiResponseToLackDocuments = (data: any): LackDocumentItem[] =>
     };
   });
 
+const getDefectIsDefense = (data: any): boolean => {
+  const list = getListFromApiValue(data);
+  const values = list.length ? list : [data];
+
+  return values.some((item: any) => {
+    if (typeof item === "boolean") return item;
+    if (typeof item === "number") return item === 1;
+    if (typeof item === "string") {
+      const normalized = item.trim().toLowerCase();
+      return (
+        normalized === "true" ||
+        normalized === "1" ||
+        normalized.includes("دفاع")
+      );
+    }
+
+    if (!item || typeof item !== "object") return false;
+
+    return Boolean(
+      item.IsDefense ??
+        item.isDefense ??
+        item.IsDefence ??
+        item.isDefence ??
+        item.defense ??
+        item.defence ??
+        item.isDefectDefense,
+    );
+  });
+};
+
 const formatRequestDate = (date: any): string => {
   if (!date) return "—";
 
@@ -460,6 +490,39 @@ const getFileShopValue = (item: any) =>
     item.id,
   );
 
+const getFileCodeNodeTreeValue = (item: any) =>
+  firstDefined(item.codeTree, item.CodeTree, item.codeNodeTree, item.CodeNodeTree);
+
+const getUploadShopValue = (value: any) =>
+  firstText(
+    value?.shop,
+    value?.Shop,
+    value?.shopId,
+    value?.ShopId,
+    value?.malekId,
+    value?.MalekId,
+    value?.raw?.shop,
+    value?.raw?.Shop,
+    value?.raw?.shopId,
+    value?.raw?.ShopId,
+    value?.raw?.malekId,
+    value?.raw?.MalekId,
+    value?.id,
+    value?.Id,
+  );
+
+const getUploadCodeNodeTreeValue = (value: any) =>
+  firstText(
+    value?.codeNodeTree,
+    value?.CodeNodeTree,
+    value?.codeTree,
+    value?.CodeTree,
+    value?.raw?.codeNodeTree,
+    value?.raw?.CodeNodeTree,
+    value?.raw?.codeTree,
+    value?.raw?.CodeTree,
+  );
+
 const isOwnerApplicantType = (value: string) => value.trim().includes("مالک");
 
 const getRequestNumberFromApiValue = (value: any): string => {
@@ -510,8 +573,11 @@ export function SabtDarkhastPage({
   const [lackDocuments, setLackDocuments] = useState<LackDocumentItem[]>([]);
   const [lackDocumentsLoading, setLackDocumentsLoading] = useState(false);
   const [lackDocumentsError, setLackDocumentsError] = useState("");
+  const [defectIsDefense, setDefectIsDefense] = useState(false);
   const [registeredRequestId, setRegisteredRequestId] = useState("");
   const [selectedTreeItemId, setSelectedTreeItemId] = useState("");
+  const [selectedShopValue, setSelectedShopValue] = useState("");
+  const [selectedCodeNodeTree, setSelectedCodeNodeTree] = useState("");
 
   const [modalContent, setModalContent] = useState<HelpModalContent>({
     title: "",
@@ -1019,6 +1085,8 @@ export function SabtDarkhastPage({
 
   const applyPropertyToPage = (property: PropertyRecord) => {
     setActiveProperty(property);
+    setSelectedShopValue(getUploadShopValue(property));
+    setSelectedCodeNodeTree(getUploadCodeNodeTreeValue(property));
 
     setOwnerForm({
       identityType: getIdentityTypeFromValue(property.owner.nationalId),
@@ -1208,6 +1276,7 @@ export function SabtDarkhastPage({
         const mapped: PropertyRecord[] = rawList.map(
           (item: any, index: number) => {
             const fileShop = getFileShopValue(item);
+            const codeNodeTree = firstText(getFileCodeNodeTreeValue(item));
             const fullCode = firstText(
               item.codeN,
               item.CodeN,
@@ -1253,7 +1322,7 @@ export function SabtDarkhastPage({
 
             const ownerName = item.FullName ?? "—";
 
-            return {
+            const mappedRecord: PropertyRecord = {
               ...base,
               id: String(fileShop ?? ""),
               rowNumber: String(index + 1),
@@ -1361,6 +1430,12 @@ export function SabtDarkhastPage({
                 ),
               },
             };
+
+            return Object.assign(mappedRecord, {
+              shop: String(fileShop ?? ""),
+              codeNodeTree,
+              raw: item,
+            });
           },
         );
 
@@ -1472,6 +1547,8 @@ export function SabtDarkhastPage({
         codes: searchValues,
       });
       setSelectedTreeItemId("");
+      setSelectedShopValue("");
+      setSelectedCodeNodeTree("");
       setRegisteredRequests([]);
       setRegisteredRequestsError("");
       void fetchFileCheckData(codeNosazi);
@@ -1483,6 +1560,9 @@ export function SabtDarkhastPage({
     activeProperty?.fullCode || buildCodeFromValues(searchValues);
 
   const getCurrentShopValue = () =>
+    selectedShopValue ||
+    getUploadShopValue(activeProperty) ||
+    getUploadShopValue(selectedProperty) ||
     activeProperty?.id ||
     selectedProperty.id ||
     localStorage.getItem("shop") ||
@@ -1491,10 +1571,11 @@ export function SabtDarkhastPage({
   const getCurrentShopNumber = () => toNumber(getCurrentShopValue());
 
   const getCurrentCodeNodeTree = () =>
-    selectedTreeItemId ||
+    selectedCodeNodeTree ||
+    getUploadCodeNodeTreeValue(activeProperty) ||
+    getUploadCodeNodeTreeValue(selectedProperty) ||
     localStorage.getItem(selectedPropertyStorageKey) ||
-    activeProperty?.id ||
-    selectedProperty.id ||
+    selectedTreeItemId ||
     "";
 
   const getMeliType = (identityType: "1" | "2") => identityType;
@@ -1554,7 +1635,7 @@ export function SabtDarkhastPage({
     if (!shod) {
       setLackDocuments([]);
       setLackDocumentsError("شماره درخواست برای دریافت کسری مدارک معتبر نیست.");
-      return;
+      return [];
     }
 
     setLackDocumentsLoading(true);
@@ -1574,15 +1655,45 @@ export function SabtDarkhastPage({
         "خطا در دریافت کسری مدارک.",
       );
 
-      setLackDocuments(mapApiResponseToLackDocuments(getApiValue(data)));
+      const documents = mapApiResponseToLackDocuments(getApiValue(data));
+      setLackDocuments(documents);
+      return documents;
     } catch (error) {
       setLackDocuments([]);
       setLackDocumentsError(
         error instanceof Error ? error.message : "خطا در دریافت کسری مدارک.",
       );
+      return [];
     } finally {
       setLackDocumentsLoading(false);
     }
+  };
+
+  const fetchDefectStatus = async (requestId: string) => {
+    const id = toNumber(requestId);
+
+    if (!id) {
+      setDefectIsDefense(false);
+      return false;
+    }
+
+    const token = normalizeAuthToken(localStorage.getItem("auth-token"));
+    const response = await apiFetch(
+      `/api/request/Defect?id=${encodeURIComponent(String(id))}`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(token),
+      },
+    );
+    const data = await readApiResponse(response, "خطا در دریافت وضعیت نقص مدارک.");
+    const isDefense = getDefectIsDefense(getApiValue(data));
+
+    setDefectIsDefense(isDefense);
+    return isDefense;
+  };
+
+  const prepareUploadRequirements = async () => {
+    return { documents: [] as LackDocumentItem[], isDefense: false };
   };
 
   const handleContinue = async () => {
@@ -1644,10 +1755,9 @@ export function SabtDarkhastPage({
       setRequestForm((prev) => ({ ...prev, id: createdRequestId }));
       setLackDocuments([]);
       setLackDocumentsError("");
+      setDefectIsDefense(false);
       setUploadError("");
       setStep("upload");
-      void fetchLackDocuments(createdRequestId);
-      void fetchRegisteredRequests(getCurrentCodeNosazi());
     } catch (error) {
       setRequestSubmitError(
         error instanceof Error ? error.message : "خطا در ثبت درخواست.",
@@ -1678,7 +1788,9 @@ export function SabtDarkhastPage({
     setIsUploadingFiles(true);
 
     try {
-      const isDefense = lackDocuments.some((doc) => doc.isDefense);
+      const isDefense =
+        defectIsDefense ||
+        lackDocuments.some((doc) => doc.isDefense);
 
       for (const file of files) {
         const formData = new FormData();
@@ -1715,9 +1827,20 @@ export function SabtDarkhastPage({
 
   const handlePropertyTreeSelect = (property: PropertyItem, treeItem: PropertyTreeItem) => {
     setSelectedTreeItemId(treeItem.id);
+    setSelectedShopValue(
+      getUploadShopValue(treeItem) ||
+        getUploadShopValue(property) ||
+        treeItem.id ||
+        property.id,
+    );
+    setSelectedCodeNodeTree(
+      getUploadCodeNodeTreeValue(treeItem) ||
+        getUploadCodeNodeTreeValue(property),
+    );
     setRegisteredRequestId("");
     setLackDocuments([]);
     setLackDocumentsError("");
+    setDefectIsDefense(false);
     setUploadError("");
 
     const codes: RenewalCodes = {

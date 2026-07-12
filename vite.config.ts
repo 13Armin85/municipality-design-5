@@ -20,6 +20,14 @@ const readEnvUrl = (
   return fallback;
 };
 
+const normalizeAppBase = (value?: string) => {
+  const trimmedValue = value?.trim();
+  if (!trimmedValue) return "/";
+  if (trimmedValue === "./" || trimmedValue === "/") return trimmedValue;
+
+  return `/${trimmedValue.replace(/^\/+|\/+$/g, "")}/`;
+};
+
 function figmaAssetResolver() {
   return {
     name: "figma-asset-resolver",
@@ -36,6 +44,7 @@ function figmaAssetResolver() {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const appBase = normalizeAppBase(env.VITE_APP_BASE);
   const apiProxyTarget = readEnvUrl(
     env,
     ["VITE_API_PROXY_TARGET", "VITE_API_BASE_URL", "VITE_API_URL"],
@@ -52,6 +61,8 @@ export default defineConfig(({ mode }) => {
   );
 
   return {
+    base: appBase,
+
     plugins: [
       figmaAssetResolver(),
       react(),
@@ -68,11 +79,11 @@ export default defineConfig(({ mode }) => {
           name: "شهروندیار آمل",
           short_name: "شهروندیار",
           description: "پرتال خدمات شهری شهرداری آمل",
-          id: "/",
+          id: ".",
           lang: "fa",
           dir: "rtl",
-          start_url: "/",
-          scope: "/",
+          start_url: ".",
+          scope: ".",
           display: "standalone",
           display_override: ["standalone", "minimal-ui"],
           orientation: "portrait-primary",
@@ -81,19 +92,19 @@ export default defineConfig(({ mode }) => {
           categories: ["government", "utilities", "productivity"],
           icons: [
             {
-              src: "/pwa/icon-192.png",
+              src: "pwa/icon-192.png",
               sizes: "192x192",
               type: "image/png",
               purpose: "any",
             },
             {
-              src: "/pwa/icon-512.png",
+              src: "pwa/icon-512.png",
               sizes: "512x512",
               type: "image/png",
               purpose: "any",
             },
             {
-              src: "/pwa/icon-512.png",
+              src: "pwa/icon-512.png",
               sizes: "512x512",
               type: "image/png",
               purpose: "any maskable",
@@ -112,7 +123,7 @@ export default defineConfig(({ mode }) => {
           globPatterns: [
             "**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}",
           ],
-          navigateFallback: "/index.html",
+          navigateFallback: "index.html",
           navigateFallbackDenylist: [
             /^\/api(?:\/|$)/,
             /^\/dotnet10-api(?:\/|$)/,
@@ -166,13 +177,9 @@ export default defineConfig(({ mode }) => {
         },
         "/api": {
           target: apiProxyTarget,
-
           changeOrigin: true,
-
           secure: false,
-
           ws: true,
-
           rewrite: (path) => path.replace(/^\/api/, "/api"),
         },
       },

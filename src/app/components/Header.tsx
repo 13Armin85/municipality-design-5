@@ -28,7 +28,16 @@ import { Link, useNavigate } from "react-router";
 import { useIsMobile } from "./ui/use-mobile";
 import { useAuthModal } from "./AuthContext";
 import { dotNet10ApiFetch } from "../data/api";
+import {
+  fetchNotifications,
+  markNotificationRead,
+  type NotificationItem,
+} from "../data/notifications";
 import { serviceItems } from "../data/services";
+import {
+  fetchHeaderInformation,
+  resolveInformationImageSrc,
+} from "../data/siteInformation";
 import {
   AUTH_STORAGE_KEY,
   AUTH_TOKEN_KEY,
@@ -107,19 +116,8 @@ const menuItems = [
   { title: "پشتیبانی", href: "#support" },
 ] satisfies HeaderMenuItem[];
 
-const notifications = [
-  {
-    id: "n1",
-    title: "وضعیت پرونده PR-22318 به‌روزرسانی شد",
-    time: "5 دقیقه پیش",
-  },
-  {
-    id: "n2",
-    title: "قبض عوارض نوسازی شما آماده پرداخت است",
-    time: "1 ساعت پیش",
-  },
-  { id: "n3", title: "پاسخ تیکت #TK-1082 ثبت شد", time: "امروز، 10:15" },
-];
+const defaultHeaderTitle = "شهرداری مراغه";
+const defaultLogoSrc = "/images/Amard Logo 01.JPG";
 
 const decodeToken = (token: string) => {
   try {
@@ -221,9 +219,17 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const [scrolled, setScrolled] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState(menuItems[0].href);
+  const [siteHeader, setSiteHeader] = useState<{
+    title: string;
+    logo: string | null;
+  }>({
+    title: defaultHeaderTitle,
+    logo: null,
+  });
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginType, setLoginType] = useState<"user" | "admin">(() => {
@@ -275,8 +281,12 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
   } = useAuthModal();
 
   const unreadCount = notifications.filter(
-    (item) => !readNotificationIds.includes(item.id),
+    (item) => !item.isRead && !readNotificationIds.includes(item.id),
   ).length;
+  const headerLogoSrc = resolveInformationImageSrc(
+    siteHeader.logo,
+    defaultLogoSrc,
+  );
 
   // ─── Auth Context sync ────────────────────────────────────────────────────
 
@@ -292,15 +302,66 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
     }
   }, [isLoginModalOpen, setIsLoginModalOpen]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchHeaderInformation(controller.signal)
+      .then((data) => {
+        setSiteHeader({
+          title: data.title || defaultHeaderTitle,
+          logo: data.logo ?? null,
+        });
+      })
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      setReadNotificationIds([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    fetchNotifications(controller.signal)
+      .then(setNotifications)
+      .catch(() => undefined);
+
+    return () => controller.abort();
+  }, [isAuthenticated]);
+
   // ─── Notification handlers ───────────────────────────────────────────────
 
-  const markNotificationAsRead = (id: string) =>
+  const markNotificationAsRead = async (id: string) => {
     setReadNotificationIds((prev) =>
       prev.includes(id) ? prev : [...prev, id],
     );
+    setNotifications((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, isRead: true } : item)),
+    );
 
-  const markAllNotificationsAsRead = () =>
+    try {
+      await markNotificationRead(id);
+    } catch {
+      fetchNotifications()
+        .then(setNotifications)
+        .catch(() => undefined);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    const unreadIds = notifications
+      .filter((item) => !item.isRead && !readNotificationIds.includes(item.id))
+      .map((item) => item.id);
+
     setReadNotificationIds(notifications.map((item) => item.id));
+    setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+
+    await Promise.allSettled(unreadIds.map((id) => markNotificationRead(id)));
+  };
 
   // ─── Login handlers ──────────────────────────────────────────────────────
 
@@ -708,15 +769,20 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
           <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
             {/* Logo */}
             <div className="flex min-w-0 items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-secondary to-accent text-primary-foreground shadow-[0_12px_28px_rgba(13,86,90,0.35)] md:h-12 md:w-12">
-                <Building2 className="h-5 w-5 md:h-6 md:w-6" />
-                <span className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center rounded-md border border-border/70 bg-background text-accent shadow-sm">
-                  <ShieldCheck className="h-2.5 w-2.5" />
-                </span>
+              <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden text-primary md:h-12 md:w-12">
+                {siteHeader.logo ? (
+                  <img
+                    src={headerLogoSrc}
+                    alt={siteHeader.title}
+                    className="h-full w-full object-contain p-1"
+                  />
+                ) : (
+                  <Building2 className="h-5 w-5 md:h-6 md:w-6" />
+                )}
               </div>
               <div className="min-w-0">
                 <h1 className="truncate text-base font-bold text-foreground md:text-lg">
-                  شهرداری مراغه
+                  {siteHeader.title}
                 </h1>
                 <div className="hidden items-center gap-2 sm:flex">
                   <p className="text-xs text-muted-foreground">
