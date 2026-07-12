@@ -28,7 +28,24 @@ const inputClass =
   "h-11 rounded-xl border border-border bg-background px-3.5 text-sm outline-none transition-colors focus:border-primary";
 
 function isValidPersianDateTime(value: string) {
-  return /^\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}$/.test(value.trim());
+  const match = /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2})$/.exec(
+    value.trim(),
+  );
+  if (!match) return false;
+
+  const [, , month, day, hour, minute] = match.map(Number);
+  const maxDay = month <= 6 ? 31 : month <= 11 ? 30 : 30;
+
+  return (
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= maxDay &&
+    hour >= 0 &&
+    hour <= 23 &&
+    minute >= 0 &&
+    minute <= 59
+  );
 }
 
 export function AdminSlidersPage() {
@@ -93,7 +110,7 @@ export function AdminSlidersPage() {
     if (!publishDateTime || !isValidPersianDateTime(publishDateTime)) {
       setMessage({
         type: "error",
-        text: "تاریخ انتشار باید وارد شود.",
+        text: "تاریخ انتشار باید با فرمت 1405/05/14 14:00 وارد شود.",
       });
       return;
     }
@@ -244,7 +261,7 @@ export function AdminSlidersPage() {
                       publishDateTime: event.target.value,
                     }))
                   }
-                  placeholder="1405/05/01 12:00"
+                  placeholder="1405/05/14 14:00"
                   className={inputClass}
                 />
               </label>

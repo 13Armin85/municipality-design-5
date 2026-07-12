@@ -31,6 +31,10 @@ type ApiEnvelope<T = unknown> = {
 type RawSlider = {
   id?: string;
   Id?: string;
+  sliderId?: string;
+  SliderId?: string;
+  sliderID?: string;
+  SliderID?: string;
   picture?: string;
   Picture?: string;
   image?: string;
@@ -136,12 +140,27 @@ function getPublishDateTime(item: RawSlider) {
   return [date, time].filter(Boolean).join(" ").trim();
 }
 
-function normalizeSlider(item: RawSlider): SliderItem {
+function getSliderId(item: RawSlider) {
+  return (
+    item.id ??
+    item.Id ??
+    item.sliderId ??
+    item.SliderId ??
+    item.sliderID ??
+    item.SliderID ??
+    ""
+  ).trim();
+}
+
+function normalizeSlider(item: RawSlider): SliderItem | null {
+  const id = getSliderId(item);
+  if (!id) return null;
+
   const picture =
     item.picture ?? item.Picture ?? item.imageUrl ?? item.ImageUrl ?? item.image ?? item.Image ?? "";
 
   return {
-    id: item.id ?? item.Id ?? crypto.randomUUID(),
+    id,
     picture,
     imageUrl: resolveSliderImageSrc(picture),
     publishDateTime: getPublishDateTime(item),
@@ -176,7 +195,9 @@ export async function fetchSliders(
   const value = unwrapValue(payload);
 
   if (!Array.isArray(value)) return [];
-  return value.map(normalizeSlider).filter((item) => item.isActive && item.imageUrl);
+  return value
+    .map(normalizeSlider)
+    .filter((item): item is SliderItem => Boolean(item?.isActive && item.imageUrl));
 }
 
 export async function fetchAdminSliders(
@@ -190,7 +211,9 @@ export async function fetchAdminSliders(
   const value = unwrapValue(payload);
 
   if (!Array.isArray(value)) return [];
-  return value.map(normalizeSlider);
+  return value
+    .map(normalizeSlider)
+    .filter((item): item is SliderItem => item !== null);
 }
 
 function toSliderFormData(
@@ -221,6 +244,8 @@ export async function createSlider(input: SliderInput): Promise<void> {
 }
 
 export async function updateSlider(input: SliderInput): Promise<void> {
+  if (!input.id?.trim()) throw new Error("شناسه اسلایدر معتبر نیست.");
+
   await requestSliders(
     "/api/admin/sliders",
     {
@@ -232,21 +257,23 @@ export async function updateSlider(input: SliderInput): Promise<void> {
 }
 
 export async function deleteSlider(id: string): Promise<void> {
+  const sliderId = id.trim();
+  if (!sliderId) throw new Error("شناسه اسلایدر معتبر نیست.");
+
   await requestSliders(
-    `/api/admin/sliders/${encodeURIComponent(id)}`,
+    `/api/admin/sliders/${encodeURIComponent(sliderId)}`,
     { method: "DELETE" },
     "حذف اسلایدر ناموفق بود.",
   );
 }
 
 export async function changeSliderStatus(id: string): Promise<void> {
+  const sliderId = id.trim();
+  if (!sliderId) throw new Error("شناسه اسلایدر معتبر نیست.");
+
   await requestSliders(
-    `/api/admin/sliders/${encodeURIComponent(id)}/status`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    },
+    `/api/admin/sliders/${encodeURIComponent(sliderId)}/status`,
+    { method: "PATCH" },
     "تغییر وضعیت اسلایدر ناموفق بود.",
   );
 }

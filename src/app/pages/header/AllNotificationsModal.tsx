@@ -86,16 +86,6 @@ export function AllNotificationsModal({
                 <Bell className="h-3.5 w-3.5" />
                 لیست کامل اعلان‌ها
               </span>
-
-              <button
-                type="button"
-                onClick={onMarkAllAsRead}
-                disabled={unreadCount === 0}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-[var(--primary-soft)] disabled:pointer-events-none disabled:opacity-45"
-              >
-                <CheckCheck className="h-3.5 w-3.5" />
-                علامت‌گذاری همه
-              </button>
             </div>
 
             <div className="grid flex-1 gap-3 overflow-y-auto p-3 sm:p-4">
