@@ -23,7 +23,6 @@ export function NewsDetailPage({ isDark, toggleTheme }: NewsDetailPageProps) {
         setNews(items.find((item) => item.slug === slug) ?? null);
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        console.error("Failed to load news details:", error);
         setNews(null);
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);

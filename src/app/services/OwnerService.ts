@@ -62,8 +62,7 @@ export class OwnerService {
       this.cache.set(codeNosazi, ownerName);
 
       return ownerName;
-    } catch (err) {
-      console.error(err);
+    } catch {
       return "";
     }
   }

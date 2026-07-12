@@ -22,9 +22,6 @@ const preloadImages = (slides: HeroSlide[]) => {
     img.onload = () => {
       preloadedImages.add(slide.imageSrc);
     };
-    img.onerror = () => {
-      console.error(`Failed to preload image: ${slide.imageSrc}`);
-    };
   });
 };
 

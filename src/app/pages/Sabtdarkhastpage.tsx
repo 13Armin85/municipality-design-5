@@ -1239,9 +1239,7 @@ export function SabtDarkhastPage({
             setOfficeItems(extracted.map((item) => item.label));
           }
         }
-      } catch (error) {
-        console.error("Error fetching select options:", error);
-      }
+      } catch {}
     };
 
     fetchSelectOptions();
@@ -1465,9 +1463,7 @@ export function SabtDarkhastPage({
           void fetchFileCheckData(codeToSelect);
           void fetchRegisteredRequests(codeToSelect);
         }
-      } catch (error) {
-        console.error("Error fetching properties:", error);
-      }
+      } catch {}
     };
 
     fetchProperties();
@@ -1911,15 +1907,8 @@ export function SabtDarkhastPage({
     const safeItems = Array.isArray(items) && items.length > 0 ? items : [];
 
     if (safeItems.length === 0) {
-      console.warn(`هیچ داده‌ای برای ${title} موجود نیست`);
       return;
     }
-
-    console.log("Opening selection modal with:", {
-      title,
-      itemCount: safeItems.length,
-      items: safeItems,
-    });
 
     setSelectionModal({
       open: true,

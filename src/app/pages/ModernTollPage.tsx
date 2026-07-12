@@ -491,9 +491,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
             : [];
       }
       setOwners(rawOwners.map(mapOwner));
-    } catch (error) {
-      console.error("خطا در دریافت اطلاعات نوسازی:", error);
-    }
+    } catch {}
   };
 
   // هندلر کلیک روی یک ملک از لیست زیرمجموعه
@@ -602,9 +600,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
           setSearchInputs(propertyToSelect.codes);
           void loadRenovationData(propertyToSelect.id, propertyToSelect.fullCode);
         }
-      } catch (err) {
-        console.error("Failed to load properties", err);
-      }
+      } catch {}
     };
     void loadProperties();
     // eslint-disable-next-line react-hooks/exhaustive-deps

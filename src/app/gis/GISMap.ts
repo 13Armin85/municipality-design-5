@@ -190,15 +190,12 @@ export class GISMap {
   // async findParcel(code: string) {
   //   const result = await this.parcelService.findByCodeNosazi(code);
 
-  //   console.log("Feature Count:", result.features.length);
 
   //   if (result.features.length === 0) {
-  //     console.log("Feature Not Found");
   //     return;
   //   }
   //   const feature = result.features[0];
 
-  //   console.log(feature);
   //   await this.view.goTo(feature.geometry);
   //   this.highlightHandle?.remove();
   //   this.highlightHandle = this.layerView.highlight(feature);
@@ -289,7 +286,6 @@ export class GISMap {
     // The type of Code Nosazi must be String
     if (!cNosazi || typeof cNosazi !== "string") {
       // throw new Error("The type of Code Nosazi must be String."); //En
-      console.error("نوع پارامتر کد نوسازی باید رشته‌ای باشد."); //Pr
       return false;
     }
 
@@ -297,28 +293,24 @@ export class GISMap {
     const parts = cNosazi.trim().split("-");
     if (parts.length !== 7) {
       // throw new Error("The length of Code Nosazi must be exactly seven."); //En
-      console.error("طول کد نوسازی باید دقیقاً هفت باشد."); //Pr
       return false;
     }
 
     // All Parts must be numeric
     if (parts.some((p) => !/^\d+$/.test(p))) {
       // throw new Error("All Parts of Code Nosazi must be numeric."); //En
-      console.error("تمام قسمت‌ها کد نوسازی باید عددی باشند."); //Pr
       return false;
     }
 
     // The last three parts must be exactly zero
     if (parts[4] !== "0" || parts[5] !== "0" || parts[6] !== "0") {
       // throw new Error("The last three parts of Code Nosazi must be exactly zero."); //En
-      console.error("سه بخش آخر کد نوسازی باید دقیقاً صفر باشند."); //Pr
       return false;
     }
 
     // Sections 1, 2, 3, and 4 must not be blank or zero
     if (parts.slice(0, 4).some((p) => p === "0")) {
       // throw new Error("Sections 1, 2, 3, and 4 of Code Nosazi must not be zero."); //En
-      console.error("بخش‌های ۱، ۲، ۳ و ۴ کد نوسازی نباید صفر باشند."); //Pr
       return false;
     }
 
@@ -400,7 +392,6 @@ export class GISMap {
         },
       );
       if (!features.length) {
-        console.warn("ملک مورد نظر یافت نشد.");
         return;
       }
 
@@ -449,9 +440,7 @@ export class GISMap {
       });
 
       // 6. Export Data
-    } catch (err) {
-      console.error(`${err}`, "error");
-    }
+    } catch {}
   }
 
   private firstValue = (...values: unknown[]) => {
@@ -477,10 +466,7 @@ export class GISMap {
       this.addManagedGraphic(geoMelk, "select", featureMelk.attributes);
 
       // 3. Export Data
-      console.log("Feature:", featureMelk.attributes);
-    } catch (err) {
-      console.error(`${err}`, "error");
-    }
+    } catch {}
   }
 
   public async highlightMelkByCodeNosazi(cNosaziList: any[]) {
@@ -499,17 +485,14 @@ export class GISMap {
           const geoMelk = featureMelk.geometry;
           this.addManagedGraphic(geoMelk, "highlight", featureMelk.attributes);
           geoHighlights.push(geoMelk);
-        } catch (innerErr) {
-          console.error(`خطا در پردازش \u202A${cNosazi}\u202C`, innerErr);
+        } catch {
           continue;
         }
       }
       // 4. Fit View to Highlights extent
       const extent = this.unionExtent(geoHighlights);
       await this.view.goTo(extent, { animate: true });
-    } catch (err) {
-      console.error(`${err}`, "error");
-    }
+    } catch {}
   }
 
   public clearGraphics() {
