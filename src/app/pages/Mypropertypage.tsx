@@ -15,6 +15,9 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  LayoutGrid,  
+  MapPinHouse,
+  PanelBottomClose,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import {
@@ -29,6 +32,12 @@ import {
   type ApiResponse,
 } from "../utils/apiResponseHandler";
 import { dotNet10ApiFetch } from "../data/api";
+
+import { useRef } from "react";
+//import Map from "@/app/components/Map";
+import Map from "../components/Map";
+//import { MapHandle } from "@/app/components/Map/types";
+import { MapHandle } from "../components/Map/types";
 
 interface MyPropertyPageProps {
   isDark: boolean;
@@ -128,6 +137,11 @@ const findTreeItemByFullCode = (
 
 export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
   const navigate = useNavigate();
+   const [modalContent, setModalContent] = useState({
+    title: "راهنما",
+    description:
+      "برای جستجوی کد نوسازی، مقادیر را وارد کرده و دکمه جستجو را بزنید. با کلیک روی هر پرونده در لیست، اطلاعات آن نمایش داده می‌شود و جدول‌ها به‌روزرسانی می‌شوند.",
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
@@ -425,6 +439,14 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
       );
     });
 
+    const handleOpenHelp = (title: string, description: string) => {
+    setModalContent({ title, description });
+    setIsModalOpen(true);
+  };
+    // GIS Parameters
+  const mapRef = useRef<MapHandle>(null);
+  const fullCode = selectedProperty?.fullCode;
+
   return (
     <div
       dir="rtl"
@@ -698,57 +720,115 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
 
           {/* نقشه */}
           <AnimatePresence>
-            {isMapOpen && selectedProperty && (
+            {isMapOpen && selectedProperty && (                            
               <motion.article
-                key="map"
-                initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.97, y: 6 }}
-                transition={{ duration: 0.3 }}
-                className="soft-card bg-card border border-border/50 rounded-2xl relative h-[480px] overflow-hidden group"
-              >
+                initial={{ opacity: 0, scale: 0.98 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="soft-card mesh-panel group relative h-64 overflow-hidden sm:h-80 md:h-[400px]">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() =>
+                    handleOpenHelp(
+                      "نقشه پرونده",
+                      "این قسمت موقعیت ملک را نشان می‌دهد. با کلیک کردن روی هر ملک، اطلاعات اصلی ملک روی نقشه نمایش داده می‌شود و دکمه‌های بزرگنمایی و بازگشت برای کنترل نما قرار دارند.",
+                    )
+                  }
                   className="absolute right-4 top-4 z-20 inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
                 >
                   <Info className="h-3.5 w-3.5" /> راهنما
                 </button>
-                <div className="absolute inset-0 bg-slate-700">
-                  <div className="h-full w-full relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center text-white/40 select-none">
-                        <MapPin className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                        <p className="text-xs">نقشه در حال بارگذاری...</p>
+                {/* {onOpenHelp && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onOpenHelp(
+                        "نقشه ملک",
+                        "این قسمت موقعیت ملک را نشان می‌دهد. با کلیک کردن روی هر ملک، اطلاعات اصلی ملک روی نقشه نمایش داده می‌شود و دکمه‌های بزرگنمایی و بازگشت برای کنترل نما قرار دارند.",
+                      )
+                    }
+                    className="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-lg border bor                                                                                                                                                                                                                                                                                                         der-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
+                  >
+                    <Info className="h-3.5 w-3.5" /> راهنما
+                  </button>
+                )}        */}
+                <div className="absolute inset-0 bg-slate-800">
+                  <Map ref={mapRef} />                   
+                  {/* {activeProperty && (
+                    <div className="absolute bottom-4 left-1/2 w-56 -translate-x-1/2 space-y-1.5 rounded-2xl border border-border bg-card/95 p-3 text-xs shadow-xl backdrop-blur-md sm:bottom-8 sm:w-64 sm:space-y-2 sm:p-4">
+                      <div className="mb-2 flex justify-between border-b border-border/50 pb-2">
+                        <span className="text-sm font-bold text-foreground">
+                          اطلاعات ملک
+                        </span>
                       </div>
-                    </div>
-                  </div>
+                      <div className="flex justify-between">
+                        <span className="font-bold text-foreground">کد نوسازی</span>
+                        <span className="text-[10px] text-muted-foreground sm:text-xs">
+                          {Object.values(activeProperty.codes).join("-")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-bold text-foreground">نام مالک</span>
+                        <span className="text-muted-foreground">
+                          {activeProperty.owner.name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-bold text-foreground">مساحت</span>
+                        <span className="text-muted-foreground">
+                          {activeProperty.registration.map.area}
+                        </span>
+                      </div>
+                    </div>*/}
                 </div>
-
-                <div className="absolute left-4 top-4 flex flex-col gap-2 z-10">
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
-                    <Plus className="h-4 w-4" />
+                <div className="absolute left-3 top-2 flex flex-col gap-2">
+                  <button 
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                    onClick={() => mapRef.current?.zoomIn()}
+                    title="بزرگ‌نمایی">
+                      <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
-                    <Minus className="h-4 w-4" />
+                  <button 
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                    onClick={() => mapRef.current?.zoomOut()}
+                    title="کوچک‌نمایی">
+                      <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
-                    <Home className="h-4 w-4" />
+                  <button 
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                    onClick={() => mapRef.current?.goHome()}
+                    title="بازگشت به نمای اصلی">
+                      <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </button>
+                  <button          
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                    onClick={() => mapRef.current?.toggleBasemap()}
+                    title="تغییر نقشه زمینه">
+                    <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4"/>
                   </button>
                 </div>
-
-                <button
-                  onClick={() => setIsMapOpen(false)}
-                  className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg hover:bg-destructive transition-colors z-10"
-                  title="بستن نقشه"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-
-                <div className="absolute bottom-4 left-4 rounded-md bg-card/80 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur-sm z-10">
-                  m 50
-                </div>
+                <div className="absolute right-3 top-12 flex flex-col gap-2">
+                {/*<div className="absolute right-3 top-12 flex flex-col gap-2 sm:left-4 sm:top-12">*/}
+                  <button
+                    onClick={() => setIsMapOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/90 shadow-lg sm:h-9 sm:w-9 hover:bg-destructive transition-colors"
+                    title="بستن نقشه"
+                  >
+                    <PanelBottomClose className="h-4 w-4" />
+                  </button>
+                  <button 
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                  onClick={() => {mapRef.current?.selectMelkByCodeNosazi(selectedProperty.fullCode);}}
+                  title="موقعیت من">
+                    <MapPinHouse className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </button>
+                  <button 
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/90 shadow-lg sm:h-9 sm:w-9 hover:bg-destructive transition-colors"
+                  onClick={() => mapRef.current?.clearGraphics()}
+                  title="پاک کردن انتخاب">
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </button>          
+                </div>       
               </motion.article>
             )}
           </AnimatePresence>

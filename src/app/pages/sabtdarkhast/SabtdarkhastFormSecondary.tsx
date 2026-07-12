@@ -87,7 +87,7 @@ export function SabtdarkhastFormSecondary({
         </div>
       </motion.article>
 
-          {/* نقشه */}
+      {/* نقشه */}
       <motion.article
         initial={{ opacity: 0, scale: 0.98 }}
         whileInView={{ opacity: 1, scale: 1 }}
@@ -99,7 +99,7 @@ export function SabtdarkhastFormSecondary({
             onClick={() =>
               onOpenHelp(
                 "نقشه ملک",
-                "این قسمت موقعیت نمایشی ملک انتخاب‌شده را نشان می‌دهد. پس از انتخاب پرونده، اطلاعات اصلی ملک روی نقشه نمایش داده می‌شود و دکمه‌های بزرگنمایی و بازگشت برای کنترل نما قرار دارند.",
+                "این قسمت موقعیت ملک را نشان می‌دهد. با کلیک کردن روی هر ملک، اطلاعات اصلی ملک روی نقشه نمایش داده می‌شود و دکمه‌های بزرگنمایی و بازگشت برای کنترل نما قرار دارند.",
               )
             }
             className="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-lg border bor                                                                                                                                                                                                                                                                                                         der-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
