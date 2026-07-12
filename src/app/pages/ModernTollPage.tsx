@@ -17,6 +17,8 @@ import {
   Users,
   Receipt,
   History,
+  LayoutGrid,  
+  MapPinHouse, 
 } from "lucide-react";
 import { Link } from "react-router";
 import {
@@ -38,6 +40,12 @@ import {
   flattenApiPropertyFiles,
   getPropertyFileList,
 } from "../data/propertyFiles";
+
+import { useRef } from "react";
+//import Map from "@/app/components/Map";
+import Map from "../components/Map";
+//import { MapHandle } from "@/app/components/Map/types";
+import { MapHandle } from "../components/Map/types";
 
 interface LocalPropertyItem {
   id: string;
@@ -629,6 +637,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   const currentFeeRows = mergePairs(feesRight, feesLeft);
   const hasCurrentFees = currentFeeRows.length > 0;
 
+  // GIS Parameters
+  const mapRef = useRef<MapHandle>(null);
+  const fullCode = codeNosazi;
   return (
     <div
       dir="rtl"
@@ -985,49 +996,96 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
               )}
             </div>
           </motion.article>
-
+          
           {/* نقشه */}
           <motion.article
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="soft-card mesh-panel relative h-[400px] overflow-hidden group"
-          >
-            <button
-              type="button"
-              onClick={() =>
-                handleOpenHelp(
-                  "نقشه پرونده",
-                  "این بخش موقعیت نمادین پرونده انتخاب‌شده را نشان می‌دهد. دکمه‌های بزرگنمایی و بازگشت به نمای اولیه برای کنترل نقشه قرار داده شده‌اند.",
-                )
-              }
-              className="absolute right-4 top-4 z-30 inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
-            >
-              <Info className="h-3.5 w-3.5" /> راهنما
-            </button>
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-              <div className="absolute inset-0 bg-blue-900/20 z-10" />
-              <img
-                src="/map-placeholder.jpg"
-                alt="Map"
-                className="h-full w-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
-              />
+            className="soft-card mesh-panel group relative h-64 overflow-hidden sm:h-80 md:h-[400px]">            
+              <button
+                type="button"
+                onClick={() =>
+                  handleOpenHelp(
+                    "نقشه ملک",
+                    "این قسمت موقعیت ملک را نشان می‌دهد. با کلیک کردن روی هر ملک، اطلاعات اصلی ملک روی نقشه نمایش داده می‌شود و دکمه‌های بزرگنمایی و بازگشت برای کنترل نما قرار دارند.",
+                  )
+                }
+                className="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-lg border bor                                                                                                                                                                                                                                                                                                         der-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
+              >
+                <Info className="h-3.5 w-3.5" /> راهنما
+              </button>                  
+            <div className="absolute inset-0 bg-slate-800">
+              <Map ref={mapRef} />                   
+              {/* {activeProperty && (
+                <div className="absolute bottom-4 left-1/2 w-56 -translate-x-1/2 space-y-1.5 rounded-2xl border border-border bg-card/95 p-3 text-xs shadow-xl backdrop-blur-md sm:bottom-8 sm:w-64 sm:space-y-2 sm:p-4">
+                  <div className="mb-2 flex justify-between border-b border-border/50 pb-2">
+                    <span className="text-sm font-bold text-foreground">
+                      اطلاعات ملک
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-bold text-foreground">کد نوسازی</span>
+                    <span className="text-[10px] text-muted-foreground sm:text-xs">
+                      {Object.values(activeProperty.codes).join("-")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-bold text-foreground">نام مالک</span>
+                    <span className="text-muted-foreground">
+                      {activeProperty.owner.name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-bold text-foreground">مساحت</span>
+                    <span className="text-muted-foreground">
+                      {activeProperty.registration.map.area}
+                    </span>
+                  </div>
+                </div>*/}
             </div>
-            <div className="absolute left-4 top-4 z-20 flex flex-col gap-2">
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
-                <Plus className="h-4 w-4" />
+            <div className="absolute left-3 top-2 flex flex-col gap-2">
+              <button 
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.zoomIn()}
+                title="بزرگ‌نمایی">
+                  <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
-                <Minus className="h-4 w-4" />
+              <button 
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.zoomOut()}
+                title="کوچک‌نمایی">
+                  <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
-              <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-card/90 shadow-lg hover:bg-card transition-colors text-foreground">
-                <Home className="h-4 w-4" />
+              <button 
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.goHome()}
+                title="بازگشت به نمای اصلی">
+                  <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button          
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.toggleBasemap()}
+                title="تغییر نقشه زمینه">
+                <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4"/>
               </button>
             </div>
-            <button className="absolute right-4 top-14 z-20 flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/90 text-white shadow-lg hover:bg-destructive transition-colors">
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </motion.article>
+            <div className="absolute right-3 top-12 flex flex-col gap-2">
+            {/*<div className="absolute right-3 top-12 flex flex-col gap-2 sm:left-4 sm:top-12">*/}
+              <button 
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+              onClick={() => {mapRef.current?.selectMelkByCodeNosazi(fullCode);}}
+              title="موقعیت من">
+                <MapPinHouse className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button 
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/90 shadow-lg sm:h-9 sm:w-9 hover:bg-destructive transition-colors"
+              onClick={() => mapRef.current?.clearGraphics()}
+              title="پاک کردن انتخاب">
+                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>          
+            </div>       
+          </motion.article>                          
         </div>
       </main>
     </div>
