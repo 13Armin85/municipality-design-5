@@ -108,7 +108,7 @@ export class GISMap {
       thumbnailUrl: "../../../dist/images/Satellite.png",
       baseLayers: [
         new ImageryLayer({
-          url: "http://192.168.10.112:6080/arcgis/rest/services/Maragheh/Google2025/ImageServer",
+          url: "http://192.168.10.3:6080/arcgis/rest/services/Maragheh/Google2025/ImageServer",
         }),
       ],
     });
