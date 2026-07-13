@@ -43,6 +43,7 @@ import {
   AUTH_TOKEN_KEY,
   AUTH_TYPE_KEY,
   USER_NATIONAL_CODE_KEY,
+  storeAuthTokens,
 } from "../utils/authStorage";
 
 import { type ForgotStep } from "../pages/header/Forgotpasswordmodal";
@@ -390,7 +391,7 @@ export function Header({ isDark, toggleTheme }: HeaderProps) {
       getNationalCodeFromAuthPayload(data) || sahkarNationalCode;
 
     if (resolvedToken) {
-      localStorage.setItem(AUTH_TOKEN_KEY, String(resolvedToken));
+      storeAuthTokens(data, String(resolvedToken));
     }
     if (resolvedNationalCode) {
       localStorage.setItem(USER_NATIONAL_CODE_KEY, String(resolvedNationalCode));

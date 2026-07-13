@@ -10,7 +10,7 @@ import {
   Sun,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { Dashboard } from "./adminpanel/AdminDashboard";
+// import { Dashboard } from "./adminpanel/AdminDashboard";
 import { AdminFaqPage } from "./adminpanel/AdminFaqPage";
 import { AdminNewsPage } from "./adminpanel/AdminNewsPage";
 import { AdminNewsGroupsPage } from "./adminpanel/AdminNewsGroupsPage";
@@ -37,7 +37,8 @@ import {
 // ==================== MAIN ADMIN PANEL ====================
 export default function AdminPanel({ isDark, toggleTheme }) {
   const navigate = useNavigate();
-  const [activePage, setActivePage] = useState("dashboard");
+  // const [activePage, setActivePage] = useState("dashboard");
+  const [activePage, setActivePage] = useState("news");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [openNavTrees, setOpenNavTrees] = useState({
@@ -65,7 +66,7 @@ export default function AdminPanel({ isDark, toggleTheme }) {
   };
 
   const pageComponents = {
-    dashboard: <Dashboard />,
+    // dashboard: <Dashboard />,
     faq: <AdminFaqPage />,
     news: <AdminNewsPage />,
     "news-groups": <AdminNewsGroupsPage />,
@@ -347,7 +348,9 @@ export default function AdminPanel({ isDark, toggleTheme }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {pageComponents[activePage] ?? pageComponents.dashboard}
+              {/* fallback داشبورد همراه با تب آن موقتاً غیرفعال شده است. */}
+              {/* {pageComponents[activePage] ?? pageComponents.dashboard} */}
+              {pageComponents[activePage] ?? pageComponents.news}
             </motion.div>
           </AnimatePresence>
         </main>

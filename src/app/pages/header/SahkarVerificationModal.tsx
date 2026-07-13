@@ -16,6 +16,7 @@ import {
   type ApiResponse,
 } from "../../utils/apiResponseHandler";
 import { dotNet10ApiFetch } from "../../data/api";
+import { storeAuthTokens } from "../../utils/authStorage";
 
 interface SahkarVerificationModalProps {
   isOpen: boolean;
@@ -234,10 +235,7 @@ export function SahkarVerificationModal({
 
       const token = getAuthTokenFromResponse(data);
       if (token) {
-        localStorage.setItem(
-          "auth-token",
-          String(token).replace(/^Bearer\s+/i, ""),
-        );
+        storeAuthTokens(data, String(token));
       }
 
       setStep("success");

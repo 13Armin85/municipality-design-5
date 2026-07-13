@@ -3,6 +3,7 @@ import { AUTH_TOKEN_KEY } from "../utils/authStorage";
 
 export interface SliderItem {
   id: string;
+  managementId: string | null;
   picture: string;
   imageUrl: string;
   publishDateTime: string;
@@ -35,6 +36,12 @@ type RawSlider = {
   SliderId?: string;
   sliderID?: string;
   SliderID?: string;
+  sliderGuid?: string;
+  SliderGuid?: string;
+  guid?: string;
+  Guid?: string;
+  key?: string;
+  Key?: string;
   picture?: string;
   Picture?: string;
   image?: string;
@@ -141,28 +148,48 @@ function getPublishDateTime(item: RawSlider) {
 }
 
 function getSliderId(item: RawSlider) {
-  return (
+  const knownId = (
     item.id ??
     item.Id ??
     item.sliderId ??
     item.SliderId ??
     item.sliderID ??
     item.SliderID ??
+    item.sliderGuid ??
+    item.SliderGuid ??
+    item.guid ??
+    item.Guid ??
+    item.key ??
+    item.Key ??
     ""
   ).trim();
+
+  if (knownId) return knownId;
+
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  for (const [key, value] of Object.entries(item)) {
+    if (/picture|image/i.test(key) || typeof value !== "string") continue;
+    const candidate = value.trim();
+    if (uuidPattern.test(candidate)) return candidate;
+  }
+
+  return "";
 }
 
-function normalizeSlider(item: RawSlider): SliderItem | null {
-  const id = getSliderId(item);
-  if (!id) return null;
-
+function normalizeSlider(item: RawSlider, index: number): SliderItem | null {
+  const managementId = getSliderId(item) || null;
   const picture =
     item.picture ?? item.Picture ?? item.imageUrl ?? item.ImageUrl ?? item.image ?? item.Image ?? "";
+  const imageUrl = resolveSliderImageSrc(picture);
+  if (!imageUrl) return null;
 
   return {
-    id,
+    id: managementId ?? `public-slider-${index}`,
+    managementId,
     picture,
-    imageUrl: resolveSliderImageSrc(picture),
+    imageUrl,
     publishDateTime: getPublishDateTime(item),
     isActive: item.isActive ?? item.IsActive ?? item.status ?? item.Status ?? true,
   };
@@ -203,11 +230,21 @@ export async function fetchSliders(
 export async function fetchAdminSliders(
   signal?: AbortSignal,
 ): Promise<SliderItem[]> {
-  const payload = await requestSliders<RawSlider[]>(
-    "/api/admin/sliders",
-    { method: "GET", signal },
-    "دریافت اسلایدرهای پنل ناموفق بود.",
-  );
+  let payload: ApiEnvelope<RawSlider[]> | RawSlider[];
+  try {
+    payload = await requestSliders<RawSlider[]>(
+      "/api/admin/sliders",
+      { method: "GET", signal },
+      "دریافت اسلایدرهای پنل ناموفق بود.",
+    );
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    payload = await requestSliders<RawSlider[]>(
+      "/api/sliders",
+      { method: "GET", signal },
+      "دریافت اسلایدرهای ثبت‌شده ناموفق بود.",
+    );
+  }
   const value = unwrapValue(payload);
 
   if (!Array.isArray(value)) return [];

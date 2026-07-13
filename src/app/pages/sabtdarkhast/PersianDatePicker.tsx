@@ -238,12 +238,14 @@ export function PersianDatePicker({
       return (
         <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
           <button
+            type="button"
             onClick={() => setCalView("month")}
             className="transition-colors underline-offset-2 hover:text-primary hover:underline"
           >
             {PERSIAN_MONTHS[view.month - 1]}
           </button>
           <button
+            type="button"
             onClick={() => {
               setYearPageStart(
                 Math.floor((view.year - 1) / YEAR_PAGE_SIZE) * YEAR_PAGE_SIZE +
@@ -262,6 +264,7 @@ export function PersianDatePicker({
     if (calView === "month") {
       return (
         <button
+          type="button"
           onClick={() => {
             setYearPageStart(
               Math.floor((view.year - 1) / YEAR_PAGE_SIZE) * YEAR_PAGE_SIZE + 1,
@@ -306,6 +309,7 @@ export function PersianDatePicker({
     >
       <div className="flex items-center justify-between border-b border-border/50 bg-primary/5 px-4 py-3">
         <button
+          type="button"
           onClick={handlePrev}
           className="rounded-lg p-1.5 text-primary transition-colors hover:bg-primary/10"
         >
@@ -313,6 +317,7 @@ export function PersianDatePicker({
         </button>
         {headerLabel()}
         <button
+          type="button"
           onClick={handleNext}
           className="rounded-lg p-1.5 text-primary transition-colors hover:bg-primary/10"
         >
@@ -356,6 +361,7 @@ export function PersianDatePicker({
                   today.day === d;
                 return (
                   <button
+                    type="button"
                     key={d}
                     onClick={() => selectDay(d)}
                     className={`h-8 w-full rounded-lg text-xs font-medium transition-all ${isSelected ? "bg-primary font-bold text-primary-foreground shadow-sm" : isToday ? "border border-primary/40 text-primary" : "text-foreground hover:bg-muted"}`}
@@ -386,6 +392,7 @@ export function PersianDatePicker({
                   today.year === view.year && today.month === m;
                 return (
                   <button
+                    type="button"
                     key={m}
                     onClick={() => selectMonth(m)}
                     className={`rounded-xl py-2.5 text-xs font-semibold transition-all ${isSelected ? "bg-primary text-primary-foreground shadow-sm" : isCurrentMonth ? "border border-primary/40 text-primary" : "text-foreground hover:bg-muted"}`}
@@ -413,6 +420,7 @@ export function PersianDatePicker({
                 const isCurrentYear = today.year === y;
                 return (
                   <button
+                    type="button"
                     key={y}
                     onClick={() => selectYear(y)}
                     className={`rounded-xl py-2.5 text-xs font-semibold transition-all ${isSelected ? "bg-primary text-primary-foreground shadow-sm" : isCurrentYear ? "border border-primary/40 text-primary" : "text-foreground hover:bg-muted"}`}
@@ -429,6 +437,7 @@ export function PersianDatePicker({
       <div className="flex items-center justify-between border-t border-border/40 px-3 pb-3 pt-2">
         {calView !== "day" ? (
           <button
+            type="button"
             onClick={() => setCalView(calView === "year" ? "month" : "day")}
             className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/10 hover:text-primary/80"
           >
@@ -438,6 +447,7 @@ export function PersianDatePicker({
           <div />
         )}
         <button
+          type="button"
           onClick={onClose}
           className="rounded-lg px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >

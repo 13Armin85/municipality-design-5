@@ -28,8 +28,7 @@ export const useRetreatData = (): UseRetreatDataResult => {
 
     try {
       setData(await fetchRetreatData(codeNosazi, token));
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError("خطا در دریافت اطلاعات عقب‌نشینی");
     } finally {
       setLoading(false);

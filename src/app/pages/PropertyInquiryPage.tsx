@@ -1,6 +1,6 @@
 // src/pages/PropertyInquiryPage.tsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AnimatePresence, motion } from "motion/react";
 
@@ -12,7 +12,9 @@ import {
   Home,
   Info,
   Layers,
+  LayoutGrid,
   Loader,
+  MapPinHouse,
   Minus,
   Moon,
   Plus,
@@ -46,6 +48,8 @@ import {
 } from "../utils/apiResponseHandler";
 import { PropertyTreeList, type PropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 import { flattenApiPropertyFiles } from "../data/propertyFiles";
+import Map from "../components/Map";
+import type { MapHandle } from "../components/Map/types";
 
 interface PropertyInquiryPageProps {
   isDark: boolean;
@@ -173,6 +177,8 @@ export function PropertyInquiryPage({
   isDark,
   toggleTheme,
 }: PropertyInquiryPageProps) {
+  const mapRef = useRef<MapHandle>(null);
+
   const {
     data: retreatData,
     loading: loadingRetreat,
@@ -251,9 +257,7 @@ export function PropertyInquiryPage({
 
     try {
       await refetchRetreat(code, token);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch {}
   };
 
   const selectPropertyFromList = (subProperty: SubProperty) => {
@@ -392,9 +396,7 @@ export function PropertyInquiryPage({
           setSearchInputs(propertyToSelect.codes);
           void loadRetreatData(propertyToSelect.fullCode);
         }
-      } catch (err) {
-        console.error(err);
-
+      } catch {
         setSubPropertiesError("خطا در بارگذاری پرونده‌ها");
       } finally {
         setLoadingSubProperties(false);
@@ -616,6 +618,86 @@ export function PropertyInquiryPage({
               />
             </div>
           </motion.article>
+
+          {/* نقشه */}
+          <motion.article
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="soft-card mesh-panel group relative h-64 overflow-hidden sm:h-80 md:h-[400px]"
+          >
+            <button
+              type="button"
+              onClick={() =>
+                handleOpenHelp(
+                  "نقشه ملک",
+                  "این قسمت موقعیت ملک را نشان می‌دهد. با کلیک کردن روی هر ملک، اطلاعات اصلی ملک روی نقشه نمایش داده می‌شود و دکمه‌های بزرگنمایی و بازگشت برای کنترل نما قرار دارند.",
+                )
+              }
+              className="absolute right-4 top-4 z-20 inline-flex items-center gap-1 rounded-lg border border-primary/35 bg-card/90 px-2.5 py-1 text-[10px] font-bold text-primary shadow-lg transition-colors hover:bg-card md:text-xs"
+            >
+              <Info className="h-3.5 w-3.5" /> راهنما
+            </button>
+
+            <div className="absolute inset-0 bg-slate-800">
+              <Map ref={mapRef} />
+            </div>
+
+            <div className="absolute left-3 top-2 flex flex-col gap-2">
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.zoomIn()}
+                title="بزرگ‌نمایی"
+              >
+                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.zoomOut()}
+                title="کوچک‌نمایی"
+              >
+                <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.goHome()}
+                title="بازگشت به نمای اصلی"
+              >
+                <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.toggleBasemap()}
+                title="تغییر نقشه زمینه"
+              >
+                <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+            </div>
+
+            <div className="absolute right-3 top-12 flex flex-col gap-2">
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 shadow-lg sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.selectMelkByCodeNosazi(codeNosazi)}
+                title="موقعیت ملک"
+              >
+                <MapPinHouse className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/90 shadow-lg transition-colors hover:bg-destructive sm:h-9 sm:w-9"
+                onClick={() => mapRef.current?.clearGraphics()}
+                title="پاک کردن انتخاب"
+              >
+                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+            </div>
+          </motion.article>
+
           {/* area */}
           <div className="space-y-5">
             <motion.article className="soft-card mesh-panel">

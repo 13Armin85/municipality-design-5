@@ -704,8 +704,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
           "برای دریافت عوارض صنفی، مقدار shop و jobCode در پاسخ فیش پیدا نشد.",
         );
       }
-    } catch (err) {
-      console.error("Failed to load guild fees", err);
+    } catch {
       setError("خطا در دریافت اطلاعات فیش و عوارض صنفی.");
     } finally {
       setIsGuildLoading(false);
@@ -767,8 +766,7 @@ export function GuildFeesPage({ isDark, toggleTheme }: GuildFeesPageProps) {
           setSearchInputs(propertyToSelect.codes);
           void loadGuildData(propertyToSelect.fullCode, propertyToSelect);
         }
-      } catch (err) {
-        console.error("Failed to load guild cases", err);
+      } catch {
         setError("خطا در دریافت پرونده‌های زیرمجموعه.");
       } finally {
         setIsCasesLoading(false);

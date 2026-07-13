@@ -29,7 +29,6 @@ export function NewsSection() {
         setHasError(false);
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        console.error("Failed to load news:", error);
         setHasError(true);
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);
@@ -48,7 +47,6 @@ export function NewsSection() {
         setNewsGroups(await fetchPublicNewsGroups(controller.signal));
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        console.error("Failed to load news groups:", error);
         setNewsGroups([]);
       } finally {
         if (!controller.signal.aborted) setAreGroupsLoading(false);

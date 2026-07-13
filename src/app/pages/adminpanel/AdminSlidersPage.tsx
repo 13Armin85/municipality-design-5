@@ -28,7 +28,7 @@ const inputClass =
   "h-11 rounded-xl border border-border bg-background px-3.5 text-sm outline-none transition-colors focus:border-primary";
 
 function isValidPersianDateTime(value: string) {
-  const match = /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2})$/.exec(
+  const match = /^(\d{4})[/-](\d{2})[/-](\d{2})[ T](\d{2}):(\d{2})(?::\d{2})?$/.exec(
     value.trim(),
   );
   if (!match) return false;
@@ -103,6 +103,15 @@ export function AdminSlidersPage() {
     setCurrentImage("");
   };
 
+  const resolveManagementId = (item: SliderItem) => {
+    if (item.managementId) return item.managementId;
+    setMessage({
+      type: "error",
+      text: "شناسه این اسلایدر در پاسخ API وجود ندارد؛ عملیات مدیریتی بدون Id قابل انجام نیست.",
+    });
+    return null;
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const publishDateTime = form.publishDateTime.trim();
@@ -162,7 +171,9 @@ export function AdminSlidersPage() {
   };
 
   const handleEdit = (item: SliderItem) => {
-    setEditingId(item.id);
+    const managementId = resolveManagementId(item);
+    if (!managementId) return;
+    setEditingId(managementId);
     setForm({ picture: null, publishDateTime: item.publishDateTime });
     setCurrentImage(item.imageUrl);
     setMessage(null);
@@ -170,12 +181,12 @@ export function AdminSlidersPage() {
   };
 
   const handleDelete = async (item: SliderItem) => {
-    if (!window.confirm("این اسلایدر حذف شود؟")) return;
-
+    const managementId = resolveManagementId(item);
+    if (!managementId) return;
     setDeletingId(item.id);
     setMessage(null);
     try {
-      await deleteSlider(item.id);
+      await deleteSlider(managementId);
       if (editingId === item.id) resetForm();
       setMessage({ type: "success", text: "اسلایدر با موفقیت حذف شد." });
       await loadItems();
@@ -191,10 +202,12 @@ export function AdminSlidersPage() {
   };
 
   const handleToggleStatus = async (item: SliderItem) => {
+    const managementId = resolveManagementId(item);
+    if (!managementId) return;
     setStatusLoadingId(item.id);
     setMessage(null);
     try {
-      await changeSliderStatus(item.id);
+      await changeSliderStatus(managementId);
       setMessage({
         type: "success",
         text: item.isActive
