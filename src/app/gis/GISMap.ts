@@ -97,7 +97,7 @@ export class GISMap {
 
   async initialize(container: HTMLDivElement) {
    this.melkLayer = new FeatureLayer({
-      url: "http://192.168.10.112:6080/arcgis/rest/services/Maragheh/Maraghe_14050406/MapServer/1",
+      url: "http://192.168.10.3:6080/arcgis/rest/services/Maragheh/Maragheh_14040117/MapServer/0",
       minScale: 0,
     });
     // this.parcelService = new ParcelService(this.melkLayer);
@@ -110,7 +110,7 @@ export class GISMap {
       thumbnailUrl: "../../../dist/images/Satellite.png",
       baseLayers: [
         new ImageryLayer({
-          url: "http://192.168.10.112:6080/arcgis/rest/services/Maragheh/Google2025/ImageServer",
+          url: "http://192.168.10.3:6080/arcgis/rest/services/Maragheh/Google2025/ImageServer",
         }),
       ],
     });
