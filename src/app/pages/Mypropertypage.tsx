@@ -179,6 +179,10 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
     navigate("/#services");
   };
 
+  const handleBackToHome = () => {
+    navigate("/");
+  };
+
   const handleSelectTreeItem = (
     property: PropertyItem,
     treeItem: PropertyTreeItem,
@@ -507,13 +511,35 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
         <div className="container mx-auto px-0 md:px-2 lg:px-6">
           <div className="nav-shell bg-card border border-border/50 rounded-2xl shadow-sm">
             <div className="flex h-16 items-center justify-between gap-2 px-3 md:h-20 md:px-4">
-              <button
-                onClick={handlePerformAction}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95 hover:bg-primary/90"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                <span className="hidden text-sm md:block">انجام عملیات</span>
-              </button>
+              {loading ? (
+                <button
+                  type="button"
+                  disabled
+                  aria-label="در حال بررسی املاک"
+                  className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl bg-muted px-3 py-1.5 text-xs font-bold text-muted-foreground shadow"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>در حال بررسی</span>
+                </button>
+              ) : propertyItems.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={handlePerformAction}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95 hover:bg-primary/90"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>انجام عملیات</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleBackToHome}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow transition-transform active:scale-95 hover:bg-primary/90"
+                >
+                  <Home className="h-4 w-4" />
+                  <span>بازگشت</span>
+                </button>
+              )}
 
               <h1 className="text-sm font-bold text-foreground md:text-base">
                 املاک من
@@ -651,7 +677,7 @@ export function MyPropertyPage({ isDark, toggleTheme }: MyPropertyPageProps) {
                   </motion.div>
                 ))}
               </div>
-              <div className="hidden">
+              <div className="responsive-table-shell hidden">
                 <table className="w-full text-right text-xs md:text-sm">
                   <thead>
                     <tr className="bg-muted/40 border-b border-border/60">

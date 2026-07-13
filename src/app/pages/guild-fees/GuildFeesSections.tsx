@@ -224,8 +224,8 @@ function DataTable({
   rows: LabelValue[];
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border/70 bg-card/40">
-      <table className="min-w-[34rem] table-fixed text-right text-sm md:min-w-full">
+    <div className="responsive-table-shell rounded-xl border border-border/70 bg-card/40">
+      <table className="w-full table-fixed text-right text-xs sm:text-sm">
         <thead className="bg-[var(--primary-soft)]/70 text-foreground">
           <tr>
             <th className="w-[38%] px-3 py-2.5 font-semibold">عنوان</th>
@@ -373,8 +373,8 @@ export function GuildFeesOwnersSection({
           </button>
         )}
       </div>
-      <div className="overflow-x-auto p-4 md:p-5">
-        <table className="min-w-full overflow-hidden rounded-xl border border-border/70 text-sm">
+      <div className="responsive-table-shell p-3 sm:p-4 md:p-5">
+        <table className="w-full min-w-[40rem] overflow-hidden rounded-xl border border-border/70 text-xs sm:text-sm">
           <thead className="bg-[var(--primary-soft)]/70 text-foreground">
             <tr>
               <th className="px-3 py-2.5 text-right font-semibold">نام</th>

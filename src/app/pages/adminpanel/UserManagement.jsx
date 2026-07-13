@@ -292,7 +292,7 @@ export function UserManagement() {
       ) : (
         <>
           <div className="hidden overflow-hidden rounded-lg border border-border/70 bg-card shadow-sm md:block">
-            <div className="overflow-x-auto">
+            <div className="responsive-table-shell">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/70 bg-muted/40">

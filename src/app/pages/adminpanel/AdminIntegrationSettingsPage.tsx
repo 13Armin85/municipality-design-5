@@ -121,7 +121,7 @@ function CurrentSettingsTable({
           {emptyText}
         </div>
       ) : (
-        <div className="overflow-x-auto p-5">
+        <div className="responsive-table-shell p-3 sm:p-5">
           <table className="w-full min-w-[520px] border-separate border-spacing-0 overflow-hidden rounded-xl border border-border text-sm">
             <tbody>
               {rows.map((row) => (

@@ -636,7 +636,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                 desc="این جدول درخواست‌های ثبت‌شده پرونده فعال را نمایش می‌دهد. روی هر ردیف کلیک کنید تا جزئیات همان درخواست در جدول بعدی نمایش داده شود؛ ستون وضعیت نشان می‌دهد درخواست در چه حالتی قرار دارد."
               />
             </div>
-            <div className="overflow-x-auto p-4">
+            <div className="responsive-table-shell p-3 sm:p-4">
               <table className="w-full min-w-[560px] border-separate border-spacing-0 text-xs md:text-sm">
                 <thead>
                   <tr className="bg-muted/40 text-muted-foreground">
@@ -708,7 +708,7 @@ export function PropertyRequestDetails({ isDark, toggleTheme }: Props) {
                 desc="بعد از انتخاب یک درخواست از جدول پیگیری، مراحل گردش کار، گیرنده، وضعیت، تاریخ و توضیحات آن در این جدول نمایش داده می‌شود. برای دیدن همه ستون‌ها در صفحه‌های کوچک از اسکرول افقی استفاده کنید."
               />
             </div>
-            <div className="overflow-x-auto p-3 sm:p-4">
+            <div className="responsive-table-shell p-3 sm:p-4">
               {requestDetailsError ? (
                 <div className="rounded-xl border border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                   {requestDetailsError}

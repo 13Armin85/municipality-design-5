@@ -809,8 +809,8 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                 desc="در این جدول اطلاعات مالک یا مالکین پرونده انتخاب‌شده نمایش داده می‌شود. برای به‌روزرسانی جدول، پرونده را انتخاب کنید و جستجو را بزنید."
               />
             </div>
-            <div className="overflow-x-auto p-4">
-              <table className="w-full text-right text-[11px] md:text-xs">
+            <div className="responsive-table-shell p-3 sm:p-4">
+              <table className="w-full min-w-[42rem] text-right text-[11px] md:text-xs">
                 <thead>
                   <tr className="bg-[var(--primary-soft)] text-primary">
                     <th className="border border-border/50 p-2 text-center">

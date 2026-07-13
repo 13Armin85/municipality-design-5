@@ -144,7 +144,7 @@ function LogsTable<T extends { id: string }>({
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
+      <div className="responsive-table-shell hidden md:block">
         <table className="w-full min-w-[760px] table-fixed border-separate border-spacing-0 text-sm xl:min-w-0">
           <thead>
             <tr>

@@ -177,6 +177,41 @@
     min-height: 100vh;
   }
 
+  /* Keep wide data tables inside their cards on narrow/touch screens. */
+  .responsive-table-shell {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--primary) 55%, transparent)
+      color-mix(in oklab, var(--muted) 65%, transparent);
+  }
+
+  .responsive-table-shell::-webkit-scrollbar {
+    height: 7px;
+  }
+
+  .responsive-table-shell::-webkit-scrollbar-track {
+    background: color-mix(in oklab, var(--muted) 65%, transparent);
+    border-radius: 999px;
+  }
+
+  .responsive-table-shell::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--primary) 55%, transparent);
+    border-radius: 999px;
+  }
+
+  .responsive-table-shell table {
+    max-width: none;
+  }
+
+  .responsive-table-shell th,
+  .responsive-table-shell td {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
   h1,
   h2,
   h3,

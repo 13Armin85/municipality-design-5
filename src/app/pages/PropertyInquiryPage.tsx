@@ -72,7 +72,7 @@ function ResponsiveInfoTable({
   title?: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border/70 bg-card/40">
+    <div className="responsive-table-shell overflow-hidden rounded-xl border border-border/70 bg-card/40">
       <table className="w-full table-fixed text-right text-[11px] sm:text-xs md:text-sm">
         {title && (
           <caption className="border-b border-border/70 bg-[var(--primary-soft)]/60 px-3 py-2 text-right font-bold text-foreground">
@@ -114,7 +114,7 @@ function CompactRetreatTable<T extends object>({
   rows: T[];
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border/70 bg-card/40">
+    <div className="responsive-table-shell overflow-hidden rounded-xl border border-border/70 bg-card/40">
       <table className="w-full table-fixed border-collapse text-right text-[10px] leading-5 sm:text-[11px] md:text-xs">
         <thead className="bg-[var(--primary-soft)]/70 text-foreground">
           <tr>
@@ -555,7 +555,7 @@ export function PropertyInquiryPage({
       </AnimatePresence>
 
       <main className="px-3 pb-12 pt-10">
-        <div className="container mx-auto max-w-6xl space-y-5">
+        <div className="container mx-auto flex max-w-6xl flex-col space-y-5">
           {/* search */}
           <motion.article className="soft-card mesh-panel overflow-hidden mt-[60px]">
             <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
@@ -624,7 +624,7 @@ export function PropertyInquiryPage({
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="soft-card mesh-panel group relative h-64 overflow-hidden sm:h-80 md:h-[400px]"
+            className="soft-card mesh-panel group relative order-last h-64 overflow-hidden sm:h-80 md:h-[400px]"
           >
             <button
               type="button"
@@ -758,7 +758,7 @@ export function PropertyInquiryPage({
             </motion.article>
 
             {/* directions */}
-            <motion.article className="soft-card mesh-panel overflow-hidden">
+            <motion.article className="soft-card mesh-panel overflow-hidden mb-[25px]">
               <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Compass className="h-4 w-4 text-primary" />

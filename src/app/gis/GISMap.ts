@@ -346,16 +346,16 @@ export class GISMap {
     rowsArray: { label: string; value: any }[],
   ): string {
     return `
-    <table style="width:100%; border-collapse:collapse;">
+    <table style="width:100%; max-width:100%; table-layout:fixed; border-collapse:collapse; font-size:12px;">
       <tbody>
         ${rowsArray
           .map(
             (row) => `
           <tr>
-            <td style="padding:4px 8px; border:1px solid #ddd; font-weight:bold;">
+            <td style="width:38%; padding:4px 8px; border:1px solid #ddd; font-weight:bold; overflow-wrap:anywhere;">
               ${row.label}
             </td>
-            <td style="padding:4px 8px; border:1px solid #ddd;">
+            <td style="padding:4px 8px; border:1px solid #ddd; overflow-wrap:anywhere; word-break:break-word;">
               ${row.value}
             </td>
           </tr>
