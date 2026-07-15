@@ -108,7 +108,7 @@ export function SabtdarkhastFormSecondary({
           </button>
         )}       
         <div className="absolute inset-0 bg-slate-800">
-          <Map ref={mapRef} />                   
+          <Map ref={mapRef} autoSelectCode={activeProperty?.fullCode} />                   
           {/* {activeProperty && (
             <div className="absolute bottom-4 left-1/2 w-56 -translate-x-1/2 space-y-1.5 rounded-2xl border border-border bg-card/95 p-3 text-xs shadow-xl backdrop-blur-md sm:bottom-8 sm:w-64 sm:space-y-2 sm:p-4">
               <div className="mb-2 flex justify-between border-b border-border/50 pb-2">
