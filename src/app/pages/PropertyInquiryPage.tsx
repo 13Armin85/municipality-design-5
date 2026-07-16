@@ -640,7 +640,7 @@ export function PropertyInquiryPage({
             </button>
 
             <div className="absolute inset-0 bg-slate-800">
-              <Map ref={mapRef} autoSelectCode={selectedSubProperty?.fullCode} />
+              <Map ref={mapRef} autoSelectCode={codeNosazi} />
             </div>
 
             <div className="absolute left-3 top-2 flex flex-col gap-2">

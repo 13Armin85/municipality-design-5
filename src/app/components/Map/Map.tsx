@@ -13,21 +13,30 @@ interface MapProps {
   autoSelectCode?: string | null;
 }
 
+type AutoSelectStatus = "idle" | "pending" | "done";
+
 const Map = forwardRef<MapHandle, MapProps>(({ autoSelectCode }, ref) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const arcgisMap = useRef<GISMap | null>(null);
   const mapReady = useRef<Promise<void> | null>(null);
-  const hasAutoSelected = useRef(false);
-  const autoSelectAttempt = useRef(0);
+  const mapGeneration = useRef(0);
+  const autoSelectStatus = useRef<AutoSelectStatus>("idle");
 
   useEffect(() => {
     if (!mapRef.current) return;
 
     const map = new GISMap();
+    const generation = ++mapGeneration.current;
     arcgisMap.current = map;
     mapReady.current = map.initialize(mapRef.current);
+    autoSelectStatus.current = "idle";
 
     return () => {
+      if (mapGeneration.current === generation) {
+        mapGeneration.current += 1;
+        autoSelectStatus.current = "idle";
+      }
+
       map.destroy();
 
       if (arcgisMap.current === map) {
@@ -40,30 +49,36 @@ const Map = forwardRef<MapHandle, MapProps>(({ autoSelectCode }, ref) => {
   useEffect(() => {
     const code = autoSelectCode?.trim();
     const ready = mapReady.current;
+    const map = arcgisMap.current;
 
-    if (!code || !ready || hasAutoSelected.current) return;
+    if (!code || !ready || !map || autoSelectStatus.current !== "idle") {
+      return;
+    }
 
-    hasAutoSelected.current = true;
-    const attempt = ++autoSelectAttempt.current;
+    autoSelectStatus.current = "pending";
+    const generation = mapGeneration.current;
 
     void ready
-      .then(() => {
-        if (autoSelectAttempt.current === attempt) {
-          return arcgisMap.current?.selectMelkByCodeNosazi(code);
+      .then(async () => {
+        if (
+          mapGeneration.current !== generation ||
+          arcgisMap.current !== map ||
+          autoSelectStatus.current !== "pending"
+        ) {
+          return;
+        }
+
+        await map.selectMelkByCodeNosazi(code);
+
+        if (mapGeneration.current === generation) {
+          autoSelectStatus.current = "done";
         }
       })
       .catch(() => {
-        if (autoSelectAttempt.current === attempt) {
-          hasAutoSelected.current = false;
+        if (mapGeneration.current === generation) {
+          autoSelectStatus.current = "idle";
         }
       });
-
-    return () => {
-      if (autoSelectAttempt.current === attempt) {
-        autoSelectAttempt.current += 1;
-        hasAutoSelected.current = false;
-      }
-    };
   }, [autoSelectCode]);
 
    useImperativeHandle(ref, () => ({
