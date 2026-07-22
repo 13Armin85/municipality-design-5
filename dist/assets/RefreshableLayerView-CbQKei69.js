@@ -1,0 +1,1 @@
+import{b3 as i,b5 as t,b6 as h,b as l,w as b}from"./Map-DYmycm5k.js";const o=s=>{let e=class extends s{initialize(){this.addHandles(h((()=>this.layer),"refresh",(r=>{this.doRefresh(r.dataChanged).catch((a=>{l(a)||b.getLogger(this).error(a)}))})),"RefreshableLayerView")}};return e=i([t("esri.views.layers.RefreshableLayerView")],e),e};export{o as i};

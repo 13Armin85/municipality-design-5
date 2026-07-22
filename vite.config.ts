@@ -6,6 +6,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 const DEFAULT_API_BASE_URL = "http://192.168.10.3:6300";
 const DEFAULT_DOTNET10_API_BASE_URL = "http://192.168.10.3:6500";
+const DEFAULT_PAYMENT_API_BASE_URL = "http://172.16.1.16:6101";
 
 const readEnvUrl = (
   env: Record<string, string>,
@@ -58,6 +59,11 @@ export default defineConfig(({ mode }) => {
       "VITE_DOTNET10_API_URL",
     ],
     DEFAULT_DOTNET10_API_BASE_URL,
+  );
+  const paymentApiProxyTarget = readEnvUrl(
+    env,
+    ["VITE_PAYMENT_API_PROXY_TARGET", "VITE_PAYMENT_API_BASE_URL"],
+    DEFAULT_PAYMENT_API_BASE_URL,
   );
 
   return {
@@ -127,6 +133,7 @@ export default defineConfig(({ mode }) => {
           navigateFallbackDenylist: [
             /^\/api(?:\/|$)/,
             /^\/dotnet10-api(?:\/|$)/,
+            /^\/payment-api(?:\/|$)/,
           ],
           runtimeCaching: [
             {
@@ -134,7 +141,9 @@ export default defineConfig(({ mode }) => {
                 url.pathname === "/api" ||
                 url.pathname.startsWith("/api/") ||
                 url.pathname === "/dotnet10-api" ||
-                url.pathname.startsWith("/dotnet10-api/"),
+                url.pathname.startsWith("/dotnet10-api/") ||
+                url.pathname === "/payment-api" ||
+                url.pathname.startsWith("/payment-api/"),
               handler: "NetworkOnly",
               method: "GET",
               options: {
@@ -169,6 +178,12 @@ export default defineConfig(({ mode }) => {
       port: 5173,
 
       proxy: {
+        "/payment-api": {
+          target: paymentApiProxyTarget,
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/payment-api/, ""),
+        },
         "/dotnet10-api": {
           target: dotNet10ApiProxyTarget,
           changeOrigin: true,

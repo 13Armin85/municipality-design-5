@@ -6,6 +6,7 @@ import {
 
 const DEFAULT_DOTNET48_API_BASE_URL = "http://192.168.10.3:6300";
 const DEFAULT_DOTNET10_API_BASE_URL = "http://192.168.10.3:6500";
+const DEFAULT_PAYMENT_API_BASE_URL = "http://172.16.1.16:6101";
 
 const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, "");
 
@@ -35,6 +36,13 @@ const DOTNET10_API_BASE_URL = import.meta.env.DEV
       import.meta.env.VITE_DOTNET10_API_BASE_URL,
       import.meta.env.VITE_DOTNET10_API_URL,
       DEFAULT_DOTNET10_API_BASE_URL,
+    );
+
+const PAYMENT_API_BASE_URL = import.meta.env.DEV
+  ? firstEnvUrl(import.meta.env.VITE_DEV_PAYMENT_API_BASE_URL, "/payment-api")
+  : firstEnvUrl(
+      import.meta.env.VITE_PAYMENT_API_BASE_URL,
+      DEFAULT_PAYMENT_API_BASE_URL,
     );
 
 const DOTNET48_ACCEPT_HEADER = "text/plain";
@@ -112,6 +120,14 @@ export function dotNet10ApiUrl(endpoint: string) {
   return `${DOTNET10_API_BASE_URL}${normalizedEndpoint}`;
 }
 
+export function paymentApiUrl(endpoint: string) {
+  const normalizedEndpoint = endpoint.startsWith("/")
+    ? endpoint
+    : `/${endpoint}`;
+
+  return `${PAYMENT_API_BASE_URL}${normalizedEndpoint}`;
+}
+
 export async function apiFetch(endpoint: string, options?: RequestInit) {
   const fetchOptions = withDotNet48Headers(options);
 
@@ -134,4 +150,11 @@ export async function dotNet10ApiFetch(
   options?: RequestInit,
 ) {
   return fetchWithTokenRefresh(dotNet10ApiUrl(endpoint), options);
+}
+
+export async function paymentApiFetch(
+  endpoint: string,
+  options?: RequestInit,
+) {
+  return fetchWithTokenRefresh(paymentApiUrl(endpoint), options);
 }

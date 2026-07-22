@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
@@ -19,6 +19,9 @@ import {
   History,
   LayoutGrid,  
   MapPinHouse, 
+  CreditCard,
+  LoaderCircle,
+  Wallet,
 } from "lucide-react";
 import { Link } from "react-router";
 import {
@@ -34,6 +37,13 @@ import {
   type ApiResponse,
 } from "../utils/apiResponseHandler";
 import { apiFetch } from "../data/api";
+import { AUTH_TOKEN_KEY } from "../utils/authStorage";
+import {
+  extractPaymentIdentifiers,
+  redirectToPaymentGateway,
+  requestPaymentToken,
+  type PaymentIdentifiers,
+} from "../services/paymentService";
 import { PropertyTreeList, type PropertyItem as TreePropertyItem, type PropertyTreeItem } from "../components/PropertyTreeList";
 import {
   fetchCurrentUserPropertyFiles,
@@ -41,7 +51,6 @@ import {
   getPropertyFileList,
 } from "../data/propertyFiles";
 
-import { useRef } from "react";
 //import Map from "@/app/components/Map";
 import Map from "../components/Map";
 //import { MapHandle } from "@/app/components/Map/types";
@@ -376,8 +385,14 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
   });
 
   const [error, setError] = useState("");
+  const [paymentIdentifiers, setPaymentIdentifiers] =
+    useState<PaymentIdentifiers | null>(null);
+  const [paymentError, setPaymentError] = useState("");
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const renovationRequestIdRef = useRef(0);
+  const paymentAttemptIdRef = useRef(0);
 
-  const token = localStorage.getItem("auth-token");
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
 
   const normalizeCode = (code = ""): string => {
     const segments = code
@@ -421,6 +436,9 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
 
   const loadRenovationData = async (propertyId: string, code: string) => {
     if (!token) return;
+    const requestId = ++renovationRequestIdRef.current;
+    setPaymentIdentifiers(null);
+    setPaymentError("");
     try {
       const normalizedCode = normalizeCode(code);
       const headers = {
@@ -438,6 +456,7 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
         ? getApiValue(ownersData)
         : null;
       let rawOwners = asArray(ownersValue);
+      if (requestId !== renovationRequestIdRef.current) return;
       setOwners(rawOwners.map(mapOwner));
 
       const ownerId =
@@ -466,10 +485,12 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
       const recordsValue = isApiSuccess(recordsData)
         ? getApiValue(recordsData)
         : [];
+      if (requestId !== renovationRequestIdRef.current) return;
 
       const feePairs = toModernTollPairs(renovationValue);
       setFeesRight(feePairs.filter((_: unknown, i: number) => i % 2 === 0));
       setFeesLeft(feePairs.filter((_: unknown, i: number) => i % 2 === 1));
+      setPaymentIdentifiers(extractPaymentIdentifiers(renovationValue));
 
       const rawRecords = Array.isArray(recordsValue)
         ? recordsValue
@@ -496,12 +517,17 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
 
   // هندلر کلیک روی یک ملک از لیست زیرمجموعه
   const selectPropertyFromList = (property: LocalPropertyItem) => {
+    renovationRequestIdRef.current += 1;
+    paymentAttemptIdRef.current += 1;
     setSearchInputs(property.codes);
     setSelectedProperty(property);
     setOwners([]);
     setFeesRight([]);
     setFeesLeft([]);
     setHistoryItems([]);
+    setPaymentIdentifiers(null);
+    setPaymentError("");
+    setIsPaymentLoading(false);
     setError("");
   };
 
@@ -608,15 +634,53 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
 
   const handleSearch = async () => {
     if (!selectedProperty) return;
+    paymentAttemptIdRef.current += 1;
+    setIsPaymentLoading(false);
     setError("");
     setOwners([]);
     setFeesRight([]);
     setFeesLeft([]);
     setHistoryItems([]);
+    setPaymentIdentifiers(null);
+    setPaymentError("");
     try {
       await loadRenovationData(selectedProperty.id, codeNosazi);
     } catch {
       setError("خطا در دریافت اطلاعات نوسازی.");
+    }
+  };
+
+  const handlePayment = async () => {
+    if (isPaymentLoading) return;
+    if (!token) {
+      setPaymentError("برای پرداخت باید وارد حساب کاربری شوید.");
+      return;
+    }
+    if (!paymentIdentifiers) {
+      setPaymentError(
+        "شناسه قبض یا شناسه پرداخت در اطلاعات نوسازی موجود نیست؛ ابتدا پرونده را جستجو کنید.",
+      );
+      return;
+    }
+
+    setPaymentError("");
+    setIsPaymentLoading(true);
+    const attemptId = ++paymentAttemptIdRef.current;
+    try {
+      const { refId, redirectUrl } = await requestPaymentToken(
+        paymentIdentifiers,
+        token,
+      );
+      if (attemptId !== paymentAttemptIdRef.current) return;
+      redirectToPaymentGateway(refId, redirectUrl);
+    } catch (paymentRequestError) {
+      if (attemptId !== paymentAttemptIdRef.current) return;
+      setPaymentError(
+        paymentRequestError instanceof Error
+          ? paymentRequestError.message
+          : "شروع عملیات پرداخت انجام نشد.",
+      );
+      setIsPaymentLoading(false);
     }
   };
 
@@ -632,6 +696,14 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
 
   const currentFeeRows = mergePairs(feesRight, feesLeft);
   const hasCurrentFees = currentFeeRows.length > 0;
+  const canStartPayment = Boolean(
+    token && paymentIdentifiers && !isPaymentLoading,
+  );
+  const paymentHint = !token
+    ? "برای پرداخت، ابتدا وارد حساب کاربری شوید."
+    : !paymentIdentifiers
+      ? "شناسه قبض و شناسه پرداخت برای این پرونده دریافت نشده است."
+      : "پس از دریافت توکن، به درگاه امن آسان‌پرداخت منتقل می‌شوید.";
 
   // GIS Parameters
   const mapRef = useRef<MapHandle>(null);
@@ -945,6 +1017,59 @@ export function ModernTollPage({ isDark, toggleTheme }: ModernTollPageProps) {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                      <Wallet className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-foreground">
+                        پرداخت آنلاین عوارض
+                      </h3>
+                      <p className="mt-1 text-[11px] leading-5 text-muted-foreground sm:text-xs">
+                        {paymentHint}
+                      </p>
+                      {paymentIdentifiers && (
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-foreground/70 sm:text-[11px]">
+                          <span>
+                            شناسه قبض: <bdi dir="ltr">{paymentIdentifiers.billId}</bdi>
+                          </span>
+                          <span>
+                            شناسه پرداخت:{" "}
+                            <bdi dir="ltr">{paymentIdentifiers.paymentId}</bdi>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handlePayment}
+                    disabled={!canStartPayment}
+                    aria-busy={isPaymentLoading}
+                    className="inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-muted-foreground/35 disabled:shadow-none sm:w-auto"
+                  >
+                    {isPaymentLoading ? (
+                      <LoaderCircle className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <CreditCard className="h-5 w-5" />
+                    )}
+                    {isPaymentLoading ? "در حال اتصال به درگاه..." : "پرداخت عوارض"}
+                  </button>
+                </div>
+
+                {paymentError && (
+                  <div
+                    role="alert"
+                    className="mt-3 rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs leading-6 text-destructive"
+                  >
+                    {paymentError}
+                  </div>
+                )}
               </div>
             </div>
           </motion.article>
